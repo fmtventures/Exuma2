@@ -158,7 +158,32 @@
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
     </style></head>
 <body>
-<body class="min-h-screen flex flex-col">
+<div id="login">
+  <h2>Enter Password</h2>
+  <input type="password" id="password" placeholder="Password">
+  <button onclick="checkPassword()">Enter</button>
+  <p id="error" style="color:red;"></p>
+</div>
+
+<div id="content">
+  <h1>Welcome</h1>
+  <p>This is your Exuma page content.</p>
+</div>
+
+<script>
+  function checkPassword() {
+    const password = document.getElementById("password").value;
+    const correctPassword = "exuma2026"; // 🔴 CHANGE THIS
+
+    if (password === correctPassword) {
+      document.getElementById("login").style.display = "none";
+      document.getElementById("content").style.display = "block";
+    } else {
+      document.getElementById("error").innerText = "Wrong password";
+    }
+  }
+</script>
+    <body class="min-h-screen flex flex-col">
 
     <header class="bg-white shadow-sm border-b border-brand-beige sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
