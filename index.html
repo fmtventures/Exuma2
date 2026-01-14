@@ -1,6 +1,28 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
+<html><html lang="en">
+<head> 
+    <meta charset="UTF-8">
+  <title>Protected Page</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    #login, #content {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    #content {
+      display: none;
+    }
+  </style>
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sandy Palms Strategic Business Plan | Interactive Portal</title>
@@ -134,8 +156,8 @@
 
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-    </style>
-</head>
+    </style></head>
+<body>
 <body class="min-h-screen flex flex-col">
 
     <header class="bg-white shadow-sm border-b border-brand-beige sticky top-0 z-50">
