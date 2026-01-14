@@ -1,0 +1,1664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sandy Palms Strategic Business Plan | Interactive Portal</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            sand: '#F5F2EA',      // Warm background
+                            beige: '#E6E2D6',     // Secondary background
+                            teal: '#2A9D8F',      // Primary Action / Exuma Water
+                            darkteal: '#20756B',  // Hover state
+                            navy: '#264653',      // Text / Dark accents
+                            gold: '#E9C46A',      // Highlight
+                            coral: '#E76F51',     // Alert / Attention
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['"Inter"', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #F5F2EA; color: #264653; }
+        h1, h2, h3, h4, h5, h6 { font-family: 'Playfair Display', serif; }
+        
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 320px;
+            max-height: 400px;
+        }
+        @media (min-width: 640px) {
+            .chart-container { height: 400px; }
+        }
+
+        /* Consistent Tab Styling */
+        .tab-btn {
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #6B7280;
+            transition: color 0.2s, border-bottom-color 0.2s;
+            border-bottom-width: 4px;
+            border-color: transparent;
+            white-space: nowrap;
+            font-family: 'Inter', sans-serif;
+        }
+        .tab-btn:hover { color: #2A9D8F; }
+        .tab-btn.active {
+            color: #264653;
+            border-color: #2A9D8F;
+            font-weight: 700;
+            background-color: white;
+        }
+        
+        /* Custom Range Slider Styling (Global) */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #2A9D8F;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #E6E2D6;
+            border-radius: 2px;
+        }
+        
+        /* Clean Input Styles */
+        .input-clean {
+            width: 6rem;
+            background-color: #F9FAFB;
+            border: 1px solid #D1D5DB;
+            border-radius: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            text-align: right;
+            font-weight: 700;
+            color: #264653;
+            font-size: 0.875rem;
+        }
+        .input-clean:focus { outline: none; border-color: #2A9D8F; }
+        
+        .table-input-clean {
+             width: 4rem;
+             background-color: white;
+             border: 1px solid #E5E7EB;
+             border-radius: 0.25rem;
+             padding: 0.25rem;
+             text-align: center;
+             font-weight: 700;
+             color: #2A9D8F;
+             font-size: 0.75rem;
+        }
+        .table-input-clean:focus { outline: none; border-color: #2A9D8F; }
+
+        /* PDF Print Styles */
+        @media print {
+            header, nav, footer, .no-print { display: none !important; }
+            body { background-color: white; color: black; }
+            .bg-brand-navy { background-color: #264653 !important; -webkit-print-color-adjust: exact; }
+            .hidden { display: none !important; }
+        }
+
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <header class="bg-white shadow-sm border-b border-brand-beige sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="text-2xl">🌴</span>
+                <div class="flex flex-col">
+                    <h1 class="text-xl font-bold tracking-tight text-brand-navy leading-none">Sandy Palms <span class="hidden sm:inline font-normal text-gray-500">| Private Equity Offering</span></h1>
+                    <a href="#" class="text-xs text-brand-teal hover:underline mt-1 font-sans">sandypalmsbahamas.com</a>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="exportAllDataCSV()" class="hidden sm:flex items-center gap-2 bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-700 transition-colors no-print">
+                    <span>📊</span> Export All Data (CSV)
+                </button>
+                <div class="text-sm font-semibold text-brand-navy tracking-wide border-l-2 border-brand-beige pl-4 py-1 font-sans">
+                    Presented by: Francis Theriault | 902-888-8807
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow">
+        <section class="relative h-[500px] flex items-center justify-center overflow-hidden no-print bg-gradient-to-br from-brand-navy via-[#1f3a45] to-[#162e38]">
+            <div class="relative z-10 max-w-5xl mx-auto text-center px-4 mt-10">
+                <span class="inline-block bg-white/10 backdrop-blur-md text-white border border-white/30 px-4 py-1 rounded-full text-xs font-bold tracking-wide uppercase shadow-sm mb-4 font-sans">Target Acquisition: Summer 2026</span>
+                <h2 class="text-3xl sm:text-5xl font-bold mb-4 leading-tight text-white drop-shadow-lg">Bahamas Investment Opportunity</h2>
+                <p class="text-xl text-white/90 max-w-2xl mx-auto mb-10 font-light drop-shadow-md font-sans">
+                    Unlocking immediate equity on Exuma's "Gold Coast": Acquiring a prime beachfront compound at ~30% below market value.
+                </p>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto text-center font-sans">
+                    <div class="bg-black/30 p-4 rounded-xl backdrop-blur-md border border-white/20">
+                        <div class="text-brand-gold text-3xl font-bold mb-1">$1.985M</div>
+                        <div class="text-xs text-white/80 uppercase tracking-wider font-semibold">Acquisition Price</div>
+                    </div>
+                    <div class="bg-black/30 p-4 rounded-xl backdrop-blur-md border border-white/20">
+                        <div class="text-brand-gold text-3xl font-bold mb-1">$3.5M</div>
+                        <div class="text-xs text-white/80 uppercase tracking-wider font-semibold">Target Exit (Yr 5)</div>
+                    </div>
+                    <div class="bg-black/30 p-4 rounded-xl backdrop-blur-md border border-white/20">
+                        <div class="text-brand-gold text-3xl font-bold mb-1">50%</div>
+                        <div class="text-xs text-white/80 uppercase tracking-wider font-semibold">Vacancy Rate Target</div>
+                    </div>
+                    <div class="bg-black/30 p-4 rounded-xl backdrop-blur-md border border-white/20">
+                        <div class="text-brand-gold text-3xl font-bold mb-1">25%</div>
+                        <div class="text-xs text-white/80 uppercase tracking-wider font-semibold">Target Rent Increase (2 Yrs)</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm overflow-x-auto hide-scroll no-print">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <nav class="flex space-x-2 sm:space-x-4 min-w-max py-1" aria-label="Tabs">
+                    <button onclick="switchTab('general')" class="tab-btn active" id="tab-general">General Info</button>
+                    <button onclick="switchTab('model')" class="tab-btn" id="tab-model">Financial Tool</button>
+                    <button onclick="switchTab('acquisition')" class="tab-btn" id="tab-acquisition">Acquisition</button>
+                    <button onclick="switchTab('financial')" class="tab-btn" id="tab-financial">Market Overview</button>
+                    <button onclick="switchTab('revenue')" class="tab-btn" id="tab-revenue">Rev & Exp</button>
+                    <button onclick="switchTab('roi')" class="tab-btn" id="tab-roi">ROI Overview</button>
+                    <button onclick="switchTab('structure')" class="tab-btn" id="tab-structure">Structure</button>
+                </nav>
+            </div>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+            <div id="content-general" class="space-y-12">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="text-2xl font-bold text-brand-navy mb-4">A Rare Find on the Gold Coast</h3>
+                    <p class="text-gray-600 leading-relaxed">
+                        Sandy Palms is not just a home; it's a 1.4-acre beachfront compound on Hoopers Bay. While the competition is priced near $3M, we have secured a private tender at $1.985M. The asset features a "Bunker" solid concrete structure with zero hurricane claims since 1999.
+                    </p>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <h4 class="text-xl font-bold text-brand-navy mb-4">Asset Specifications</h4>
+                        <ul class="space-y-4 font-sans text-sm mb-6">
+                            <li class="flex justify-between border-b border-gray-100 pb-2"><span class="text-gray-500">Land Size</span><span class="font-semibold text-brand-navy">1.4 Acres / 100ft Frontage</span></li>
+                            <li class="flex justify-between border-b border-gray-100 pb-2"><span class="text-gray-500">Structure</span><span class="font-semibold text-brand-navy">2,778 sq. ft. (Concrete)</span></li>
+                            <li class="flex justify-between border-b border-gray-100 pb-2"><span class="text-gray-500">Units</span><span class="font-semibold text-brand-navy">4 Revenue Units</span></li>
+                        </ul>
+                        
+                        <h5 class="font-bold text-brand-teal mb-3 text-sm uppercase tracking-wide">Market Comparables</h5>
+                        <div class="space-y-3 font-sans text-sm">
+                             <div class="p-3 bg-brand-sand/30 rounded border border-brand-beige transition-colors hover:border-brand-teal">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="font-bold text-brand-navy">Blu Wakes</span>
+                                    <span class="bg-brand-navy text-white text-[10px] px-2 py-0.5 rounded-full">Neighbor</span>
+                                </div>
+                                <div class="text-xs text-gray-500 mb-2">New build on Hoopers Bay. 5 Bed / 4 Bath.</div>
+                                <div class="flex flex-wrap gap-2">
+                                    <a href="https://www.bluwakes.com/" target="_blank" class="text-brand-teal hover:underline text-xs font-bold flex items-center">Website <span class="ml-1">↗</span></a>
+                                    <span class="text-gray-300">|</span>
+                                    <a href="https://www.hgchristie.com/eng/sales/detail/529-l-82274-f1027554659/blu-wakes-hoopers-bay-ex" target="_blank" class="text-brand-teal hover:underline text-xs font-bold flex items-center">For Sale ($5.35M) <span class="ml-1">↗</span></a>
+                                    <span class="text-gray-300">|</span>
+                                    <a href="https://www.airbnb.com/rooms/1372492688634254739" target="_blank" class="text-brand-teal hover:underline text-xs font-bold flex items-center">Airbnb Rates <span class="ml-1">↗</span></a>
+                                </div>
+                             </div>
+
+                             <div class="p-3 bg-white rounded border border-gray-100 transition-colors hover:border-brand-teal">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="font-bold text-brand-navy">Vista Del Mar</span>
+                                    <span class="text-xs font-bold text-gray-400">$2.99M</span>
+                                </div>
+                                <div class="text-xs text-gray-500 mb-2">Oceanfront Estate. 5 Bed / 5 Bath.</div>
+                                <a href="https://www.realtor.com/international/bs/vista-del-mar-exuma-exuma-cays-310103818522/" target="_blank" class="text-brand-teal hover:underline text-xs font-bold flex items-center">View Listing <span class="ml-1">↗</span></a>
+                             </div>
+                             
+                             <div class="p-3 bg-white rounded border border-gray-100 transition-colors hover:border-brand-teal">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="font-bold text-brand-navy">Casa Blanca</span>
+                                    <span class="text-xs font-bold text-gray-400">$5.95M</span>
+                                </div>
+                                <div class="text-xs text-gray-500 mb-2">Ocean Ridge Estates. 8 Bed / 8 Bath.</div>
+                                <a href="https://www.sanmiguelsothebysrealty.com/eng/sales/detail/10-l-1145-x8bsbg/casa-blanca-19-and-20-ocean-ridge-estates-emerald-bay-ex" target="_blank" class="text-brand-teal hover:underline text-xs font-bold flex items-center">View Listing <span class="ml-1">↗</span></a>
+                             </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <h4 class="text-xl font-bold text-brand-navy mb-4">Valuation Gap Analysis</h4>
+                        <div class="chart-container"><canvas id="compsChart"></canvas></div>
+                    </div>
+                </div>
+
+                <div class="max-w-4xl mx-auto">
+                    <span class="text-brand-teal font-bold tracking-wider text-xs uppercase font-sans">The Destination</span>
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <h3 class="text-3xl font-bold text-brand-navy mt-2">Great Exuma</h3>
+                        <a href="https://www.google.com/maps/place/Exuma,+The+Bahamas/@23.5912955,-76.0878994,116711m/data=!3m1!1e3!4m6!3m5!1s0x8931c7d32da2849b:0x8e03ec04218cabeb!8m2!3d23.6192598!4d-75.9695465!16zL20vMDN2ZjQw?entry=ttu&g_ep=EgoyMDI2MDEwNy4wIKXMDSoKLDEwMDc5MjA2N0gBUAM%3D" target="_blank" class="text-brand-teal font-bold text-sm hover:underline flex items-center gap-1 bg-white border border-brand-teal px-3 py-1 rounded-full transition-colors hover:bg-brand-teal hover:text-white">
+                            View on Map ↗
+                        </a>
+                    </div>
+                    <p class="text-gray-600 leading-relaxed mb-6 font-sans mt-4">
+                        This is a very secluded area with high-end properties where tourists are paying premium rates. With new direct airlift from Toronto and Miami, it has become the most accessible "Out Island" experience.
+                    </p>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-bold text-brand-navy mb-8 text-center">The Visual Experience</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                        <a href="https://www.youtube.com/watch?v=nfVZQQlbhyc" target="_blank" class="bg-white p-2 rounded-xl shadow-sm border border-gray-100 group block hover:border-brand-teal transition-colors">
+                            <div class="aspect-w-16 aspect-h-9 bg-gray-200 rounded-lg overflow-hidden relative"><img src="https://img.youtube.com/vi/nfVZQQlbhyc/mqdefault.jpg" class="w-full h-full object-cover"><div class="absolute inset-0 flex items-center justify-center"><div class="w-10 h-10 bg-black/50 rounded-full flex items-center justify-center text-white play-icon backdrop-blur-sm group-hover:bg-brand-teal/80">▶</div></div></div>
+                            <div class="p-3"><h5 class="font-bold text-brand-navy text-sm group-hover:text-brand-teal font-sans">The "Money Maker"</h5></div>
+                        </a>
+                        <a href="https://www.youtube.com/watch?v=TV6jBR7R2ZI" target="_blank" class="bg-white p-2 rounded-xl shadow-sm border border-gray-100 group block hover:border-brand-teal transition-colors">
+                            <div class="aspect-w-16 aspect-h-9 bg-gray-200 rounded-lg overflow-hidden relative"><img src="https://img.youtube.com/vi/TV6jBR7R2ZI/mqdefault.jpg" class="w-full h-full object-cover"><div class="absolute inset-0 flex items-center justify-center"><div class="w-10 h-10 bg-black/50 rounded-full flex items-center justify-center text-white play-icon backdrop-blur-sm group-hover:bg-brand-teal/80">▶</div></div></div>
+                            <div class="p-3"><h5 class="font-bold text-brand-navy text-sm group-hover:text-brand-teal font-sans">Aerial Context</h5></div>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="bg-brand-navy p-6 rounded-xl text-center text-white mt-6 shadow-lg">
+                    <p class="text-lg font-light mb-4 font-sans">Learn more about the high development standards in the area:</p>
+                    <a href="https://www.youtube.com/@buildingwithsteveharbaugh" target="_blank" class="inline-block bg-brand-gold text-brand-navy px-6 py-3 rounded-full font-bold hover:bg-white transition-colors text-lg flex items-center justify-center gap-2 w-fit mx-auto font-sans">
+                        <span>▶</span> Steve Harbaugh - Exuma Developer
+                    </a>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-8">
+                    <h3 class="text-2xl font-bold text-brand-navy mb-4">Revenue Unit Configuration</h3>
+                    <ul class="space-y-4 font-sans">
+                        
+                        <li>
+                            <a href="https://sandypalmsbahamas.com/accom-4bedapart.html" target="_blank" class="block bg-gray-50 rounded-lg border border-gray-100 hover:border-brand-teal hover:shadow-sm transition-all p-4 group no-underline">
+                                <div class="flex items-center mb-3">
+                                    <span class="w-2 h-2 bg-brand-teal rounded-full mr-3 group-hover:scale-125 transition-transform"></span>
+                                    <span class="font-bold text-brand-navy mr-2 text-lg">4-Bed Apartment</span>
+                                    <span class="text-gray-500 text-sm">- Upper Floor (Sleeps 8)</span>
+                                    <span class="ml-auto text-brand-teal text-xs font-bold uppercase opacity-0 group-hover:opacity-100 transition-opacity">View Photos ↗</span>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-5 text-sm">
+                                    <div class="bg-white p-2 rounded border border-gray-200 flex justify-between">
+                                        <span class="text-gray-600">Minimum (7 nights)</span>
+                                        <span class="font-bold text-brand-navy">$5,895 / wk</span>
+                                    </div>
+                                    <div class="bg-white p-2 rounded border border-brand-gold/30 flex justify-between">
+                                        <span class="text-gray-600">Dec 18 - Jan 5</span>
+                                        <span class="font-bold text-brand-gold">$6,695 / wk</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+
+                        <li>
+                            <a href="https://sandypalmsbahamas.com/accom-1bedapart.html" target="_blank" class="block bg-gray-50 rounded-lg border border-gray-100 hover:border-brand-teal hover:shadow-sm transition-all p-4 group no-underline">
+                                <div class="flex items-center mb-3">
+                                    <span class="w-2 h-2 bg-brand-teal rounded-full mr-3 group-hover:scale-125 transition-transform"></span>
+                                    <span class="font-bold text-brand-navy mr-2 text-lg">1-Bed Apartment</span>
+                                    <span class="text-gray-500 text-sm">- Ground Floor (Sleeps 4)</span>
+                                    <span class="ml-auto text-brand-teal text-xs font-bold uppercase opacity-0 group-hover:opacity-100 transition-opacity">View Photos ↗</span>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-5 text-sm">
+                                    <div class="bg-white p-2 rounded border border-gray-200 flex justify-between">
+                                        <span class="text-gray-600">Minimum (7 nights)</span>
+                                        <span class="font-bold text-brand-navy">$2,695 / wk</span>
+                                    </div>
+                                    <div class="bg-white p-2 rounded border border-brand-gold/30 flex justify-between">
+                                        <span class="text-gray-600">Dec 18 - Jan 5</span>
+                                        <span class="font-bold text-brand-gold">$3,095 / wk</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+
+                        <li>
+                            <a href="https://sandypalmsbahamas.com/accom-studioapart-queen.html" target="_blank" class="block bg-gray-50 rounded-lg border border-gray-100 hover:border-brand-teal hover:shadow-sm transition-all p-4 group no-underline">
+                                <div class="flex items-center mb-3">
+                                    <span class="w-2 h-2 bg-brand-teal rounded-full mr-3 group-hover:scale-125 transition-transform"></span>
+                                    <span class="font-bold text-brand-navy mr-2 text-lg">Queen Studio</span>
+                                    <span class="text-gray-500 text-sm">- Ground Floor (Sleeps 2)</span>
+                                    <span class="ml-auto text-brand-teal text-xs font-bold uppercase opacity-0 group-hover:opacity-100 transition-opacity">View Photos ↗</span>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-5 text-sm">
+                                    <div class="bg-white p-2 rounded border border-gray-200 flex justify-between">
+                                        <span class="text-gray-600">Minimum (7 nights)</span>
+                                        <span class="font-bold text-brand-navy">$1,795 / wk</span>
+                                    </div>
+                                    <div class="bg-white p-2 rounded border border-brand-gold/30 flex justify-between">
+                                        <span class="text-gray-600">Dec 18 - Jan 5</span>
+                                        <span class="font-bold text-brand-gold">$1,995 / wk</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+
+                        <li>
+                            <a href="https://sandypalmsbahamas.com/accom-studioapart-king.html" target="_blank" class="block bg-gray-50 rounded-lg border border-gray-100 hover:border-brand-teal hover:shadow-sm transition-all p-4 group no-underline">
+                                <div class="flex items-center mb-3">
+                                    <span class="w-2 h-2 bg-brand-teal rounded-full mr-3 group-hover:scale-125 transition-transform"></span>
+                                    <span class="font-bold text-brand-navy mr-2 text-lg">King Studio</span>
+                                    <span class="text-gray-500 text-sm">- Ground Floor (Sleeps 2)</span>
+                                    <span class="ml-auto text-brand-teal text-xs font-bold uppercase opacity-0 group-hover:opacity-100 transition-opacity">View Photos ↗</span>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-5 text-sm">
+                                    <div class="bg-white p-2 rounded border border-gray-200 flex justify-between">
+                                        <span class="text-gray-600">Minimum (7 nights)</span>
+                                        <span class="font-bold text-brand-navy">$1,795 / wk</span>
+                                    </div>
+                                    <div class="bg-white p-2 rounded border border-brand-gold/30 flex justify-between">
+                                        <span class="text-gray-600">Dec 18 - Jan 5</span>
+                                        <span class="font-bold text-brand-gold">$1,995 / wk</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+
+                    </ul>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-8">
+                    <h3 class="text-2xl font-bold text-brand-navy mb-6">Logistics & Travel</h3>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 font-sans">
+                        <div>
+                            <h4 class="font-bold text-brand-navy mb-4 text-lg">How to Get There</h4>
+                            <ul class="space-y-4 text-sm">
+                                <li class="flex items-start"><span class="text-xl mr-3">✈️</span><div><span class="font-bold text-brand-navy">American Airlines</span><span class="block text-gray-500">Miami (1h 10m), Charlotte (2h 25m)</span></div></li>
+                                <li class="flex items-start"><span class="text-xl mr-3">✈️</span><div><span class="font-bold text-brand-navy">Delta Airlines</span><span class="block text-gray-500">Atlanta (2h 20m)</span></div></li>
+                                <li class="flex items-start"><span class="text-xl mr-3">✈️</span><div><span class="font-bold text-brand-navy">Air Canada</span><span class="block text-gray-500">Toronto (3h 30m)</span></div></li>
+                                <li class="flex items-start"><span class="text-xl mr-3">✈️</span><div><span class="font-bold text-brand-navy">Silver Airways</span><span class="block text-gray-500">Fort Lauderdale (1h 30m)</span></div></li>
+                            </ul>
+                        </div>
+                        <div class="bg-brand-sand p-6 rounded-xl border border-brand-beige text-center"><div class="text-4xl mb-4">📍</div><h4 class="font-bold text-brand-navy mb-2">Location Context</h4><p class="text-sm text-gray-700">15 min drive from GGT Airport.</p></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="content-model" class="hidden space-y-10">
+                <div class="flex flex-col sm:flex-row justify-between items-center bg-gray-50 border border-gray-200 p-4 rounded-lg shadow-sm gap-4 no-print font-sans">
+                    <div class="text-sm text-gray-500">
+                        <strong>Share Model:</strong> Use the button below to save as PDF.
+                    </div>
+                    <div class="flex gap-3">
+                        <button onclick="generatePDF()" class="flex items-center gap-2 bg-brand-navy text-white px-4 py-2 rounded font-bold text-sm hover:bg-gray-800 transition-colors">
+                            <span>📄</span> Generate Professional PDF
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-brand-navy p-6 rounded-xl shadow-lg text-white font-sans">
+                    <div class="flex flex-col md:flex-row justify-between items-center gap-6 mb-6">
+                        <h3 class="text-2xl font-bold text-brand-gold font-serif">Financial Modeling Tool</h3>
+                        <div class="flex items-center gap-4">
+                             <button onclick="fm_toggleCurrency()" id="cur-btn" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors">VIEW IN CAD ($)</button>
+                             <span class="text-xs text-brand-gold font-mono border border-brand-gold/30 px-2 py-1 rounded">1.00 USD ≈ 1.43 CAD</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                        <div><label class="text-xs font-bold text-gray-400 uppercase block mb-2">Mortgage Rate: <span id="rate-disp" class="text-white ml-1">7.0%</span></label><input type="range" id="mortgage-rate" min="3" max="10" step="0.25" value="7" oninput="fm_updateCalculations()"></div>
+                        <div><label class="text-xs font-bold text-gray-400 uppercase block mb-2">Down Payment: <span id="down-disp" class="text-white ml-1">40%</span></label><input type="range" id="down-slider" min="20" max="100" step="5" value="40" oninput="fm_updateCalculations()"></div>
+                        <div><label class="text-xs font-bold text-gray-400 uppercase block mb-2">Occupancy: <span id="occ-disp" class="text-white ml-1">50%</span></label><input type="range" id="vacancy-rate" min="20" max="90" step="5" value="50" oninput="fm_updateCalculations()"></div>
+                    </div>
+                </div>
+
+                <div id="pdf-capture-area" class="space-y-10 bg-white p-2 font-sans">
+                    <div class="grid md:grid-cols-3 gap-6">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <h4 class="font-bold text-brand-navy mb-4 border-b pb-2 text-lg font-serif">Purchase Info</h4>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between items-center"><span class="text-gray-600">Purchase Price</span><input type="number" id="input-price" class="input-clean" value="1985000" onchange="fm_updateCalculations()"></div>
+                                <div class="flex justify-between items-center text-gray-500"><span>- Mortgage</span><span id="p-mortgage" class="font-bold"></span></div>
+                                <div class="flex justify-between items-center text-brand-teal font-bold pt-2 border-t border-gray-100"><span>= Downpayment</span><span id="p-down"></span></div>
+                                <div class="flex justify-between items-center mt-2"><span class="text-gray-600">Buying Costs</span><input type="number" id="input-buying" class="input-clean" value="248125" onchange="fm_updateCalculations()"></div>
+                                <div class="flex justify-between items-center"><span class="text-gray-600">Renovations</span><input type="number" id="input-reno" class="input-clean" value="100000" onchange="fm_updateCalculations()"></div>
+                                <div class="flex justify-between items-center"><span class="text-gray-600">Furniture/Other</span><input type="number" id="input-other" class="input-clean" value="0" onchange="fm_updateCalculations()"></div>
+                                <div class="flex justify-between items-center bg-brand-sand p-2 rounded mt-2"><span class="font-bold text-brand-navy uppercase text-xs">Initial Cash</span><span id="p-total" class="font-bold text-brand-navy text-lg"></span></div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <h4 class="font-bold text-brand-navy mb-4 border-b pb-2 text-lg font-serif">Operating Performance</h4>
+                            <div class="space-y-3 text-sm">
+                                <div class="flex justify-between"><span class="text-gray-600">Gross Revenue</span><span id="p-gross-pot" class="font-bold text-brand-navy"></span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">Vacancy Loss</span><span id="p-vac-loss" class="font-bold text-red-400"></span></div>
+                                <div class="flex justify-between pt-1 border-t border-gray-100"><span class="font-bold text-gray-700">Effective Income</span><span id="p-eff-inc" class="font-bold"></span></div>
+                                <div class="flex justify-between"><span class="font-bold text-gray-700">NOI</span><span id="p-noi" class="font-bold text-green-600"></span></div>
+                                <div class="flex justify-between"><span class="text-gray-400">- Annual Debt</span><span id="p-debt" class="font-bold text-red-400"></span></div>
+                                <div class="flex justify-between items-center bg-brand-gold/10 p-2 rounded mt-2"><span class="font-bold text-brand-navy uppercase text-xs">Annual Cash Flow</span><span id="p-ncf" class="font-bold text-brand-navy text-lg"></span></div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <h4 class="font-bold text-brand-navy mb-4 border-b pb-2 text-lg font-serif">Assumptions & Metrics</h4>
+                            <div class="space-y-3 text-sm mb-6">
+                                <div class="flex justify-between items-center"><span class="text-gray-600">Income Inflation</span><div class="flex items-center gap-1"><input type="number" id="ass-inc" class="w-12 border rounded px-1 text-right" value="3.0"><span class="text-xs">%</span></div></div>
+                                <div class="flex justify-between items-center"><span class="text-gray-600">Expense Inflation</span><div class="flex items-center gap-1"><input type="number" id="ass-exp" class="w-12 border rounded px-1 text-right" value="3.0"><span class="text-xs">%</span></div></div>
+                                <div class="flex justify-between items-center"><span class="text-gray-600">Selling Costs</span><div class="flex items-center gap-1"><input type="number" id="ass-sell" class="w-12 border rounded px-1 text-right" value="5.0"><span class="text-xs">%</span></div></div>
+                                <div class="flex justify-between items-center"><span class="text-gray-600">Refi LTV</span><div class="flex items-center gap-1"><input type="number" id="ass-refi" class="w-12 border rounded px-1 text-right" value="70.0"><span class="text-xs">%</span></div></div>
+                                <button onclick="fm_updateCalculations()" class="w-full bg-gray-100 text-gray-600 text-xs font-bold py-2 rounded hover:bg-gray-200 mt-2">Refresh Projection</button>
+                            </div>
+                            <div class="pt-4 border-t border-gray-100">
+                                <div class="flex justify-between mb-2"><span class="text-gray-600 font-bold">Cap Rate</span><span id="f-cap" class="font-bold text-brand-navy"></span></div>
+                                <div class="flex justify-between"><span class="text-gray-600 font-bold">Cash on Cash</span><span id="f-coc" class="font-bold text-green-600"></span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <h3 class="text-xl font-bold text-brand-navy mb-4 font-serif">Buy & Hold Projection (30 Year Analysis)</h3>
+                        <div class="table-scroll overflow-x-auto">
+                            <table class="projection-table min-w-full border-collapse text-sm text-center">
+                                <thead>
+                                    <tr>
+                                        <th class="bg-brand-navy text-white p-3 text-left">Metric</th>
+                                        <th class="bg-brand-navy text-white p-3 text-center">Year 1</th>
+                                        <th class="bg-brand-navy text-white p-3 text-center">Year 2</th>
+                                        <th class="bg-brand-navy text-white p-3 text-center">Year 3</th>
+                                        <th class="bg-brand-navy text-white p-3 text-center">Year 5</th>
+                                        <th class="bg-brand-navy text-white p-3 text-center">Year 10</th>
+                                        <th class="bg-brand-navy text-white p-3 text-center">Year 20</th>
+                                        <th class="bg-brand-navy text-white p-3 text-center">Year 30</th>
+                                    </tr>
+                                    <tr class="bg-gray-50 border-b border-gray-200">
+                                        <td class="p-2 font-bold text-gray-600 italic text-left">Appreciation Rate</td>
+                                        <td class="p-2 text-center"><input type="number" id="app-1" class="table-input-clean mx-auto" value="3.0" onchange="fm_updateCalculations()">%</td>
+                                        <td class="p-2 text-center"><input type="number" id="app-2" class="table-input-clean mx-auto" value="3.0" onchange="fm_updateCalculations()">%</td>
+                                        <td class="p-2 text-center"><input type="number" id="app-3" class="table-input-clean mx-auto" value="3.0" onchange="fm_updateCalculations()">%</td>
+                                        <td class="p-2 text-center"><input type="number" id="app-5" class="table-input-clean mx-auto" value="3.0" onchange="fm_updateCalculations()">%</td>
+                                        <td class="p-2 text-center"><input type="number" id="app-10" class="table-input-clean mx-auto" value="3.0" onchange="fm_updateCalculations()">%</td>
+                                        <td class="p-2 text-center"><input type="number" id="app-20" class="table-input-clean mx-auto" value="3.0" onchange="fm_updateCalculations()">%</td>
+                                        <td class="p-2 text-center"><input type="number" id="app-30" class="table-input-clean mx-auto" value="3.0" onchange="fm_updateCalculations()">%</td>
+                                    </tr>
+                                </thead>
+                                <tbody id="fm-projection-body" class="divide-y divide-gray-100 text-center"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <h3 class="text-xl font-bold text-brand-navy mb-6 font-serif">Equity Ownership Calculator</h3>
+                        <div class="flex flex-col md:flex-row justify-between items-center gap-10">
+                            <div class="w-full md:w-1/2 space-y-6">
+                                <div>
+                                    <label class="block text-sm font-bold uppercase text-gray-500 mb-4">Ownership Stake: <span id="owner-pct-disp" class="text-brand-teal text-2xl ml-2">50%</span></label>
+                                    <input type="range" id="ownership-slider" min="1" max="100" step="1" value="50" oninput="fm_calculateEquityStake()">
+                                </div>
+                                <div class="pt-6 border-t border-gray-100">
+                                    <label class="block text-sm font-bold uppercase text-gray-500 mb-2">Manual Investment ($)</label>
+                                    <input type="number" id="manual-invest-input" class="w-full text-2xl font-bold p-3 rounded border border-gray-300 text-brand-navy focus:border-brand-teal focus:outline-none" oninput="fm_calculateStakeFromDollars()">
+                                </div>
+                            </div>
+                            <div class="w-full md:w-1/2 grid grid-cols-1 gap-4">
+                                <div class="p-4 bg-brand-sand rounded-lg border border-brand-beige text-center">
+                                    <span class="text-xs font-bold uppercase text-brand-navy block mb-1">Required Capital</span>
+                                    <div id="investor-dollar-result" class="text-3xl font-black text-brand-navy"></div>
+                                </div>
+                                <div class="p-4 bg-green-50 rounded-lg border border-brand-teal text-center">
+                                    <span class="text-xs font-bold uppercase text-brand-teal block mb-1">Ownership %</span>
+                                    <div id="investor-percent-result" class="text-4xl font-black text-brand-navy">50.0%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div> 
+            </div>
+
+            <div id="content-acquisition" class="hidden space-y-12">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl font-serif text-brand-navy">Sources & Uses of Funds</h3>
+                        <button onclick="toggleAcquisitionCurrency()" class="bg-brand-teal text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:bg-brand-darkteal transition-colors" id="acq-toggle-btn">Show in CAD ($)</button>
+                    </div>
+                    <div class="mb-6 bg-brand-sand/30 p-4 rounded-lg border border-brand-beige">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="block text-xs font-bold text-gray-500 uppercase">Adjust Bank Financing (LTV)</label>
+                            <span class="font-bold text-brand-navy text-lg" id="ltv-display">60%</span>
+                        </div>
+                        <input type="range" min="50" max="85" step="5" value="60" id="ltv-slider" oninput="updateAcquisitionLogic()" class="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer">
+                        <div class="flex justify-between text-xs text-gray-400 mt-1"><span>50%</span><span>Conservative (60%)</span><span>Aggressive (85%)</span></div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                        <div>
+                            <h4 class="font-bold text-brand-navy mb-4 border-b pb-2 flex justify-between"><span>Uses of Funds (Costs)</span><span class="text-brand-teal" id="acq-currency-label">USD (Estimated)</span></h4>
+                            <ul class="space-y-3 text-sm">
+                                <li class="flex justify-between items-center"><span class="text-gray-600">Purchase Price</span><span class="font-bold text-brand-navy" id="acq-price">$1,985,000</span></li>
+                                <li class="flex justify-between items-center"><span class="text-gray-600">Closing Costs (VAT/Legal ~12.5%)</span><span class="font-bold text-brand-navy" id="acq-closing">$248,125</span></li>
+                                <li class="flex justify-between items-center"><span class="text-gray-600">Renovation Fund (Capex)</span><span class="font-bold text-brand-navy" id="acq-reno">$100,000</span></li>
+                                <li class="flex justify-between items-center bg-brand-sand/50 p-2 rounded -mx-2"><span class="text-gray-600 italic">Reserve Funds</span><span class="font-bold text-gray-700" id="acq-reserve">$57,875</span></li>
+                                <li class="flex justify-between items-center pt-3 border-t border-gray-200 mt-2"><span class="font-bold text-lg text-brand-navy">Total Project Cost</span><span class="font-bold text-lg text-brand-navy" id="acq-total">$2,391,000</span></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-brand-navy mb-4 border-b pb-2 flex justify-between"><span>Sources of Funds (Capital)</span><span class="text-brand-teal">% of Total</span></h4>
+                            <ul class="space-y-3 text-sm">
+                                <li class="flex justify-between items-center"><div class="flex flex-col"><span class="text-gray-600">Bank Financing (Mortgage)</span><span class="text-xs text-gray-400" id="ltv-label">Assumes 60% LTV</span></div><div class="text-right"><span class="font-bold text-brand-navy block" id="acq-loan">$1,191,000</span><span class="text-xs text-brand-teal font-bold" id="loan-pct">~50%</span></div></li>
+                                <li class="flex justify-between items-center bg-brand-gold/10 p-2 rounded -mx-2"><div class="flex flex-col"><span class="text-gray-800 font-bold">Total Equity Required</span><span class="text-xs text-gray-500">Downpayment + Costs</span></div><div class="text-right"><span class="font-bold text-brand-gold block" id="acq-equity">$1,200,000</span><span class="text-xs text-brand-gold font-bold" id="equity-pct">~50%</span></div></li>
+                                <li class="flex justify-between items-center pt-3 border-t border-gray-200 mt-2"><span class="font-bold text-lg text-brand-navy">Total Sources</span><span class="font-bold text-lg text-brand-navy" id="acq-total-src">$2,391,000</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="content-financial" class="hidden space-y-12">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="text-2xl font-serif text-brand-navy mb-4">Conservative Financial Planning</h3>
+                    <p class="text-gray-600 leading-relaxed">We have stress-tested this deal against multiple scenarios. Unlike the Seller's optimistic historical figures, our budget accounts for full insurance, property tax re-assessments, and professional management fees.</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
+                    <h4 class="font-bold text-brand-navy mb-4 flex items-center gap-2"><span>📉</span> Market Occupancy Reality</h4>
+                    <p class="text-sm text-gray-600 mb-4">Market-wide data for Exuma shows ~46% occupancy. However, high-end beachfront estates like Sandy Palms outperform the average.</p>
+                    <div class="overflow-x-auto"><table class="min-w-full text-sm text-left"><thead class="bg-brand-sand text-brand-navy"><tr><th class="px-4 py-2">Scenario</th><th class="px-4 py-2">Approx. Occupancy</th><th class="px-4 py-2">Approx. Vacancy</th></tr></thead><tbody class="divide-y divide-gray-100"><tr><td class="px-4 py-2">Conservative</td><td class="px-4 py-2">~45%</td><td class="px-4 py-2 text-gray-500">~55%</td></tr><tr><td class="px-4 py-2 text-brand-teal">Target</td><td class="px-4 py-2 font-bold text-brand-teal">~50%</td><td class="px-4 py-2 text-gray-500">~50%</td></tr><tr><td class="px-4 py-2">Above-Average</td><td class="px-4 py-2">~55%+</td><td class="px-4 py-2 text-gray-500">~45%</td></tr></tbody></table></div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <h4 class="font-bold text-brand-navy mb-2">The "Private Sale" Arbitrage</h4>
+                        <div class="chart-container"><canvas id="arbitrageChart"></canvas></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <h4 class="font-bold text-brand-navy mb-2">Financing Strategy & Burn Rate</h4>
+                        <div class="chart-container"><canvas id="financingChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="content-revenue" class="hidden space-y-12">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
+                    <div class="flex justify-between items-center mb-4"><h3 class="text-2xl font-serif text-brand-navy">Pro-Forma Income Statement</h3><button onclick="toggleRevenueCurrency()" class="bg-brand-teal text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:bg-brand-darkteal transition-colors" id="rev-toggle-btn">Show in CAD ($)</button></div>
+                    <p class="text-gray-600 leading-relaxed mb-6">Estimated annual operating performance based on the target 50% occupancy scenario. <strong>Expenses below are editable.</strong></p>
+                    <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                        <table class="min-w-full text-sm"><thead class="bg-brand-navy text-white"><tr><th class="px-6 py-3 text-left">Item</th><th class="px-6 py-3 text-right">Annual Estimate <span id="rev-currency-label">($ USD)</span></th><th class="px-6 py-3 text-right hidden sm:table-cell">% of Revenue</th></tr></thead>
+                            <tbody class="divide-y divide-gray-100">
+                                <tr class="bg-gray-50 font-bold"><td class="px-6 py-4">Gross Rental Revenue (50% Occ)</td><td class="px-6 py-4 text-right text-brand-navy" id="pf-revenue">$317,367</td><td class="px-6 py-4 text-right hidden sm:table-cell">100%</td></tr>
+                                <tr>
+                                    <td class="px-6 py-3 pl-8 flex items-center justify-between sm:justify-start">Less: Property Management (<input type="number" id="in-mgmt-pct" class="w-12 text-center border rounded mx-1 text-gray-700 font-bold" value="20" oninput="updateMgmtPct(this.value)">%)</td>
+                                    <td class="px-6 py-3 text-right text-gray-600" id="pf-mgmt">($63,473)</td>
+                                    <td class="px-6 py-3 text-right text-gray-400 hidden sm:table-cell" id="disp-mgmt-pct">20%</td>
+                                </tr>
+                                <tr><td class="px-6 py-3 pl-8 flex items-center justify-between sm:justify-start">Less: Utilities</td><td class="px-6 py-3 text-right"><input type="number" id="in-util" class="input-clean text-red-500" value="30000" oninput="updateExpenseInput('util', this.value)"></td><td class="px-6 py-3 text-right text-gray-400 hidden sm:table-cell">~9.5%</td></tr>
+                                <tr><td class="px-6 py-3 pl-8 flex items-center justify-between sm:justify-start">Less: Insurance</td><td class="px-6 py-3 text-right"><input type="number" id="in-ins" class="input-clean text-red-500" value="18000" oninput="updateExpenseInput('ins', this.value)"></td><td class="px-6 py-3 text-right text-gray-400 hidden sm:table-cell">~5.6%</td></tr>
+                                <tr><td class="px-6 py-3 pl-8 flex items-center justify-between sm:justify-start">Less: Maint & Landscape</td><td class="px-6 py-3 text-right"><input type="number" id="in-maint" class="input-clean text-red-500" value="12000" oninput="updateExpenseInput('maint', this.value)"></td><td class="px-6 py-3 text-right text-gray-400 hidden sm:table-cell">~3.8%</td></tr>
+                                <tr><td class="px-6 py-3 pl-8 flex items-center justify-between sm:justify-start">Less: Marketing</td><td class="px-6 py-3 text-right"><input type="number" id="in-mktg" class="input-clean text-red-500" value="15000" oninput="updateExpenseInput('mktg', this.value)"></td><td class="px-6 py-3 text-right text-gray-400 hidden sm:table-cell">~4.7%</td></tr>
+                                <tr><td class="px-6 py-3 pl-8 flex items-center justify-between sm:justify-start">Less: Taxes</td><td class="px-6 py-3 text-right"><input type="number" id="in-tax" class="input-clean text-red-500" value="5000" oninput="updateExpenseInput('tax', this.value)"></td><td class="px-6 py-3 text-right text-gray-400 hidden sm:table-cell">~1.6%</td></tr>
+                                
+                                <tr><td class="px-6 py-3 pl-8 flex items-center justify-between sm:justify-start"><input type="text" class="border-b border-gray-300 text-sm w-32 focus:outline-none" placeholder="Other Cost 1"></td><td class="px-6 py-3 text-right"><input type="number" id="in-other1" class="input-clean text-red-500" value="0" oninput="updateExpenseInput('other1', this.value)"></td><td class="px-6 py-3 text-right text-gray-400 hidden sm:table-cell">-</td></tr>
+                                <tr><td class="px-6 py-3 pl-8 flex items-center justify-between sm:justify-start"><input type="text" class="border-b border-gray-300 text-sm w-32 focus:outline-none" placeholder="Other Cost 2"></td><td class="px-6 py-3 text-right"><input type="number" id="in-other2" class="input-clean text-red-500" value="0" oninput="updateExpenseInput('other2', this.value)"></td><td class="px-6 py-3 text-right text-gray-400 hidden sm:table-cell">-</td></tr>
+                                <tr><td class="px-6 py-3 pl-8 flex items-center justify-between sm:justify-start"><input type="text" class="border-b border-gray-300 text-sm w-32 focus:outline-none" placeholder="Other Cost 3"></td><td class="px-6 py-3 text-right"><input type="number" id="in-other3" class="input-clean text-red-500" value="0" oninput="updateExpenseInput('other3', this.value)"></td><td class="px-6 py-3 text-right text-gray-400 hidden sm:table-cell">-</td></tr>
+
+                                <tr class="bg-brand-sand/50 font-bold border-t-2 border-brand-teal"><td class="px-6 py-4 text-brand-navy">NOI</td><td class="px-6 py-4 text-right text-brand-teal" id="pf-noi">$173,894</td><td class="px-6 py-4 text-right hidden sm:table-cell">~54.8%</td></tr>
+                                <tr><td class="px-6 py-3 pl-8 italic text-gray-500">Less: Debt Service</td><td class="px-6 py-3 text-right text-gray-500" id="pf-debt">($120,000)</td><td class="px-6 py-3 text-right text-gray-400 hidden sm:table-cell">-</td></tr>
+                                <tr class="bg-brand-teal text-white font-bold text-lg"><td class="px-6 py-4">Net Cash Flow</td><td class="px-6 py-4 text-right" id="pf-net">+$53,894</td><td class="px-6 py-4 text-right hidden sm:table-cell"></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+                        <h3 class="text-xl font-bold text-brand-navy">Interactive Multi-Year Projections</h3>
+                        <div class="flex space-x-2 mt-4 md:mt-0">
+                            <button onclick="currentYears=5; renderProjections()" class="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-brand-teal hover:text-white transition-colors text-xs font-bold" id="btn-5yr">5 Year</button>
+                            <button onclick="currentYears=7; renderProjections()" class="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-brand-teal hover:text-white transition-colors text-xs font-bold" id="btn-7yr">7 Year</button>
+                            <button onclick="currentYears=10; renderProjections()" class="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-brand-teal hover:text-white transition-colors text-xs font-bold" id="btn-10yr">10 Year</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 bg-brand-sand/30 p-4 rounded-lg border border-brand-beige">
+                        <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Occupancy Rate</label><div class="flex items-center gap-2 mb-2"><input type="range" id="input-occupancy" min="30" max="80" value="50" step="5" oninput="renderProjections()"><span class="text-brand-teal font-bold text-sm w-12 text-right" id="val-occupancy">50%</span></div></div>
+                        <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Bank Rate</label><div class="flex items-center gap-2 mb-2"><input type="range" id="input-rate" min="4.0" max="12.0" value="7.5" step="0.25" oninput="renderProjections()"><span class="text-brand-teal font-bold text-sm w-12 text-right" id="val-rate">7.5%</span></div></div>
+                        <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Rev Growth</label><div class="flex items-center gap-2 mb-2"><input type="range" id="input-growth" min="0" max="10" value="3" step="0.5" oninput="renderProjections()"><span class="text-brand-teal font-bold text-sm w-12 text-right" id="val-growth">3%</span></div></div>
+                        <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Inflation</label><div class="flex items-center gap-2 mb-2"><input type="range" id="input-inflation" min="0" max="10" value="3" step="0.5" oninput="renderProjections()"><span class="text-brand-teal font-bold text-sm w-12 text-right" id="val-inflation">3%</span></div></div>
+                    </div>
+                    <div class="overflow-x-auto border border-gray-200 rounded-lg"><table class="min-w-full text-xs sm:text-sm text-right"><thead class="bg-brand-navy text-white text-center"><tr><th class="px-3 py-2 text-left">Year</th><th class="px-3 py-2">Gross Rev</th><th class="px-3 py-2 bg-white/10">NOI</th><th class="px-3 py-2">Debt Service</th><th class="px-3 py-2 bg-brand-gold/20 text-brand-gold font-bold">Net Cash Flow</th><th class="px-3 py-2 bg-brand-teal/20 text-brand-teal font-bold">DCR</th><th class="px-3 py-2 bg-white/20 font-bold">ROI %</th></tr></thead><tbody id="projection-body" class="divide-y divide-gray-100 text-gray-700"></tbody></table></div>
+                </div>
+            </div>
+
+            <div id="content-roi" class="hidden space-y-12">
+                 <div class="bg-brand-navy text-white p-6 rounded-xl shadow-lg mb-8">
+                     <div class="flex flex-col md:flex-row justify-between items-center mb-6"><h3 class="text-2xl font-bold text-brand-gold">ROI Simulator & Control Panel</h3><button onclick="toggleROICurrency()" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors" id="roi-toggle-btn">Show in CAD ($)</button></div>
+                     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                         <div><label class="text-xs font-bold text-gray-400 uppercase block mb-2">Mortgage Rate</label><div class="flex items-center gap-3"><input type="range" id="roi-rate" min="4" max="10" step="0.25" value="7.5" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer" oninput="renderROISummary(); renderLongTermTables()"><span class="font-bold w-12 text-right" id="disp-roi-rate">7.5%</span></div></div>
+                         <div><label class="text-xs font-bold text-gray-400 uppercase block mb-2">LTV</label><div class="flex items-center gap-3"><input type="range" id="roi-ltv" min="50" max="80" step="5" value="60" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer" oninput="renderROISummary(); renderLongTermTables()"><span class="font-bold w-12 text-right" id="disp-roi-ltv">60%</span></div></div>
+                         <div><label class="text-xs font-bold text-gray-400 uppercase block mb-2">Vacancy</label><div class="flex items-center gap-3"><input type="range" id="roi-vacancy" min="20" max="60" step="5" value="50" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer" oninput="renderROISummary(); renderLongTermTables()"><span class="font-bold w-12 text-right" id="disp-roi-vacancy">50%</span></div></div>
+                         <div><label class="text-xs font-bold text-gray-400 uppercase block mb-2">Start Market Val ($)</label><input type="number" id="roi-start-val" value="1985000" class="w-full bg-gray-700 text-white rounded px-2 py-1 text-sm font-bold border border-gray-600 focus:border-brand-teal focus:outline-none" onchange="renderLongTermTables()"></div>
+                     </div>
+                 </div>
+                 <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8"><h3 class="text-xl font-serif text-brand-navy mb-4">Projected Deal Structure (Year 1)</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-8"><div class="bg-gray-50 p-4 rounded-lg border border-gray-200"><h4 class="font-bold text-brand-navy mb-3">Capital Stack</h4><div id="roi-purchase-info" class="space-y-2 text-sm"></div></div><div class="bg-gray-50 p-4 rounded-lg border border-gray-200"><h4 class="font-bold text-brand-navy mb-3">Key Performance Indicators</h4><div id="roi-metrics" class="space-y-2 text-sm"></div></div></div></div>
+                 <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                     <div class="flex flex-col md:flex-row justify-between items-center mb-6"><h3 class="text-xl font-bold text-brand-navy">30-Year Performance Analysis</h3><div class="flex gap-4 text-xs"><div class="flex flex-col"><label class="font-bold text-gray-500">Appreciation Rate</label><div class="flex items-center gap-2"><input type="range" min="1" max="10" value="3" step="0.5" class="w-24" id="appreciation-slider" oninput="renderLongTermTables()"><span id="appreciation-val">3%</span></div></div><div class="flex flex-col"><label class="font-bold text-gray-500">Inflation Rate</label><div class="flex items-center gap-2"><input type="range" min="1" max="10" value="3" step="0.5" class="w-24" id="inflation-slider" oninput="renderLongTermTables()"><span id="inflation-val">3%</span></div></div></div></div>
+                     <div class="overflow-x-auto mb-8"><h4 class="font-bold text-brand-teal mb-2 text-sm">Income Analysis</h4><table class="min-w-full text-xs text-right border-collapse"><thead class="bg-brand-navy text-white"><tr><th class="px-2 py-2 text-left">Metric</th><th class="px-2 py-2">Year 1</th><th class="px-2 py-2">Year 2</th><th class="px-2 py-2">Year 3</th><th class="px-2 py-2">Year 5</th><th class="px-2 py-2">Year 10</th><th class="px-2 py-2">Year 20</th><th class="px-2 py-2">Year 30</th></tr></thead><tbody id="income-analysis-body" class="divide-y divide-gray-100 text-gray-700"></tbody></table></div>
+                     <div class="overflow-x-auto"><h4 class="font-bold text-brand-gold mb-2 text-sm flex justify-between items-center"><span>Loan & Sale Analysis</span><span class="text-[10px] text-gray-500 font-normal italic">*Adjust Appreciation Rates below for each period</span></h4><table class="min-w-full text-xs text-right border-collapse"><thead class="bg-gray-100 text-brand-navy"><tr><th class="px-2 py-2 text-left">Metric</th><th class="px-2 py-2">Year 1</th><th class="px-2 py-2">Year 2</th><th class="px-2 py-2">Year 3</th><th class="px-2 py-2">Year 5</th><th class="px-2 py-2">Year 10</th><th class="px-2 py-2">Year 20</th><th class="px-2 py-2">Year 30</th></tr></thead><tbody id="sale-analysis-body" class="divide-y divide-gray-100 text-gray-700"></tbody></table></div>
+                 </div>
+            </div>
+
+            <div id="content-structure" class="hidden space-y-12">
+                
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="text-2xl font-serif text-brand-navy mb-4">Structure & Exit Strategy (5–10 Year Horizon)</h3>
+                    <p class="text-gray-600 leading-relaxed mb-6">
+                        The investment is structured using a General Partner (GP) / Limited Partner (LP) model to clearly separate capital contribution from day-to-day management and decision-making. This structure is designed to provide predictable returns, long-term value creation, and multiple, clearly defined exit paths.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-brand-navy p-5 rounded-lg text-white">
+                            <h4 class="font-bold text-brand-gold mb-2 text-lg">General Partner (GP)</h4>
+                            <p class="text-sm opacity-90 leading-relaxed">Responsible for operations, asset management, financing strategy, and long-term vision.</p>
+                        </div>
+                        <div class="bg-brand-teal p-5 rounded-lg text-white">
+                            <h4 class="font-bold text-white mb-2 text-lg">Limited Partner (LP)</h4>
+                            <p class="text-sm opacity-90 leading-relaxed">Participates economically through their equity interest and share in cash flow and appreciation, without operational involvement.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <h4 class="font-bold text-brand-navy mb-6 text-lg border-b pb-2">Exit Scenarios & Liquidity Options</h4>
+                        <div class="space-y-8">
+                            <div class="relative pl-6 border-l-4 border-brand-teal">
+                                <h5 class="font-bold text-brand-teal text-lg">1. Cash-Out Refinance</h5>
+                                <p class="text-sm text-gray-600 mt-2 mb-2">At any point during the hold period, subject to market conditions, partners may jointly agree to pursue a refinance based on current market valuation.</p>
+                                <ul class="list-disc pl-5 text-sm text-gray-500 space-y-1">
+                                    <li>Partial or full return of invested capital to partners</li>
+                                    <li>Continued ownership & participation in future cash flow</li>
+                                    <li>Reinvestment of released equity into other opportunities</li>
+                                </ul>
+                            </div>
+                            <div class="relative pl-6 border-l-4 border-brand-navy">
+                                <h5 class="font-bold text-brand-navy text-lg">2. Market Sale</h5>
+                                <p class="text-sm text-gray-600 mt-2 mb-2">A full sale of the asset may be pursued if market conditions are favorable and aligned with partner objectives.</p>
+                                <ul class="list-disc pl-5 text-sm text-gray-500 space-y-1">
+                                    <li>Market pricing reflects peak or above-trend valuation</li>
+                                    <li>Risk-adjusted returns justify liquidation</li>
+                                    <li>Net proceeds distributed after debt/fees settlement</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-center items-center">
+                        <h4 class="font-bold text-brand-navy mb-6 text-center">Total Projected Profit (5 Years)</h4>
+                        <div class="relative" style="height: 250px; width: 250px;">
+                            <canvas id="totalReturnChart"></canvas>
+                        </div>
+                        <div class="mt-6 text-center text-sm text-gray-500 max-w-xs">
+                            Projected breakdown of returns based on conservative appreciation and steady cash flow.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-8 border-t border-gray-200">
+                    <h3 class="text-2xl font-serif text-brand-navy mb-8">Corporate Structure & International Financing</h3>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <div class="flex items-center gap-3 mb-4">
+                                <span class="bg-brand-navy text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">1</span>
+                                <h4 class="font-bold text-brand-navy text-lg">Establishing the Investment Vehicle</h4>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-4">To facilitate ownership, governance, and financing, we will form a corporate entity to hold the Bahamas property.</p>
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4">
+                                <h5 class="font-bold text-xs uppercase text-gray-500 mb-2">Typical Structure</h5>
+                                <ul class="text-sm space-y-2 text-brand-navy font-medium">
+                                    <li>🏢 Parent Holding Corp (Canada)</li>
+                                    <li>↳ 🌴 Operating Corp (Bahamas) <span class="text-gray-400 font-normal">- Owns Property</span></li>
+                                </ul>
+                            </div>
+                            <h5 class="font-bold text-xs uppercase text-gray-500 mb-2">Key Benefits</h5>
+                            <ul class="list-disc pl-5 text-sm text-gray-600 space-y-1">
+                                <li>Limited liability protection for all investors</li>
+                                <li>Clear governance with board oversight</li>
+                                <li>Tax planning flexibility for profit repatriation</li>
+                                <li>Ease of future syndication or capital raises</li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <div class="flex items-center gap-3 mb-4">
+                                <span class="bg-brand-navy text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">2</span>
+                                <h4 class="font-bold text-brand-navy text-lg">Partner & Shareholder Framework</h4>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-4">Essential documents to create stability, align incentives, and protect minority shareholders.</p>
+                            <ul class="space-y-3">
+                                <li class="flex items-start">
+                                    <span class="text-brand-teal mr-2">✓</span>
+                                    <div>
+                                        <span class="font-bold text-brand-navy text-sm block">Shareholders’ Agreement</span>
+                                        <span class="text-xs text-gray-500">Clarifies decision thresholds, transfer restrictions, and dispute resolution.</span>
+                                    </div>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-brand-teal mr-2">✓</span>
+                                    <div>
+                                        <span class="font-bold text-brand-navy text-sm block">Equity Class Rights</span>
+                                        <span class="text-xs text-gray-500">Defines economic rights, voting rights, and distribution priority.</span>
+                                    </div>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-brand-teal mr-2">✓</span>
+                                    <div>
+                                        <span class="font-bold text-brand-navy text-sm block">Exit Mechanisms</span>
+                                        <span class="text-xs text-gray-500">Structured pathways for buyouts or third-party sales.</span>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
+                        <h4 class="font-bold text-brand-navy mb-6 text-lg">Advantages of Registering a Corporation in The Bahamas</h4>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-sm text-left">
+                                <thead class="bg-brand-navy text-white">
+                                    <tr>
+                                        <th class="px-4 py-3 w-1/3 rounded-tl-lg">Core Advantage</th>
+                                        <th class="px-4 py-3 rounded-tr-lg">Strategic Impact & Benefits</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100 border border-gray-200 border-t-0">
+                                    <tr class="hover:bg-brand-sand/30 transition-colors">
+                                        <td class="px-4 py-4 align-top font-bold text-brand-navy">1. Legal Ownership & Local Compliance</td>
+                                        <td class="px-4 py-4 text-gray-600">
+                                            <ul class="list-disc pl-4 space-y-1">
+                                                <li>Simplifies compliance with Bahamian real estate, banking, and regulations.</li>
+                                                <li>Provides clear legal title under Bahamian law.</li>
+                                                <li>Easier interaction with local attorneys, notaries, and registries.</li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-brand-sand/30 transition-colors">
+                                        <td class="px-4 py-4 align-top font-bold text-brand-navy">2. Limited Liability Protection</td>
+                                        <td class="px-4 py-4 text-gray-600">
+                                            <ul class="list-disc pl-4 space-y-1">
+                                                <li>Creates legal separation between the asset and shareholders' personal assets.</li>
+                                                <li>Limits investor liability strictly to their capital contribution.</li>
+                                                <li>Protects shareholders from operational and legal risks.</li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-brand-sand/30 transition-colors">
+                                        <td class="px-4 py-4 align-top font-bold text-brand-navy">3. Simplified Partner Structuring</td>
+                                        <td class="px-4 py-4 text-gray-600">
+                                            <ul class="list-disc pl-4 space-y-1">
+                                                <li>Easier to define share classes, voting rights, and economic interests.</li>
+                                                <li>Streamlines adding or removing partners over time.</li>
+                                                <li>Allows clear documentation of GP and LP roles within the framework.</li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-brand-sand/30 transition-colors">
+                                        <td class="px-4 py-4 align-top font-bold text-brand-navy">4. Access to Financing</td>
+                                        <td class="px-4 py-4 text-gray-600">
+                                            <ul class="list-disc pl-4 space-y-1">
+                                                <li>Many lenders prefer/require a locally registered entity.</li>
+                                                <li>Facilitates local security registration.</li>
+                                                <li>Increases flexibility with Bahamian banks & international private lenders.</li>
+                                            </ul>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-brand-sand/30 transition-colors bg-brand-gold/5">
+                                        <td class="px-4 py-4 align-top font-bold text-brand-navy">5. Tax Efficiency & Predictability</td>
+                                        <td class="px-4 py-4 text-gray-600">
+                                            <p class="mb-1">Capitalizes on the jurisdiction's tax neutrality:</p>
+                                            <div class="flex gap-4 font-bold text-brand-teal text-xs uppercase mt-2">
+                                                <span>✓ No Corp Income Tax</span>
+                                                <span>✓ No Capital Gains Tax</span>
+                                                <span>✓ No Inheritance Tax</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="bg-brand-sand/30 p-6 rounded-xl border border-brand-beige mb-8">
+                        <div class="flex items-center gap-3 mb-6">
+                            <span class="bg-brand-navy text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">3</span>
+                            <h4 class="font-bold text-brand-navy text-lg">Cross-Border Banking & Financing Options</h4>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <h5 class="font-bold text-brand-navy border-b border-gray-300 pb-2 mb-3">🇨🇦 Canadian Capabilities</h5>
+                                <div class="space-y-4">
+                                    <div class="flex items-start gap-3">
+                                        <div class="w-10 h-10 bg-white rounded flex items-center justify-center font-bold text-brand-navy border border-gray-200">CIBC</div>
+                                        <div>
+                                            <span class="font-bold text-sm block">Canadian Imperial Bank of Commerce</span>
+                                            <span class="text-xs text-gray-600">Commercial real estate financing & asset-based lending tailored for corporate ventures.</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start gap-3">
+                                        <div class="w-10 h-10 bg-white rounded flex items-center justify-center font-bold text-brand-navy border border-gray-200">RBC</div>
+                                        <div>
+                                            <span class="font-bold text-sm block">Royal Bank of Canada</span>
+                                            <span class="text-xs text-gray-600">Leveraging international networks and private banking for cross-border financing.</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <h5 class="font-bold text-brand-navy border-b border-gray-300 pb-2 mb-3">🇧🇸 Local & Regional Options</h5>
+                                <div class="space-y-4">
+                                    <div class="flex items-start gap-3">
+                                        <div class="w-10 h-10 bg-white rounded flex items-center justify-center font-bold text-brand-teal border border-gray-200">FINCO</div>
+                                        <div>
+                                            <span class="font-bold text-sm block">RBC FINCO (Bahamas)</span>
+                                            <span class="text-xs text-gray-600">Licensed to provide Bahamian dollar mortgage financing and local services.</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start gap-3">
+                                        <div class="w-10 h-10 bg-white rounded flex items-center justify-center font-bold text-brand-teal border border-gray-200">CIBC</div>
+                                        <div>
+                                            <span class="font-bold text-sm block">CIBC Caribbean</span>
+                                            <span class="text-xs text-gray-600">Regional footprint supporting foreign exchange, deposits, and local lending.</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-brand-navy text-white p-6 rounded-xl shadow-lg">
+                        <h4 class="font-bold text-brand-gold mb-6 uppercase tracking-wider text-sm">4. Recommended Implementation Sequence</h4>
+                        <div class="space-y-4">
+                            <div class="flex items-center gap-4">
+                                <div class="w-8 h-8 rounded-full bg-brand-teal flex items-center justify-center font-bold text-white shrink-0">1</div>
+                                <div class="text-sm"><span class="font-bold">Incorporation:</span> Engage legal/tax services to register holding & operating corps.</div>
+                            </div>
+                            <div class="w-0.5 h-4 bg-brand-teal/30 ml-4"></div>
+                            <div class="flex items-center gap-4">
+                                <div class="w-8 h-8 rounded-full bg-brand-teal flex items-center justify-center font-bold text-white shrink-0">2</div>
+                                <div class="text-sm"><span class="font-bold">Bank Relationships:</span> Introduce concept to CIBC/RBC commercial teams early.</div>
+                            </div>
+                            <div class="w-0.5 h-4 bg-brand-teal/30 ml-4"></div>
+                            <div class="flex items-center gap-4">
+                                <div class="w-8 h-8 rounded-full bg-brand-teal flex items-center justify-center font-bold text-white shrink-0">3</div>
+                                <div class="text-sm"><span class="font-bold">Draft Agreements:</span> Prepare shareholders’ agreement and bylaws.</div>
+                            </div>
+                            <div class="w-0.5 h-4 bg-brand-teal/30 ml-4"></div>
+                            <div class="flex items-center gap-4">
+                                <div class="w-8 h-8 rounded-full bg-brand-teal flex items-center justify-center font-bold text-white shrink-0">4</div>
+                                <div class="text-sm"><span class="font-bold">Open Accounts:</span> Establish Canadian and Bahamian corporate bank accounts.</div>
+                            </div>
+                            <div class="w-0.5 h-4 bg-brand-teal/30 ml-4"></div>
+                            <div class="flex items-center gap-4">
+                                <div class="w-8 h-8 rounded-full bg-brand-teal flex items-center justify-center font-bold text-white shrink-0">5</div>
+                                <div class="text-sm"><span class="font-bold">Finalize & Close:</span> Align debt terms and execute purchase through the structure.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-8 border-t border-gray-200">
+                    <h4 class="font-bold text-brand-navy mb-6">GP "Sweat Equity" Contribution (Projected)</h4>
+                    <div class="overflow-x-auto bg-white rounded-lg border border-gray-200">
+                        <table class="min-w-full text-sm">
+                            <thead class="bg-brand-sand">
+                                <tr><th class="px-4 py-3 text-left">Service</th><th class="px-4 py-3 text-right">Value (5 Yrs)</th></tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                <tr><td class="px-4 py-3">Property Management (20%)</td><td class="px-4 py-3 text-right">$300,000</td></tr>
+                                <tr><td class="px-4 py-3">Marketing (5%)</td><td class="px-4 py-3 text-right">$75,000</td></tr>
+                                <tr><td class="px-4 py-3">Project Mgmt (Reno)</td><td class="px-4 py-3 text-right">$20,000</td></tr>
+                                <tr class="bg-brand-teal/5 font-bold"><td class="px-4 py-3">TOTAL</td><td class="px-4 py-3 text-right">~$395,000</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="bg-white border-t border-gray-200 mt-12 py-8">
+        <div class="max-w-7xl mx-auto px-4 text-center text-gray-400 text-sm"><p class="mb-2">Sandy Palms Strategic Business Plan v26.0</p><p>Confidential Investment Memorandum. For Accredited Investors Only @FTVentures Inc.</p></div>
+    </footer>
+
+    <script>
+        // Global variables
+        let currentYears = 5;
+        const CAD_RATE = 1 / 0.70; 
+        let acqInCAD = false;
+        let fm_isCAD = false;
+        let roiInCAD = false;
+        let revInCAD = false;
+        const FX = 1.43; // $1.00 CAD = $0.70 USD
+        const FM_YEARS = [1, 2, 3, 5, 10, 20, 30];
+        let fm_totalInitialCashUSD = 0;
+        let compsChart, arbitrageChart, financingChart, totalReturnChart;
+
+        // Base Data
+        const acqData = { price: 1985000, closing: 248125, reno: 100000, reserve: 57875, total: 2391000 };
+        const pfData = { 
+            revenue: 317367, 
+            mgmt_pct: 0.20,
+            mgmt: 63473, 
+            util: 30000, 
+            ins: 18000, 
+            maint: 12000, 
+            mktg: 15000, 
+            tax: 5000, 
+            other1: 0,
+            other2: 0,
+            other3: 0,
+            noi: 173894, 
+            debt: 120000, 
+            net: 53894 
+        };
+        let appRates = {1:3, 2:3, 3:3, 5:3, 10:3, 20:3, 30:3};
+
+        // 1. Navigation Logic
+        function switchTab(tabId) {
+            ['general', 'model', 'financial', 'revenue', 'roi', 'structure', 'acquisition'].forEach(id => {
+                const c = document.getElementById(`content-${id}`);
+                const t = document.getElementById(`tab-${id}`);
+                if(c) c.classList.add('hidden');
+                if(t) t.classList.remove('active', 'text-brand-navy', 'border-brand-teal', 'font-bold', 'bg-white');
+            });
+            const sc = document.getElementById(`content-${tabId}`);
+            const st = document.getElementById(`tab-${tabId}`);
+            if(sc) sc.classList.remove('hidden');
+            if(st) st.classList.add('active', 'text-brand-navy', 'border-brand-teal', 'font-bold', 'bg-white');
+            
+            // Resize charts
+            if(tabId === 'general' && compsChart) { setTimeout(() => compsChart.resize(), 10); }
+            if(tabId === 'financial') { 
+                if (arbitrageChart) arbitrageChart.resize(); 
+                if (financingChart) financingChart.resize(); 
+            }
+            if(tabId === 'structure' && totalReturnChart) totalReturnChart.resize();
+            if(tabId === 'roi') { renderROISummary(); renderLongTermTables(); }
+            if(tabId === 'revenue') renderProjections();
+            if(tabId === 'model') { fm_updateCalculations(); }
+        }
+        
+        // --- FINANCIAL TOOL FUNCTIONS ---
+        function fm_toggleCurrency() {
+            fm_isCAD = !fm_isCAD;
+            document.getElementById('cur-btn').innerText = fm_isCAD ? 'VIEW IN USD ($)' : 'VIEW IN CAD ($)';
+            fm_updateCalculations();
+        }
+
+        // CSV Export Function
+        function exportAllDataCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            
+            // 1. Acquisition Summary
+            csvContent += "ACQUISITION SUMMARY\n";
+            csvContent += "Item,Value (USD)\n";
+            csvContent += `Purchase Price,${acqData.price}\n`;
+            csvContent += `Closing Costs,${acqData.closing}\n`;
+            csvContent += `Renovations,${acqData.reno}\n`;
+            csvContent += `Total Project Cost,${acqData.total}\n\n`;
+
+            // 2. Pro-Forma (One Year Snapshot)
+            csvContent += "PRO-FORMA (YEAR 1)\n";
+            csvContent += "Item,Value (USD)\n";
+            csvContent += `Gross Revenue,${pfData.revenue}\n`;
+            csvContent += `Property Mgmt,${pfData.mgmt}\n`;
+            csvContent += `Expenses (Total),${pfData.util + pfData.ins + pfData.maint + pfData.mktg + pfData.tax + pfData.other1 + pfData.other2 + pfData.other3}\n`;
+            csvContent += `NOI,${pfData.noi}\n`;
+            csvContent += `Net Cash Flow,${pfData.net}\n\n`;
+
+            // 3. Multi-Year Projection (5 Years)
+            csvContent += "MULTI-YEAR PROJECTION (5 YEARS)\n";
+            csvContent += "Year,Gross Revenue,NOI,Net Cash Flow\n";
+            // Simple re-calc loop for export
+            let curRev = 634734 * 0.5; // default 50% occ
+            let curExp = 80000;
+            const growth = 0.03; 
+            const inf = 0.03;
+            for(let i=1; i<=5; i++) {
+                if(i==2) curRev *= 1.10; else if(i>2) curRev *= (1+growth);
+                if(i>1) curExp *= (1+inf);
+                let noi = curRev - (curRev*0.2 + curExp);
+                csvContent += `Year ${i},${Math.round(curRev)},${Math.round(noi)},${Math.round(noi - 120000)}\n`;
+            }
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "SandyPalms_Financial_Data.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Generate Professional PDF
+        async function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const element = document.getElementById('pdf-capture-area');
+            
+            // Temporarily style for capture
+            const originalPadding = element.style.padding;
+            const originalBg = element.style.background;
+            
+            element.style.padding = "40px";
+            element.style.background = "#ffffff";
+
+            try {
+                const canvas = await html2canvas(element, { scale: 2 });
+                const imgData = canvas.toDataURL('image/png');
+                
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                
+                // Add Logo/Header to PDF
+                pdf.setFontSize(22);
+                pdf.text("Sandy Palms Financial Model", 10, 15);
+                pdf.setFontSize(10);
+                pdf.text("Prepared by Francis Theriault | fmtventures@gmail.com", 10, 22);
+                
+                pdf.addImage(imgData, 'PNG', 0, 30, pdfWidth, pdfHeight);
+                pdf.save("SandyPalms_Financial_Projection.pdf");
+            } catch (err) {
+                alert("Error generating PDF: " + err.message);
+            } finally {
+                // Restore styles
+                element.style.padding = originalPadding;
+                element.style.background = originalBg;
+            }
+        }
+
+        function fm_updateCalculations() {
+            const price = parseFloat(document.getElementById('input-price').value) || 0;
+            const downPct = parseFloat(document.getElementById('down-slider').value) / 100;
+            const rate = parseFloat(document.getElementById('mortgage-rate').value) / 100;
+            const occ = parseFloat(document.getElementById('vacancy-rate').value) / 100;
+            const incInf = parseFloat(document.getElementById('ass-inc').value) / 100;
+            const expInf = parseFloat(document.getElementById('ass-exp').value) / 100;
+            const sellPct = parseFloat(document.getElementById('ass-sell').value) / 100;
+            const refiLtv = parseFloat(document.getElementById('ass-refi').value) / 100;
+
+            const buyCosts = parseFloat(document.getElementById('input-buying').value) || 0;
+            const reno = parseFloat(document.getElementById('input-reno').value) || 0;
+            const other = parseFloat(document.getElementById('input-other').value) || 0;
+            
+            const mult = fm_isCAD ? FX : 1;
+            const fmt = (v) => (fm_isCAD ? 'C$' : '$') + Math.round(v * mult).toLocaleString();
+
+            document.getElementById('rate-disp').innerText = (rate*100).toFixed(2) + '%';
+            document.getElementById('down-disp').innerText = (downPct*100) + '%';
+            document.getElementById('occ-disp').innerText = (occ*100) + '%';
+
+            const loanAmt = price * (1 - downPct);
+            const downAmt = price * downPct;
+            fm_totalInitialCashUSD = downAmt + buyCosts + reno + other;
+
+            const nMonths = 25 * 12;
+            const monthlyRate = rate / 12;
+            const monthlyPmt = loanAmt > 0 ? (loanAmt * (monthlyRate * Math.pow(1+monthlyRate, nMonths))) / (Math.pow(1+monthlyRate, nMonths) - 1) : 0;
+            const annualDebt = monthlyPmt * 12;
+
+            document.getElementById('p-mortgage').innerText = fmt(loanAmt);
+            document.getElementById('p-down').innerText = fmt(downAmt);
+            document.getElementById('p-total').innerText = fmt(fm_totalInitialCashUSD);
+
+            const grossPot = 634734;
+            const vacLoss = grossPot * (1 - occ);
+            const noi = (grossPot * occ) - 143473;
+            const ncf = noi - annualDebt;
+
+            document.getElementById('p-gross-pot').innerText = fmt(grossPot);
+            document.getElementById('p-vac-loss').innerText = "- " + fmt(vacLoss);
+            document.getElementById('p-eff-inc').innerText = fmt(grossPot - vacLoss);
+            document.getElementById('p-noi').innerText = fmt(noi);
+            document.getElementById('p-debt').innerText = "- " + fmt(annualDebt);
+            document.getElementById('p-ncf').innerText = fmt(ncf);
+
+            document.getElementById('f-cap').innerText = price > 0 ? ((noi / price) * 100).toFixed(1) + "%" : "0%";
+            document.getElementById('f-coc').innerText = fm_totalInitialCashUSD > 0 ? ((ncf / fm_totalInitialCashUSD) * 100).toFixed(2) + "%" : "0%";
+
+            fm_renderDeepAnalysis(price, loanAmt, fm_totalInitialCashUSD, monthlyRate, nMonths, annualDebt, grossPot, occ, incInf, 143473, expInf, sellPct, refiLtv, fmt);
+            fm_calculateEquityStake();
+        }
+
+        function fm_renderDeepAnalysis(price, loanAmt, initialCash, mRate, nMonths, debt, gross, occ, incInf, expTotal, expInf, sellPct, refiLtv, fmt) {
+            const body = document.getElementById('fm-projection-body');
+            let mVal = price;
+            let lastY = 0;
+            let rows = {
+                gross: '<td>Gross Rental Income</td>',
+                noi: '<td>Net Operating Income (NOI)</td>',
+                debtR: '<td>- Annual Mortgage</td>',
+                ncfR: '<td class="font-bold text-brand-navy">= Annual Cash Flow</td>',
+                coc: '<td>Cash on Cash Return</td>',
+                mv: '<td>Market Value</td>',
+                bal: '<td>- Loan Balance</td>',
+                eq: '<td class="font-bold text-brand-navy">= Total Equity</td>',
+                ltv: '<td>Loan-to-Value Ratio</td>',
+                refi: '<td class="font-bold text-brand-teal">Potential Cash-Out Refi</td>',
+                prof: '<td class="font-bold text-brand-navy">Cumulative Net Profit</td>',
+                roi: '<td class="font-bold text-brand-teal">Total ROI %</td>'
+            };
+
+            FM_YEARS.forEach(y => {
+                const gap = y - lastY;
+                const app = parseFloat(document.getElementById(`app-${y}`).value) / 100;
+                mVal = mVal * Math.pow(1 + app, gap);
+                lastY = y;
+
+                const cGross = gross * Math.pow(1 + incInf, y - 1);
+                const cNOI = (gross * occ * Math.pow(1 + incInf, y - 1)) - (expTotal * Math.pow(1 + expInf, y - 1));
+                const cBal = loanAmt * (Math.pow(1+mRate, nMonths) - Math.pow(1+mRate, y*12)) / (Math.pow(1+mRate, nMonths) - 1);
+                const cEq = mVal - cBal;
+                
+                const cLtv = (cBal / mVal);
+                const potentialRefi = (mVal * refiLtv) - cBal; 
+
+                const cNCF = cNOI - debt;
+                const cProc = cEq - (mVal * sellPct);
+                const cProf = (cProc + (cNCF * y)) - initialCash;
+
+                rows.gross += `<td>${fmt(cGross)}</td>`;
+                rows.noi += `<td>${fmt(cNOI)}</td>`;
+                rows.debtR += `<td>(${fmt(debt)})</td>`;
+                rows.ncfR += `<td class="font-bold">${fmt(cNCF)}</td>`;
+                rows.coc += `<td>${initialCash > 0 ? ((cNCF / initialCash) * 100).toFixed(1) : 0}%</td>`;
+                
+                rows.mv += `<td class="font-bold">${fmt(mVal)}</td>`;
+                rows.bal += `<td class="text-red-400">(${fmt(cBal)})</td>`;
+                rows.eq += `<td class="font-bold">${fmt(cEq)}</td>`;
+                rows.ltv += `<td>${(cLtv * 100).toFixed(1)}%</td>`;
+                rows.refi += `<td class="font-bold ${potentialRefi > 0 ? 'text-brand-teal' : 'text-gray-400'}">${potentialRefi > 0 ? fmt(potentialRefi) : '$0'}</td>`;
+
+                rows.prof += `<td class="font-bold">${fmt(cProf)}</td>`;
+                rows.roi += `<td class="font-bold">${initialCash > 0 ? ((cProf / initialCash) * 100).toFixed(0) : 0}%</td>`;
+            });
+            
+            body.innerHTML = `
+                <tr class="bg-gray-100 text-brand-navy font-bold text-left"><td colspan="8" class="p-2">INCOME ANALYSIS</td></tr>
+                <tr>${rows.gross}</tr>
+                <tr>${rows.noi}</tr>
+                <tr>${rows.debtR}</tr>
+                <tr class="bg-brand-gold/10">${rows.ncfR}</tr>
+                <tr>${rows.coc}</tr>
+                <tr class="bg-gray-100 text-brand-navy font-bold text-left"><td colspan="8" class="p-2">LOAN & REFINANCE ANALYSIS</td></tr>
+                <tr>${rows.mv}</tr>
+                <tr>${rows.bal}</tr>
+                <tr>${rows.eq}</tr>
+                <tr>${rows.ltv}</tr>
+                <tr class="bg-brand-teal/5">${rows.refi}</tr>
+                <tr class="bg-gray-100 text-brand-navy font-bold text-left"><td colspan="8" class="p-2">EXIT SUMMARY</td></tr>
+                <tr class="bg-gray-50">${rows.prof}</tr>
+                <tr class="bg-brand-teal/10">${rows.roi}</tr>
+            `;
+        }
+
+        function fm_calculateEquityStake() {
+            const pct = document.getElementById('ownership-slider').value;
+            const mult = fm_isCAD ? FX : 1;
+            const investVal = (fm_totalInitialCashUSD * (pct / 100)) * mult;
+            document.getElementById('owner-pct-disp').innerText = pct + '%';
+            document.getElementById('investor-dollar-result').innerText = (fm_isCAD ? 'C$' : '$') + Math.round(investVal).toLocaleString();
+            document.getElementById('investor-percent-result').innerText = pct + '.0%';
+            document.getElementById('manual-invest-input').value = Math.round(investVal);
+        }
+
+        function fm_calculateStakeFromDollars() {
+            const dollars = parseFloat(document.getElementById('manual-invest-input').value) || 0;
+            const mult = fm_isCAD ? FX : 1;
+            const base = fm_totalInitialCashUSD * mult;
+            const pct = base > 0 ? (dollars / base) * 100 : 0;
+            document.getElementById('investor-dollar-result').innerText = (fm_isCAD ? 'C$' : '$') + Math.round(dollars).toLocaleString();
+            document.getElementById('investor-percent-result').innerText = pct.toFixed(1) + '%';
+            document.getElementById('ownership-slider').value = Math.min(100, Math.max(1, Math.round(pct)));
+            document.getElementById('owner-pct-disp').innerText = Math.round(pct) + '%';
+        }
+
+        // --- ACQUISITION TAB LOGIC ---
+        function toggleAcquisitionCurrency() {
+            acqInCAD = !acqInCAD;
+            const btn = document.getElementById('acq-toggle-btn');
+            const label = document.getElementById('acq-currency-label');
+            const rate = acqInCAD ? CAD_RATE : 1;
+            const fmt = (num) => '$' + Math.round(num * rate).toLocaleString();
+
+            if (acqInCAD) {
+                btn.innerText = "Show in USD ($)";
+                btn.classList.remove('bg-brand-teal');
+                btn.classList.add('bg-brand-navy');
+                label.innerText = "CAD (Approx 1.43x)";
+            } else {
+                btn.innerText = "Show in CAD ($)";
+                btn.classList.remove('bg-brand-navy');
+                btn.classList.add('bg-brand-teal');
+                label.innerText = "USD (Estimated)";
+            }
+
+            document.getElementById('acq-price').innerText = fmt(acqData.price);
+            document.getElementById('acq-closing').innerText = fmt(acqData.closing);
+            document.getElementById('acq-reno').innerText = fmt(acqData.reno);
+            document.getElementById('acq-reserve').innerText = fmt(acqData.reserve);
+            document.getElementById('acq-total').innerText = fmt(acqData.total);
+            document.getElementById('acq-total-src').innerText = fmt(acqData.total);
+            updateAcquisitionLogic();
+        }
+
+        function updateAcquisitionLogic() {
+            const ltv = parseInt(document.getElementById('ltv-slider').value);
+            document.getElementById('ltv-display').innerText = ltv + '%';
+            const rate = acqInCAD ? CAD_RATE : 1;
+            const newLoanUSD = acqData.price * (ltv / 100);
+            const newEquityUSD = acqData.total - newLoanUSD;
+            const fmt = (num) => '$' + Math.round(num * rate).toLocaleString();
+
+            document.getElementById('acq-loan').innerText = fmt(newLoanUSD);
+            document.getElementById('acq-equity').innerText = fmt(newEquityUSD);
+            
+            const loanPct = Math.round((newLoanUSD / acqData.total) * 100);
+            document.getElementById('loan-pct').innerText = `~${loanPct}%`;
+            document.getElementById('equity-pct').innerText = `~${100 - loanPct}%`;
+
+            // If we are on the Model tab, also update calculation logic there eventually
+            // (Current setup separates them slightly for simplicity)
+        }
+
+        // 3. ROI Logic (Tab: ROI Overview)
+        function toggleROICurrency() {
+            roiInCAD = !roiInCAD;
+            const btn = document.getElementById('roi-toggle-btn');
+            const currentStartVal = parseFloat(document.getElementById('roi-start-val').value);
+
+            if (roiInCAD) {
+                btn.innerText = "Show in USD ($)";
+                btn.classList.add('bg-brand-gold', 'text-brand-navy');
+                btn.classList.remove('bg-white/20', 'text-white');
+                document.getElementById('roi-start-val').value = Math.round(currentStartVal * CAD_RATE);
+            } else {
+                btn.innerText = "Show in CAD ($)";
+                btn.classList.remove('bg-brand-gold', 'text-brand-navy');
+                btn.classList.add('bg-white/20', 'text-white');
+                document.getElementById('roi-start-val').value = Math.round(currentStartVal / CAD_RATE);
+            }
+            renderROISummary();
+            renderLongTermTables();
+        }
+
+        function renderROISummary() {
+             const ltv = parseFloat(document.getElementById('roi-ltv').value);
+             const vacancy = parseFloat(document.getElementById('roi-vacancy').value);
+             const mortgageRate = parseFloat(document.getElementById('roi-rate').value);
+             
+             document.getElementById('disp-roi-rate').innerText = mortgageRate + '%';
+             document.getElementById('disp-roi-ltv').innerText = ltv + '%';
+             document.getElementById('disp-roi-vacancy').innerText = vacancy + '%';
+             
+             // Base USD
+             const purchasePrice = 1985000;
+             const closingCosts = 248125;
+             const renoReserve = 157875; 
+             const loanAmount = purchasePrice * (ltv / 100);
+             const downpayment = purchasePrice - loanAmount;
+             const initialCash = downpayment + closingCosts + renoReserve;
+
+             const grossPotential = 634734; 
+             const effGrossIncome = grossPotential * ((100-vacancy)/100);
+             const operatingExp = 143473; 
+             const noi = effGrossIncome - operatingExp;
+
+             const r = (mortgageRate/100)/12;
+             const n = 20*12;
+             let monthly = 0;
+             if(mortgageRate>0) monthly = loanAmount * (r * Math.pow(1+r, n))/(Math.pow(1+r, n)-1);
+             else monthly = loanAmount/n;
+             const annualDebt = monthly * 12;
+             
+             const cashFlow = noi - annualDebt;
+             const dcr = annualDebt > 0 ? (noi/annualDebt) : 0;
+             const capRate = purchasePrice > 0 ? (noi/purchasePrice)*100 : 0;
+             const coc = initialCash > 0 ? (cashFlow/initialCash)*100 : 0;
+
+             const rate = roiInCAD ? CAD_RATE : 1;
+             const fmt = (num) => '$' + Math.round(num * rate).toLocaleString();
+             
+             document.getElementById('roi-purchase-info').innerHTML = `
+                <li class="flex justify-between"><span>Purchase Price</span><span class="font-bold">${fmt(purchasePrice)}</span></li>
+                <li class="flex justify-between text-gray-600"><span>- Loan (${ltv}%)</span><span>(${fmt(loanAmount)})</span></li>
+                <li class="flex justify-between text-gray-600 border-t border-gray-200 pt-1"><span>= Downpayment</span><span>${fmt(downpayment)}</span></li>
+                <li class="flex justify-between text-gray-600"><span>+ Costs & Reno</span><span>${fmt(closingCosts+renoReserve)}</span></li>
+                <li class="flex justify-between border-t border-brand-teal pt-2 text-brand-teal font-bold text-base"><span>= Initial Investment</span><span>${fmt(initialCash)}</span></li>`;
+             
+             let dcrColor = dcr >= 1.25 ? 'text-green-600' : 'text-red-500';
+             document.getElementById('roi-metrics').innerHTML = `
+                <li class="flex justify-between"><span>Gross Revenue</span><span class="font-bold">${fmt(effGrossIncome)}</span></li>
+                <li class="flex justify-between"><span>NOI</span><span class="font-bold">${fmt(noi)}</span></li>
+                <li class="flex justify-between text-red-400"><span>Debt Service</span><span class="font-bold">(${fmt(annualDebt)})</span></li>
+                <li class="flex justify-between border-t border-gray-200 pt-1"><span>Net Cash Flow</span><span class="font-bold ${cashFlow>0?'text-green-600':'text-red-500'}">${fmt(cashFlow)}</span></li>
+                <li class="flex justify-between mt-2"><span>DCR</span><span class="font-bold ${dcrColor}">${dcr.toFixed(2)}x</span></li>
+                <li class="flex justify-between"><span>Cap Rate</span><span class="font-bold">${capRate.toFixed(2)}%</span></li>
+                <li class="flex justify-between"><span>Cash on Cash</span><span class="font-bold">${coc.toFixed(2)}%</span></li>`;
+        }
+
+        function updateAppRate(year, val) {
+            appRates[year] = parseFloat(val);
+            renderLongTermTables();
+        }
+
+        function renderLongTermTables() {
+             const mortgageRate = parseFloat(document.getElementById('roi-rate').value);
+             const ltv = parseFloat(document.getElementById('roi-ltv').value);
+             const vacancy = parseFloat(document.getElementById('roi-vacancy').value);
+             
+             let inputStartVal = parseFloat(document.getElementById('roi-start-val').value);
+             if(roiInCAD) inputStartVal = inputStartVal / CAD_RATE;
+             
+             const infRate = parseFloat(document.getElementById('inflation-slider').value) / 100;
+             document.getElementById('inflation-val').innerText = (infRate*100) + '%';
+
+             const purchasePrice = 1985000;
+             const loanAmount = purchasePrice * (ltv / 100);
+             const initialCash = 2391000 - loanAmount; 
+             
+             const startRev = 634734 * ((100-vacancy)/100);
+             const startExp = 143473; 
+
+             const r = (mortgageRate/100)/12;
+             const nPeriods = 20*12;
+             let monthly = 0;
+             if(mortgageRate > 0) monthly = loanAmount * (r * Math.pow(1+r, nPeriods))/(Math.pow(1+r, nPeriods)-1);
+             else monthly = loanAmount/nPeriods;
+             const annualDebt = monthly * 12;
+
+             const incomeBody = document.getElementById('income-analysis-body');
+             const saleBody = document.getElementById('sale-analysis-body');
+             incomeBody.innerHTML = '';
+             saleBody.innerHTML = '';
+
+             const years = [1, 2, 3, 5, 10, 20, 30];
+             const rate = roiInCAD ? CAD_RATE : 1;
+             const fmt = (num) => '$' + Math.round(num * rate).toLocaleString();
+             
+             let rowNOI=[], rowDebt=[], rowCF=[], rowCoC=[], rowVal=[], rowEq=[], rowProfit=[];
+             let rowInputs = [];
+
+             let currentVal = inputStartVal;
+             let lastYear = 0;
+
+             years.forEach(y => {
+                 const yearsPassed = y - lastYear;
+                 const periodRate = (appRates[y] || 3) / 100;
+                 currentVal = currentVal * Math.pow(1 + periodRate, yearsPassed);
+                 lastYear = y;
+
+                 let rev = startRev * Math.pow(1+infRate, y-1);
+                 if(y>=2) rev = rev * 1.10; // Simple growth bump assumption
+                 let exp = startExp * Math.pow(1+infRate, y-1);
+                 let noi = rev - exp;
+                 let cf = noi - annualDebt;
+                 let coc = initialCash > 0 ? (cf/initialCash)*100 : 0;
+                 
+                 let bal = 0;
+                 let n = y*12;
+                 if(n < nPeriods && mortgageRate > 0) {
+                     bal = loanAmount * (Math.pow(1+r, nPeriods) - Math.pow(1+r, n)) / (Math.pow(1+r, nPeriods) - 1);
+                 } else if (n < nPeriods) {
+                     bal = loanAmount - (monthly*n);
+                 }
+
+                 let equity = currentVal - bal;
+                 let proceeds = equity - (currentVal*0.06);
+                 let totalProfit = proceeds + (cf*y) - initialCash; 
+
+                 rowNOI.push(fmt(noi));
+                 rowDebt.push('('+fmt(annualDebt)+')');
+                 rowCF.push(fmt(cf));
+                 rowCoC.push(coc.toFixed(1)+'%');
+                 
+                 // Push Inputs for Appreciation Row
+                 rowInputs.push(`<input type="number" class="table-input-clean mx-auto" value="${appRates[y]}" onchange="updateAppRate(${y}, this.value)">%`);
+
+                 rowVal.push(fmt(currentVal));
+                 rowEq.push(fmt(equity));
+                 rowProfit.push(fmt(totalProfit));
+             });
+
+             const addRow = (l, d, b=false) => {
+                 let tr = document.createElement('tr');
+                 if(b) tr.className="font-bold bg-gray-50";
+                 tr.innerHTML = `<td class="px-2 py-2 text-left">${l}</td>` + d.map(v=>`<td class="px-2 py-2 text-center">${v}</td>`).join('');
+                 return tr;
+             };
+
+             incomeBody.appendChild(addRow('Net Operating Income', rowNOI));
+             incomeBody.appendChild(addRow('Debt Service', rowDebt));
+             incomeBody.appendChild(addRow('Cash Flow', rowCF, true));
+             incomeBody.appendChild(addRow('Cash on Cash', rowCoC));
+
+             // Add the Input Row
+             let trInput = document.createElement('tr');
+             trInput.className = "bg-brand-gold/10";
+             trInput.innerHTML = `<td class="px-2 py-2 text-left font-bold text-brand-navy">Appr. Rate (%)</td>` + rowInputs.map(v=>`<td class="px-2 py-2 text-center">${v}</td>`).join('');
+             saleBody.appendChild(trInput);
+
+             saleBody.appendChild(addRow('Market Value', rowVal, true));
+             saleBody.appendChild(addRow('Equity', rowEq));
+             saleBody.appendChild(addRow('Total Net Profit (Exit)', rowProfit, true));
+        }
+
+        // 4. Revenue Logic
+        function toggleRevenueCurrency() {
+            revInCAD = !revInCAD;
+            const btn = document.getElementById('rev-toggle-btn');
+            const label = document.getElementById('rev-currency-label');
+            const rate = revInCAD ? CAD_RATE : 1;
+            const fmt = (num) => '$' + Math.round(num * rate).toLocaleString();
+            const negFmt = (num) => '($' + Math.round(num * rate).toLocaleString() + ')';
+            const posFmt = (num) => '+$' + Math.round(num * rate).toLocaleString();
+
+            if (revInCAD) {
+                btn.innerText = "Show in USD ($)";
+                btn.classList.remove('bg-brand-teal');
+                btn.classList.add('bg-brand-navy');
+                label.innerText = "($ CAD)";
+            } else {
+                btn.innerText = "Show in CAD ($)";
+                btn.classList.remove('bg-brand-navy');
+                btn.classList.add('bg-brand-teal');
+                label.innerText = "($ USD)";
+            }
+            
+            // Populate Inputs with correct currency value
+            document.getElementById('in-util').value = Math.round(pfData.util * rate);
+            document.getElementById('in-ins').value = Math.round(pfData.ins * rate);
+            document.getElementById('in-maint').value = Math.round(pfData.maint * rate);
+            document.getElementById('in-mktg').value = Math.round(pfData.mktg * rate);
+            document.getElementById('in-tax').value = Math.round(pfData.tax * rate);
+            document.getElementById('in-other1').value = Math.round(pfData.other1 * rate);
+            document.getElementById('in-other2').value = Math.round(pfData.other2 * rate);
+            document.getElementById('in-other3').value = Math.round(pfData.other3 * rate);
+
+            document.getElementById('pf-revenue').innerText = fmt(pfData.revenue);
+            document.getElementById('pf-mgmt').innerText = negFmt(pfData.mgmt);
+            document.getElementById('pf-noi').innerText = fmt(pfData.noi);
+            document.getElementById('pf-debt').innerText = negFmt(pfData.debt);
+            document.getElementById('pf-net').innerText = posFmt(pfData.net);
+            renderProjections();
+        }
+
+        function updateExpenseInput(key, val) {
+            // val is what the user typed in the current currency
+            const rate = revInCAD ? CAD_RATE : 1;
+            // Convert back to USD for the data model
+            const usdVal = parseFloat(val) / rate;
+            pfData[key] = usdVal;
+            recalcRevenueTab();
+        }
+
+        function updateMgmtPct(val) {
+            pfData.mgmt_pct = parseFloat(val) / 100;
+            document.getElementById('disp-mgmt-pct').innerText = val + '%';
+            recalcRevenueTab();
+        }
+
+        function recalcRevenueTab() {
+            // Recalculate totals based on USD values in pfData
+            const totalFixedExp = pfData.util + pfData.ins + pfData.maint + pfData.mktg + pfData.tax + pfData.other1 + pfData.other2 + pfData.other3;
+            // Mgmt fee is % of revenue
+            pfData.mgmt = pfData.revenue * pfData.mgmt_pct;
+            const totalExp = totalFixedExp + pfData.mgmt;
+            pfData.noi = pfData.revenue - totalExp;
+            // Debt comes from global acq/mortgage calculation, here simplified as constant unless linked
+            pfData.net = pfData.noi - pfData.debt;
+
+            // Re-render text
+            const rate = revInCAD ? CAD_RATE : 1;
+            const fmt = (num) => '$' + Math.round(num * rate).toLocaleString();
+            const negFmt = (num) => '($' + Math.round(num * rate).toLocaleString() + ')';
+            const posFmt = (num) => '+$' + Math.round(num * rate).toLocaleString();
+
+            document.getElementById('pf-mgmt').innerText = negFmt(pfData.mgmt);
+            document.getElementById('pf-noi').innerText = fmt(pfData.noi);
+            document.getElementById('pf-net').innerText = posFmt(pfData.net);
+            
+            renderProjections(); // Update the chart below
+        }
+
+        function renderProjections() {
+            const occRate = parseFloat(document.getElementById('input-occupancy').value);
+            const bankRate = parseFloat(document.getElementById('input-rate').value);
+            const growthRate = parseFloat(document.getElementById('input-growth').value) / 100;
+            const inflationRate = parseFloat(document.getElementById('input-inflation').value) / 100;
+
+            document.getElementById('val-occupancy').innerText = occRate + '%';
+            document.getElementById('val-rate').innerText = bankRate + '%';
+            document.getElementById('val-growth').innerText = (growthRate*100) + '%';
+            document.getElementById('val-inflation').innerText = (inflationRate*100) + '%';
+
+            ['5yr', '7yr', '10yr'].forEach(id => {
+                const btn = document.getElementById(`btn-${id}`);
+                if (btn) {
+                    btn.classList.remove('bg-brand-teal', 'text-white');
+                    btn.classList.add('bg-gray-200', 'text-gray-700');
+                }
+            });
+            const activeBtn = document.getElementById(`btn-${currentYears}yr`);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-gray-200', 'text-gray-700');
+                activeBtn.classList.add('bg-brand-teal', 'text-white');
+            }
+
+            const tbody = document.getElementById('projection-body');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            const rate = revInCAD ? CAD_RATE : 1;
+            const potentialRevenueUSD = 634734;
+            let currentRevUSD = potentialRevenueUSD * (occRate / 100);
+            
+            // Base fixed expenses from the Inputs above (sum of all current inputs in USD)
+            let currentFixedExpUSD = pfData.util + pfData.ins + pfData.maint + pfData.mktg + pfData.tax + pfData.other1 + pfData.other2 + pfData.other3;
+
+            // Get LTV from Acquisition Tab for accurate debt calculation
+            const ltvSlider = document.getElementById('ltv-slider');
+            const ltv = ltvSlider ? parseInt(ltvSlider.value) : 60;
+            const principalUSD = acqData.price * (ltv / 100);
+
+            const monthlyRate = (bankRate / 100) / 12;
+            const numPayments = 20 * 12; 
+            
+            let monthlyPaymentUSD = 0;
+            if (bankRate > 0) {
+                monthlyPaymentUSD = principalUSD * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+            } else {
+                monthlyPaymentUSD = principalUSD / numPayments; 
+            }
+            const annualDebtServiceUSD = monthlyPaymentUSD * 12;
+            const initialEquityUSD = acqData.total - principalUSD;
+
+            for (let i = 1; i <= currentYears; i++) {
+                if (i === 2) {
+                    currentRevUSD = currentRevUSD * 1.10;
+                } else if (i > 2) {
+                    currentRevUSD = currentRevUSD * (1 + growthRate);
+                }
+               
+                if (i > 1) {
+                    currentFixedExpUSD = currentFixedExpUSD * (1 + inflationRate);
+                }
+
+                const mgmtFeeUSD = currentRevUSD * pfData.mgmt_pct;
+                const totalExpUSD = currentFixedExpUSD + mgmtFeeUSD;
+                const noiUSD = currentRevUSD - totalExpUSD;
+                const netCashUSD = noiUSD - annualDebtServiceUSD;
+                const dcr = annualDebtServiceUSD > 0 ? noiUSD / annualDebtServiceUSD : 0;
+                const roi = initialEquityUSD > 0 ? (netCashUSD / initialEquityUSD) * 100 : 0;
+                const fmt = (num) => '$' + Math.round(num * rate).toLocaleString();
+
+                const row = `
+                    <tr class="hover:bg-gray-50 text-center transition-colors">
+                        <td class="px-3 py-2 text-left font-bold text-brand-navy border-b border-gray-100">Year ${i}</td>
+                        <td class="px-3 py-2 font-medium text-brand-teal border-b border-gray-100">${fmt(currentRevUSD)}</td>
+                        <td class="px-3 py-2 bg-white/10 font-bold text-brand-navy bg-gray-50 border-b border-gray-100">${fmt(noiUSD)}</td>
+                        <td class="px-3 py-2 text-red-400 border-b border-gray-100">(${fmt(annualDebtServiceUSD)})</td>
+                        <td class="px-3 py-2 font-bold ${netCashUSD > 0 ? 'text-green-600' : 'text-red-500'} bg-brand-gold/10 border-b border-white">${fmt(netCashUSD)}</td>
+                        <td class="px-3 py-2 font-bold ${dcr >= 1.25 ? 'text-green-600' : 'text-red-500'} bg-brand-teal/5 border-b border-white">${dcr.toFixed(2)}x</td>
+                        <td class="px-3 py-2 font-bold text-brand-navy bg-gray-100 border-b border-white">${roi.toFixed(2)}%</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            }
+        }
+
+        // Initialize Charts and Logic
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                 if(document.getElementById('compsChart')) {
+                     const ctx = document.getElementById('compsChart').getContext('2d');
+                     compsChart = new Chart(ctx, { type: 'bar', data: { labels: ['Sandy Palms', 'Vista Del Mar', 'The Reserve', 'Blu Wakes'], datasets: [{ label: 'Price ($M)', data: [1.985, 2.99, 2.87, 5.4], backgroundColor: ['#2A9D8F', '#E6E2D6', '#E6E2D6', '#264653'], borderRadius: 4 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } } });
+                 }
+                 if(document.getElementById('financingChart')) {
+                     const ctx = document.getElementById('financingChart').getContext('2d');
+                     financingChart = new Chart(ctx, { type: 'bar', data: { labels: ['Bahamas Bank', 'CIBC Int\'l', 'CDN Cash'], datasets: [{ label: 'Monthly Burn Rate ($)', data: [9100, 7900, 5300], backgroundColor: ['#E76F51', '#F4A261', '#2A9D8F'] }] }, options: { responsive: true, plugins: { legend: { display: false } } } });
+                 }
+                 if(document.getElementById('totalReturnChart')) {
+                     const ctx = document.getElementById('totalReturnChart').getContext('2d');
+                     totalReturnChart = new Chart(ctx, { type: 'doughnut', data: { labels: ['Appreciation ($1.5M)', 'Cash Flow ($375k)', 'Principal Paydown ($130k)'], datasets: [{ data: [1500000, 375000, 130000], backgroundColor: ['#2A9D8F', '#E9C46A', '#264653'] }] }, options: { cutout: '60%' } });
+                 }
+                 if(document.getElementById('arbitrageChart')) {
+                     const ctx = document.getElementById('arbitrageChart').getContext('2d');
+                     arbitrageChart = new Chart(ctx, { type: 'bar', data: { labels: ['Public Listing', 'Private Net Deal'], datasets: [{ label: 'Price', data: [2385000, 1985000], backgroundColor: '#E6E2D6' }, { label: 'Costs', data: [178000, 298500], backgroundColor: '#E76F51' }] }, options: { scales: { x: { stacked: true }, y: { stacked: true } } } });
+                 }
+                 
+                 // Initial Renders
+                 switchTab('general'); 
+                 fm_updateCalculations(); 
+                 renderROISummary();
+                 renderLongTermTables();
+                 renderProjections();
+            }, 100);
+        });
+    </script>
+</body>
+</html>
