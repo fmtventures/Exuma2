@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Picture Studio · Batch Resize · Convert · Passport</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<script>
+tailwind.config = {
+  theme: { extend: {
+    colors: { brand: {
+      sand:'#F5F2EA', beige:'#E6E2D6', teal:'#2A9D8F', darkteal:'#20756B',
+      navy:'#264653', gold:'#E9C46A', coral:'#E76F51'
+    }},
+    fontFamily: { serif:['"Playfair Display"','serif'], sans:['"Inter"','sans-serif'] }
+  }}
+}
+</script>
+<style>
+  body{ font-family:'Inter',sans-serif; background:#F5F2EA; color:#264653; }
+  h1,h2,h3{ font-family:'Playfair Display',serif; }
+  .card{ background:#fff; border:1px solid #E6E2D6; border-radius:1rem; box-shadow:0 1px 3px rgba(38,70,83,.06); }
+  .btn{ transition:all .18s; }
+  .chip{ cursor:pointer; user-select:none; transition:all .15s; }
+  .chip.active{ background:#2A9D8F; color:#fff; border-color:#2A9D8F; }
+  .drop-active{ border-color:#2A9D8F !important; background:#EAF6F4 !important; }
+  input[type=range]{ accent-color:#2A9D8F; }
+  .thumb{ transition:all .15s; }
+  .thumb.sel{ outline:3px solid #2A9D8F; outline-offset:2px; }
+  .spin{ animation:spin 1s linear infinite; } @keyframes spin{ to{ transform:rotate(360deg); } }
+  input[type=number], select{ background:#F9FAFB; border:1px solid #D1D5DB; border-radius:.5rem; padding:.4rem .6rem; }
+  .lbl{ font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; color:#6B7280; font-weight:600; }
+  ::-webkit-scrollbar{ height:8px; width:8px; } ::-webkit-scrollbar-thumb{ background:#D8D2C4; border-radius:4px; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- Header -->
+<header class="bg-brand-navy text-white">
+  <div class="max-w-7xl mx-auto px-5 py-5 flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-bold">Picture Studio</h1>
+      <p class="text-brand-gold text-sm mt-.5">Batch resize · format conversion · passport photos — all in your browser</p>
+    </div>
+    <div class="text-right text-xs text-white/60 hidden md:block">
+      <p>No upload to any cloud.</p>
+      <p>Your photos never leave this page.</p>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 md:px-5 py-6">
+
+  <!-- STEP 1 : IMPORT -->
+  <section id="dropzone" class="card p-8 border-2 border-dashed border-brand-beige text-center cursor-pointer mb-6">
+    <input id="fileInput" type="file" multiple accept="image/*,.cr3,.cr2,.nef,.arw,.dng,.raf,.orf,.rw2,.srw,.pef" class="hidden">
+    <div class="pointer-events-none">
+      <div class="mx-auto w-14 h-14 rounded-full bg-brand-teal/10 flex items-center justify-center mb-3">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2A9D8F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </div>
+      <p class="text-lg font-semibold">Drop pictures here, or click to browse</p>
+      <p class="text-sm text-gray-500 mt-1">Import 1, 10, 20+ at once — JPEG · PNG · WEBP · HEIC · and RAW (CR3, CR2, NEF, ARW, DNG…)</p>
+    </div>
+  </section>
+
+  <div id="rawNote" class="hidden mb-6 text-sm bg-brand-gold/15 border border-brand-gold/40 rounded-lg px-4 py-3">
+    <b>Heads up on RAW files (CR3, CR2, NEF…):</b> the studio extracts the high-quality preview embedded in the RAW file and converts that.
+    It works great for most cameras. If a RAW file has no usable preview it will be flagged below so you can convert it another way.
+  </div>
+
+  <div id="workspace" class="hidden grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
+
+    <!-- LEFT : preview + gallery -->
+    <div class="space-y-6">
+      <!-- Live preview -->
+      <div class="card p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-lg font-bold">Preview</h2>
+          <span id="previewName" class="text-xs text-gray-500 truncate max-w-[55%]"></span>
+        </div>
+        <div class="rounded-xl bg-[repeating-conic-gradient(#eee_0_25%,#fff_0_50%)] bg-[length:20px_20px] p-3 flex items-center justify-center min-h-[280px]">
+          <canvas id="preview" class="max-w-full max-h-[420px] rounded shadow-lg"></canvas>
+        </div>
+        <p class="text-center text-xs text-gray-500 mt-2" id="previewDims"></p>
+      </div>
+
+      <!-- Gallery -->
+      <div class="card p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-lg font-bold">Your pictures (<span id="count">0</span>)</h2>
+          <button id="clearAll" class="text-sm text-brand-coral hover:underline">Remove all</button>
+        </div>
+        <div id="gallery" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT : controls -->
+    <aside class="space-y-5">
+
+      <!-- Aspect / format -->
+      <div class="card p-5">
+        <h3 class="font-bold mb-1">1 · Choose the format</h3>
+        <p class="text-xs text-gray-500 mb-3">Aspect ratio or exact print size.</p>
+        <div id="ratioChips" class="flex flex-wrap gap-2"></div>
+
+        <div id="customSize" class="hidden mt-3 grid grid-cols-2 gap-2">
+          <div><span class="lbl">Width (px)</span><input id="cw" type="number" min="1" value="1200" class="w-full mt-1"></div>
+          <div><span class="lbl">Height (px)</span><input id="ch" type="number" min="1" value="1200" class="w-full mt-1"></div>
+        </div>
+      </div>
+
+      <!-- Fit / passport -->
+      <div class="card p-5">
+        <h3 class="font-bold mb-1">2 · Fit &amp; background</h3>
+        <p class="text-xs text-gray-500 mb-3">How the picture fills the frame.</p>
+        <div class="flex gap-2 mb-3">
+          <button data-fit="cover" class="fitBtn chip flex-1 border rounded-lg py-2 text-sm active">Crop to fill</button>
+          <button data-fit="contain" class="fitBtn chip flex-1 border rounded-lg py-2 text-sm">Fit on background</button>
+        </div>
+        <div id="bgWrap" class="items-center justify-between hidden">
+          <span class="lbl">Background colour</span>
+          <div class="flex items-center gap-2">
+            <button class="bgSwatch w-6 h-6 rounded-full border-2 border-white shadow" style="background:#ffffff" data-c="#ffffff"></button>
+            <button class="bgSwatch w-6 h-6 rounded-full border" style="background:#f3f4f6" data-c="#f3f4f6"></button>
+            <button class="bgSwatch w-6 h-6 rounded-full border" style="background:#dfe7ef" data-c="#dfe7ef"></button>
+            <button class="bgSwatch w-6 h-6 rounded-full border" style="background:#000000" data-c="#000000"></button>
+            <input id="bgColor" type="color" value="#ffffff" class="w-8 h-8 p-0 border rounded cursor-pointer">
+          </div>
+        </div>
+        <label class="flex items-center gap-2 mt-3 text-sm cursor-pointer">
+          <input id="passportMode" type="checkbox" class="w-4 h-4 accent-brand-teal">
+          <span><b>Passport style</b> — force white background &amp; fit</span>
+        </label>
+      </div>
+
+      <!-- Export -->
+      <div class="card p-5">
+        <h3 class="font-bold mb-1">3 · Choose the export</h3>
+        <p class="text-xs text-gray-500 mb-3">File type you want out.</p>
+        <div id="fmtChips" class="grid grid-cols-4 gap-2 mb-3"></div>
+
+        <div id="qualityWrap">
+          <div class="flex justify-between"><span class="lbl">Quality</span><span id="qVal" class="text-xs font-semibold">92%</span></div>
+          <input id="quality" type="range" min="40" max="100" value="92" class="w-full">
+        </div>
+
+        <div id="pdfOpts" class="hidden mt-3 space-y-3">
+          <div>
+            <span class="lbl">PDF layout</span>
+            <select id="pdfLayout" class="w-full mt-1">
+              <option value="page">One picture per page</option>
+              <option value="sheet">Print sheet — repeat copies on one page (great for passport)</option>
+            </select>
+          </div>
+          <div id="pdfPaperWrap">
+            <span class="lbl">Paper</span>
+            <select id="pdfPaper" class="w-full mt-1">
+              <option value="a4">A4</option>
+              <option value="letter">US Letter</option>
+              <option value="4x6">4 × 6 in photo</option>
+            </select>
+          </div>
+          <div id="sheetCopiesWrap" class="hidden">
+            <span class="lbl">Copies of each picture</span>
+            <input id="sheetCopies" type="number" min="1" max="60" value="6" class="w-full mt-1">
+          </div>
+        </div>
+      </div>
+
+      <!-- Action -->
+      <div class="card p-5">
+        <button id="exportBtn" class="btn w-full bg-brand-teal hover:bg-brand-darkteal text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2">
+          <span id="exportLabel">Convert &amp; download all</span>
+          <svg id="exportSpin" class="spin hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+        </button>
+        <p id="exportHint" class="text-center text-xs text-gray-500 mt-2">Everything is processed on your device.</p>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<footer class="max-w-7xl mx-auto px-5 py-8 text-center text-xs text-gray-400">
+  Picture Studio — single-file app. Save this HTML anywhere and it just works.
+</footer>
+
+<script>
+/* ============================ Data / state ============================ */
+const RATIOS = [
+  { id:'orig',  label:'Original',        r:null },
+  { id:'1:1',   label:'Square 1:1',      r:1/1 },
+  { id:'4:3',   label:'4 : 3',           r:4/3 },
+  { id:'3:4',   label:'3 : 4',           r:3/4 },
+  { id:'3:2',   label:'3 : 2',           r:3/2 },
+  { id:'2:3',   label:'2 : 3',           r:2/3 },
+  { id:'16:9',  label:'16 : 9',          r:16/9 },
+  { id:'9:16',  label:'9 : 16 (story)',  r:9/16 },
+  { id:'5:4',   label:'5 : 4',           r:5/4 },
+  { id:'4:5',   label:'4 : 5 (IG)',      r:4/5 },
+  // Exact print sizes (fixed pixel targets @300dpi)
+  { id:'us-pass',  label:'Passport US 2×2 in',   fixed:[600,600] },
+  { id:'ca-pass',  label:'Passport CA 50×70 mm',  fixed:[591,827] },
+  { id:'visa',     label:'Visa 35×45 mm',         fixed:[413,531] },
+  { id:'custom',   label:'Custom…',               custom:true },
+];
+const FORMATS = [
+  { id:'jpeg', label:'JPEG', mime:'image/jpeg', ext:'jpg' },
+  { id:'png',  label:'PNG',  mime:'image/png',  ext:'png' },
+  { id:'webp', label:'WEBP', mime:'image/webp', ext:'webp' },
+  { id:'pdf',  label:'PDF',  mime:'application/pdf', ext:'pdf' },
+];
+
+const state = {
+  items: [],          // { id, name, img:Image, w, h, ok }
+  selected: null,
+  ratio: 'orig',
+  fit: 'cover',
+  bg: '#ffffff',
+  passport: false,
+  format: 'jpeg',
+  quality: 0.92,
+};
+let idSeq = 0;
+
+/* ============================ Element refs ============================ */
+const $ = s => document.querySelector(s);
+const dropzone = $('#dropzone'), fileInput = $('#fileInput'), workspace = $('#workspace');
+const gallery = $('#gallery'), preview = $('#preview'), pctx = preview.getContext('2d');
+
+/* ============================ File import ============================ */
+dropzone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => addFiles(e.target.files));
+['dragover','dragenter'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add('drop-active'); }));
+['dragleave','drop'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove('drop-active'); }));
+dropzone.addEventListener('drop', e => addFiles(e.dataTransfer.files));
+
+const RAW_EXT = ['cr3','cr2','nef','arw','dng','raf','orf','rw2','srw','pef'];
+
+async function addFiles(fileList){
+  const files = Array.from(fileList);
+  if(!files.length) return;
+  let sawRaw = false;
+  for(const f of files){
+    const ext = (f.name.split('.').pop()||'').toLowerCase();
+    const isRaw = RAW_EXT.includes(ext);
+    if(isRaw) sawRaw = true;
+    const item = { id: ++idSeq, name: f.name, img:null, w:0, h:0, ok:false, loading:true };
+    state.items.push(item);
+    renderGallery();
+    try {
+      const img = isRaw ? await loadRawPreview(f) : await loadImageFile(f);
+      item.img = img; item.w = img.naturalWidth; item.h = img.naturalHeight; item.ok = true;
+    } catch(err){
+      item.ok = false; item.error = (err && err.message) || 'Could not read this file';
+    } finally {
+      item.loading = false;
+      if(!state.selected && item.ok) selectItem(item.id);
+      renderGallery();
+    }
+  }
+  if(sawRaw) $('#rawNote').classList.remove('hidden');
+  workspace.classList.remove('hidden');
+  updatePreview();
+}
+
+function loadImageFile(file){
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { resolve(img); };            // keep object URL alive for the session
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Unsupported or corrupt image')); };
+    img.src = url;
+  });
+}
+
+/* RAW handling: pull the largest embedded JPEG (FFD8…FFD9) out of the file bytes. */
+async function loadRawPreview(file){
+  const buf = new Uint8Array(await file.arrayBuffer());
+  const jpeg = extractLargestJpeg(buf);
+  if(!jpeg) throw new Error('No embedded preview found in RAW');
+  const blob = new Blob([jpeg], { type:'image/jpeg' });
+  return await loadImageFile(blob);
+}
+function extractLargestJpeg(bytes){
+  let best = null, bestLen = 0, i = 0, n = bytes.length;
+  while(i < n-1){
+    if(bytes[i] === 0xFF && bytes[i+1] === 0xD8){          // SOI
+      let j = i + 2;
+      while(j < n-1){
+        if(bytes[j] === 0xFF && bytes[j+1] === 0xD9){       // EOI
+          const len = j + 2 - i;
+          if(len > bestLen){ bestLen = len; best = bytes.subarray(i, j+2); }
+          i = j + 2; break;
+        }
+        j++;
+      }
+      if(j >= n-1) break;
+    } else i++;
+  }
+  return best && bestLen > 2000 ? best : null;   // ignore tiny thumbnails
+}
+
+/* ============================ Gallery ============================ */
+function renderGallery(){
+  $('#count').textContent = state.items.length;
+  gallery.innerHTML = '';
+  state.items.forEach(item => {
+    const cell = document.createElement('div');
+    cell.className = 'relative group aspect-square rounded-lg overflow-hidden bg-gray-100 thumb ' + (state.selected===item.id?'sel':'');
+    if(item.loading){
+      cell.innerHTML = `<div class="w-full h-full flex items-center justify-center text-gray-400">
+        <svg class="spin" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg></div>`;
+    } else if(item.ok){
+      cell.style.cursor = 'pointer';
+      cell.appendChild(item.img.cloneNode());
+      cell.querySelector('img').className = 'w-full h-full object-cover';
+      cell.addEventListener('click', () => selectItem(item.id));
+    } else {
+      cell.innerHTML = `<div class="w-full h-full flex flex-col items-center justify-center text-center px-1 bg-brand-coral/10 text-brand-coral">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span class="text-[10px] mt-1 leading-tight">Can't convert</span></div>`;
+    }
+    const rm = document.createElement('button');
+    rm.className = 'absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white text-xs opacity-0 group-hover:opacity-100 flex items-center justify-center';
+    rm.textContent = '×';
+    rm.addEventListener('click', e => { e.stopPropagation(); removeItem(item.id); });
+    cell.appendChild(rm);
+    gallery.appendChild(cell);
+  });
+}
+function selectItem(id){ state.selected = id; renderGallery(); updatePreview(); }
+function removeItem(id){
+  state.items = state.items.filter(i => i.id !== id);
+  if(state.selected === id) state.selected = (state.items.find(i=>i.ok)||{}).id || null;
+  if(!state.items.length){ workspace.classList.add('hidden'); }
+  renderGallery(); updatePreview();
+}
+$('#clearAll').addEventListener('click', () => {
+  state.items = []; state.selected = null; workspace.classList.add('hidden'); renderGallery();
+});
+
+/* ============================ Controls ============================ */
+// Ratio chips
+const ratioChips = $('#ratioChips');
+RATIOS.forEach(r => {
+  const b = document.createElement('button');
+  b.className = 'chip border rounded-lg px-3 py-1.5 text-sm ' + (r.id===state.ratio?'active':'');
+  b.textContent = r.label; b.dataset.id = r.id;
+  b.addEventListener('click', () => {
+    state.ratio = r.id;
+    document.querySelectorAll('#ratioChips .chip').forEach(c => c.classList.toggle('active', c.dataset.id===r.id));
+    $('#customSize').classList.toggle('hidden', !r.custom);
+    updatePreview();
+  });
+  ratioChips.appendChild(b);
+});
+$('#cw').addEventListener('input', updatePreview);
+$('#ch').addEventListener('input', updatePreview);
+
+// Fit
+document.querySelectorAll('.fitBtn').forEach(b => b.addEventListener('click', () => {
+  state.fit = b.dataset.fit;
+  document.querySelectorAll('.fitBtn').forEach(x => x.classList.toggle('active', x===b));
+  $('#bgWrap').classList.toggle('hidden', state.fit!=='contain');
+  $('#bgWrap').classList.toggle('flex', state.fit==='contain');
+  updatePreview();
+}));
+document.querySelectorAll('.bgSwatch').forEach(s => s.addEventListener('click', () => {
+  state.bg = s.dataset.c; $('#bgColor').value = s.dataset.c; updatePreview();
+}));
+$('#bgColor').addEventListener('input', e => { state.bg = e.target.value; updatePreview(); });
+
+// Passport toggle → force contain + white bg
+$('#passportMode').addEventListener('change', e => {
+  state.passport = e.target.checked;
+  if(state.passport){
+    state.fit = 'contain'; state.bg = '#ffffff'; $('#bgColor').value = '#ffffff';
+    document.querySelectorAll('.fitBtn').forEach(x => x.classList.toggle('active', x.dataset.fit==='contain'));
+    $('#bgWrap').classList.remove('hidden'); $('#bgWrap').classList.add('flex');
+  }
+  updatePreview();
+});
+
+// Format chips
+const fmtChips = $('#fmtChips');
+FORMATS.forEach(f => {
+  const b = document.createElement('button');
+  b.className = 'chip border rounded-lg py-2 text-sm font-semibold ' + (f.id===state.format?'active':'');
+  b.textContent = f.label; b.dataset.id = f.id;
+  b.addEventListener('click', () => {
+    state.format = f.id;
+    document.querySelectorAll('#fmtChips .chip').forEach(c => c.classList.toggle('active', c.dataset.id===f.id));
+    const isPdf = f.id==='pdf';
+    $('#pdfOpts').classList.toggle('hidden', !isPdf);
+    $('#qualityWrap').classList.toggle('hidden', f.id==='png');
+    updateExportLabel();
+  });
+  fmtChips.appendChild(b);
+});
+$('#quality').addEventListener('input', e => { state.quality = e.target.value/100; $('#qVal').textContent = e.target.value+'%'; });
+$('#pdfLayout').addEventListener('change', e => {
+  $('#sheetCopiesWrap').classList.toggle('hidden', e.target.value!=='sheet');
+});
+
+/* ============================ Rendering core ============================ */
+// Decide the output pixel dimensions for an image based on current settings.
+function targetDims(item){
+  const rdef = RATIOS.find(r => r.id===state.ratio);
+  if(rdef.fixed) return { w: rdef.fixed[0], h: rdef.fixed[1] };
+  if(rdef.custom) return { w: Math.max(1, +$('#cw').value||1), h: Math.max(1, +$('#ch').value||1) };
+  if(rdef.r == null) return { w: item.w, h: item.h };                 // original
+  // apply aspect ratio, keep the larger source dimension as reference
+  const ratio = rdef.r;
+  if(item.w/item.h > ratio){ const h = item.h; return { w: Math.round(h*ratio), h }; }
+  const w = item.w; return { w, h: Math.round(w/ratio) };
+}
+
+// Draw item onto a fresh canvas at target size using current fit/bg. Returns canvas.
+function renderToCanvas(item){
+  const { w, h } = targetDims(item);
+  const cv = document.createElement('canvas');
+  cv.width = w; cv.height = h;
+  const ctx = cv.getContext('2d');
+  ctx.imageSmoothingQuality = 'high';
+
+  const needsBg = state.fit==='contain' || state.passport || state.format!=='png';
+  if(needsBg){ ctx.fillStyle = (state.fit==='contain'||state.passport) ? state.bg : '#ffffff';
+    // For PNG contain we still honour transparency unless a bg was chosen:
+    if(!(state.format==='png' && state.fit!=='contain' && !state.passport)) ctx.fillRect(0,0,w,h);
+  }
+
+  const iw = item.w, ih = item.h;
+  if(state.fit==='contain' || state.passport){
+    const s = Math.min(w/iw, h/ih);
+    const dw = iw*s, dh = ih*s;
+    ctx.drawImage(item.img, (w-dw)/2, (h-dh)/2, dw, dh);
+  } else { // cover
+    const s = Math.max(w/iw, h/ih);
+    const dw = iw*s, dh = ih*s;
+    ctx.drawImage(item.img, (w-dw)/2, (h-dh)/2, dw, dh);
+  }
+  return cv;
+}
+
+function updatePreview(){
+  const item = state.items.find(i => i.id===state.selected && i.ok);
+  if(!item){ pctx.clearRect(0,0,preview.width,preview.height); $('#previewDims').textContent=''; $('#previewName').textContent=''; return; }
+  const cv = renderToCanvas(item);
+  preview.width = cv.width; preview.height = cv.height;
+  pctx.clearRect(0,0,cv.width,cv.height);
+  pctx.drawImage(cv,0,0);
+  $('#previewDims').textContent = `${cv.width} × ${cv.height} px`;
+  $('#previewName').textContent = item.name;
+}
+function updateExportLabel(){
+  const n = state.items.filter(i=>i.ok).length;
+  const f = FORMATS.find(x=>x.id===state.format);
+  $('#exportLabel').textContent = state.format==='pdf'
+    ? `Convert ${n} → one PDF`
+    : (n>1 ? `Convert ${n} → download ZIP` : `Convert & download ${f.label}`);
+}
+
+/* ============================ Export ============================ */
+$('#exportBtn').addEventListener('click', doExport);
+
+function canvasToBlob(cv, mime, q){
+  return new Promise(res => cv.toBlob(res, mime, q));
+}
+function baseName(name){ return name.replace(/\.[^.]+$/, ''); }
+function download(blob, filename){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+}
+
+async function doExport(){
+  const items = state.items.filter(i => i.ok);
+  if(!items.length){ alert('Add at least one picture first.'); return; }
+  setBusy(true);
+  try {
+    if(state.format==='pdf') await exportPdf(items);
+    else await exportImages(items);
+  } catch(err){
+    console.error(err); alert('Something went wrong: ' + (err.message||err));
+  } finally { setBusy(false); }
+}
+
+async function exportImages(items){
+  const f = FORMATS.find(x=>x.id===state.format);
+  const q = state.format==='png' ? undefined : state.quality;
+  if(items.length===1){
+    const cv = renderToCanvas(items[0]);
+    const blob = await canvasToBlob(cv, f.mime, q);
+    download(blob, baseName(items[0].name)+'.'+f.ext);
+    return;
+  }
+  const zip = new JSZip();
+  const seen = {};
+  for(const item of items){
+    const cv = renderToCanvas(item);
+    const blob = await canvasToBlob(cv, f.mime, q);
+    let nm = baseName(item.name)+'.'+f.ext;
+    if(seen[nm]) nm = baseName(item.name)+'-'+(++seen[nm])+'.'+f.ext; else seen[nm]=1;
+    zip.file(nm, blob);
+  }
+  const out = await zip.generateAsync({ type:'blob' });
+  download(out, 'pictures-converted.zip');
+}
+
+const PAPER = { a4:[210,297], letter:[215.9,279.4], '4x6':[101.6,152.4] }; // mm
+async function exportPdf(items){
+  const { jsPDF } = window.jspdf;
+  const layout = $('#pdfLayout').value;
+  const paperKey = $('#pdfPaper').value;
+  const [pw, ph] = PAPER[paperKey];
+  const orient = pw > ph ? 'landscape' : 'portrait';
+  const pdf = new jsPDF({ unit:'mm', format:[pw, ph], orientation:'portrait' });
+  const margin = 8;
+
+  if(layout==='sheet'){
+    const copies = Math.max(1, Math.min(60, +$('#sheetCopies').value||1));
+    let first = true;
+    for(const item of items){
+      const cv = renderToCanvas(item);
+      const dataUrl = cv.toDataURL('image/jpeg', state.quality);
+      // physical size of the photo in mm from its pixel aspect, capped to a passport-ish width
+      const imgRatio = cv.width/cv.height;
+      let cellW = 35, cellH = 35/imgRatio;            // default ~35mm wide tiles
+      if(cellH > 60){ cellH = 45; cellW = 45*imgRatio; }
+      const gap = 4;
+      const cols = Math.max(1, Math.floor((pw-2*margin+gap)/(cellW+gap)));
+      const rows = Math.max(1, Math.floor((ph-2*margin+gap)/(cellH+gap)));
+      const perPage = cols*rows;
+      if(!first) pdf.addPage([pw,ph],'portrait');
+      first = false;
+      for(let k=0;k<copies;k++){
+        const idx = k % perPage;
+        if(k>0 && idx===0) pdf.addPage([pw,ph],'portrait');
+        const col = idx % cols, row = Math.floor(idx/cols);
+        const x = margin + col*(cellW+gap), y = margin + row*(cellH+gap);
+        pdf.addImage(dataUrl,'JPEG', x, y, cellW, cellH);
+      }
+    }
+  } else {
+    let first = true;
+    for(const item of items){
+      const cv = renderToCanvas(item);
+      const dataUrl = cv.toDataURL('image/jpeg', state.quality);
+      if(!first) pdf.addPage([pw,ph],'portrait');
+      first = false;
+      const maxW = pw-2*margin, maxH = ph-2*margin;
+      const s = Math.min(maxW/cv.width, maxH/cv.height);
+      const dw = cv.width*s, dh = cv.height*s;
+      pdf.addImage(dataUrl,'JPEG', (pw-dw)/2, (ph-dh)/2, dw, dh);
+    }
+  }
+  pdf.save('pictures.pdf');
+}
+
+function setBusy(b){
+  $('#exportBtn').disabled = b;
+  $('#exportBtn').classList.toggle('opacity-60', b);
+  $('#exportSpin').classList.toggle('hidden', !b);
+  $('#exportHint').textContent = b ? 'Working… converting your pictures.' : 'Everything is processed on your device.';
+}
+
+/* init labels */
+updateExportLabel();
+</script>
+</body>
+</html>
