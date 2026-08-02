@@ -1,5 +1,5 @@
 {
-  "_comment": "PROVISIONAL LAYOUT \u2014 replace with the campground's real site map. Site numbers, service levels and positions below are a working placeholder, not All Points East's actual map, which was not reachable when this was built. x and y are percentages of the map area (0,0 is the north-west corner), so a site can be moved by nudging two numbers. This file is the source of truth for how many sites exist: the inventory counts in rates.json are checked against it at start-up.",
+  "_comment": "PROVISIONAL LAYOUT (service levels follow the published rate card; numbering and positions do not) \u2014 replace with the campground's real site map. Site numbers, service levels and positions below are a working placeholder, not All Points East's actual map, which was not reachable when this was built. x and y are percentages of the map area (0,0 is the north-west corner), so a site can be moved by nudging two numbers. This file is the source of truth for how many sites exist: the inventory counts in rates.json are checked against it at start-up.",
   "bounds": {
     "width": 100,
     "height": 100
@@ -355,7 +355,7 @@
   "sites": [
     {
       "number": "1",
-      "typeId": "full-service",
+      "typeId": "full-service-50",
       "amps": 50,
       "hookups": [
         "power",
@@ -374,7 +374,7 @@
     },
     {
       "number": "2",
-      "typeId": "full-service",
+      "typeId": "full-service-50",
       "amps": 50,
       "hookups": [
         "power",
@@ -392,7 +392,7 @@
     },
     {
       "number": "3",
-      "typeId": "full-service",
+      "typeId": "full-service-50",
       "amps": 50,
       "hookups": [
         "power",
@@ -410,7 +410,7 @@
     },
     {
       "number": "4",
-      "typeId": "full-service",
+      "typeId": "full-service-50",
       "amps": 50,
       "hookups": [
         "power",
@@ -428,7 +428,7 @@
     },
     {
       "number": "5",
-      "typeId": "full-service",
+      "typeId": "full-service-50",
       "amps": 50,
       "hookups": [
         "power",
@@ -446,7 +446,7 @@
     },
     {
       "number": "6",
-      "typeId": "full-service",
+      "typeId": "full-service-50",
       "amps": 50,
       "hookups": [
         "power",
@@ -464,7 +464,7 @@
     },
     {
       "number": "7",
-      "typeId": "full-service",
+      "typeId": "full-service-50",
       "amps": 50,
       "hookups": [
         "power",
@@ -482,7 +482,7 @@
     },
     {
       "number": "8",
-      "typeId": "full-service",
+      "typeId": "full-service-50",
       "amps": 50,
       "hookups": [
         "power",
@@ -500,7 +500,7 @@
     },
     {
       "number": "9",
-      "typeId": "full-service",
+      "typeId": "full-service-50",
       "amps": 50,
       "hookups": [
         "power",
@@ -518,7 +518,7 @@
     },
     {
       "number": "10",
-      "typeId": "full-service",
+      "typeId": "full-service-50",
       "amps": 50,
       "hookups": [
         "power",
@@ -536,7 +536,7 @@
     },
     {
       "number": "11",
-      "typeId": "full-service",
+      "typeId": "full-service-50",
       "amps": 50,
       "hookups": [
         "power",
@@ -554,7 +554,7 @@
     },
     {
       "number": "12",
-      "typeId": "full-service",
+      "typeId": "full-service-50",
       "amps": 50,
       "hookups": [
         "power",
@@ -573,8 +573,8 @@
     },
     {
       "number": "13",
-      "typeId": "full-service",
-      "amps": 50,
+      "typeId": "full-service-30",
+      "amps": 30,
       "hookups": [
         "power",
         "water",
@@ -591,8 +591,8 @@
     },
     {
       "number": "14",
-      "typeId": "full-service",
-      "amps": 50,
+      "typeId": "full-service-30",
+      "amps": 30,
       "hookups": [
         "power",
         "water",
@@ -609,8 +609,8 @@
     },
     {
       "number": "15",
-      "typeId": "full-service",
-      "amps": 50,
+      "typeId": "full-service-30",
+      "amps": 30,
       "hookups": [
         "power",
         "water",
@@ -627,7 +627,7 @@
     },
     {
       "number": "16",
-      "typeId": "full-service",
+      "typeId": "full-service-30",
       "amps": 30,
       "hookups": [
         "power",
@@ -644,7 +644,7 @@
     },
     {
       "number": "17",
-      "typeId": "full-service",
+      "typeId": "full-service-30",
       "amps": 30,
       "hookups": [
         "power",
@@ -661,7 +661,7 @@
     },
     {
       "number": "18",
-      "typeId": "full-service",
+      "typeId": "full-service-30",
       "amps": 30,
       "hookups": [
         "power",
@@ -678,7 +678,7 @@
     },
     {
       "number": "19",
-      "typeId": "full-service",
+      "typeId": "full-service-30",
       "amps": 30,
       "hookups": [
         "power",
@@ -690,12 +690,12 @@
       "x": 73.57,
       "y": 32,
       "features": [
-        "Back-in"
+        "Near washrooms"
       ]
     },
     {
       "number": "20",
-      "typeId": "full-service",
+      "typeId": "full-service-30",
       "amps": 30,
       "hookups": [
         "power",
@@ -707,16 +707,17 @@
       "x": 83,
       "y": 32,
       "features": [
-        "Back-in"
+        "Near washrooms"
       ]
     },
     {
       "number": "21",
-      "typeId": "power-water",
+      "typeId": "full-service-30",
       "amps": 30,
       "hookups": [
         "power",
-        "water"
+        "water",
+        "sewer"
       ],
       "pullThrough": false,
       "facing": "north",
@@ -728,11 +729,12 @@
     },
     {
       "number": "22",
-      "typeId": "power-water",
+      "typeId": "full-service-30",
       "amps": 30,
       "hookups": [
         "power",
-        "water"
+        "water",
+        "sewer"
       ],
       "pullThrough": false,
       "facing": "north",
@@ -744,11 +746,12 @@
     },
     {
       "number": "23",
-      "typeId": "power-water",
+      "typeId": "full-service-30",
       "amps": 30,
       "hookups": [
         "power",
-        "water"
+        "water",
+        "sewer"
       ],
       "pullThrough": false,
       "facing": "north",
@@ -760,11 +763,12 @@
     },
     {
       "number": "24",
-      "typeId": "power-water",
+      "typeId": "full-service-30",
       "amps": 30,
       "hookups": [
         "power",
-        "water"
+        "water",
+        "sewer"
       ],
       "pullThrough": false,
       "facing": "north",
@@ -776,11 +780,12 @@
     },
     {
       "number": "25",
-      "typeId": "power-water",
+      "typeId": "full-service-30",
       "amps": 30,
       "hookups": [
         "power",
-        "water"
+        "water",
+        "sewer"
       ],
       "pullThrough": false,
       "facing": "north",
@@ -792,11 +797,12 @@
     },
     {
       "number": "26",
-      "typeId": "power-water",
+      "typeId": "full-service-30",
       "amps": 30,
       "hookups": [
         "power",
-        "water"
+        "water",
+        "sewer"
       ],
       "pullThrough": false,
       "facing": "north",
@@ -808,11 +814,12 @@
     },
     {
       "number": "27",
-      "typeId": "power-water",
+      "typeId": "full-service-30",
       "amps": 30,
       "hookups": [
         "power",
-        "water"
+        "water",
+        "sewer"
       ],
       "pullThrough": false,
       "facing": "north",
@@ -824,11 +831,12 @@
     },
     {
       "number": "28",
-      "typeId": "power-water",
+      "typeId": "full-service-30",
       "amps": 30,
       "hookups": [
         "power",
-        "water"
+        "water",
+        "sewer"
       ],
       "pullThrough": false,
       "facing": "north",
@@ -840,11 +848,12 @@
     },
     {
       "number": "29",
-      "typeId": "power-water",
-      "amps": 15,
+      "typeId": "full-service-30",
+      "amps": 30,
       "hookups": [
         "power",
-        "water"
+        "water",
+        "sewer"
       ],
       "pullThrough": false,
       "facing": "north",
@@ -856,11 +865,12 @@
     },
     {
       "number": "30",
-      "typeId": "power-water",
-      "amps": 15,
+      "typeId": "full-service-30",
+      "amps": 30,
       "hookups": [
         "power",
-        "water"
+        "water",
+        "sewer"
       ],
       "pullThrough": false,
       "facing": "north",
@@ -872,11 +882,12 @@
     },
     {
       "number": "31",
-      "typeId": "power-water",
-      "amps": 15,
+      "typeId": "full-service-30",
+      "amps": 30,
       "hookups": [
         "power",
-        "water"
+        "water",
+        "sewer"
       ],
       "pullThrough": false,
       "facing": "north",
@@ -888,11 +899,12 @@
     },
     {
       "number": "32",
-      "typeId": "power-water",
-      "amps": 15,
+      "typeId": "full-service-30",
+      "amps": 30,
       "hookups": [
         "power",
-        "water"
+        "water",
+        "sewer"
       ],
       "pullThrough": false,
       "facing": "north",
@@ -904,30 +916,34 @@
     },
     {
       "number": "33",
-      "typeId": "tent",
+      "typeId": "water-only",
       "amps": null,
-      "hookups": [],
+      "hookups": [
+        "water"
+      ],
       "pullThrough": false,
       "facing": "north",
       "x": 20,
       "y": 84,
       "features": [
-        "Shaded",
-        "Water tap nearby"
+        "Water at the site",
+        "Tent or car camping"
       ]
     },
     {
       "number": "34",
-      "typeId": "tent",
+      "typeId": "water-only",
       "amps": null,
-      "hookups": [],
+      "hookups": [
+        "water"
+      ],
       "pullThrough": false,
       "facing": "north",
       "x": 28.57,
       "y": 84,
       "features": [
-        "Shaded",
-        "Water tap nearby"
+        "Water at the site",
+        "Tent or car camping"
       ]
     },
     {

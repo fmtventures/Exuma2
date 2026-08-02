@@ -38,17 +38,36 @@ the same code path a real booking takes.
 
 ### 1. Enter the rates
 
-Open `config/rates.json` and fill in a `nightly` price for every site type, plus
-`weekly` and `monthly` if longer stays get a better rate. Check the inventory
-split too — it ships as 20 full-service / 12 power-and-water / 8 tent, adding up
-to the 40 sites, but only the office knows the real breakdown.
+`config/rates.json` carries the campground's published rates, per season:
 
-**Until every bookable site type has a nightly rate, online booking stays shut**
-and the website shows a "call to book" message. That is deliberate: the site
-should never quote a price nobody entered.
+```json
+"seasons": [
+  { "id": "high", "name": "High season", "ranges": [["06-23", "09-07"]] },
+  { "id": "low",  "name": "Low season",  "ranges": [["04-25", "06-22"], ["09-08", "11-02"]] }
+],
+"siteTypes": [
+  { "id": "full-service-50", "nightly": { "high": 63, "low": 54 },
+                             "weekly":  { "high": 385, "low": 325 } }
+]
+```
 
-`config/rates.sample.json` shows the shape with example numbers. Those numbers
-are made up — do not ship them.
+A rate can be one number all year or one per season. **A `null` price is never
+guessed at**: the stay is refused with a message telling the guest to call, and
+the office can fill the number in later without touching any code. Two are still
+null and need confirming — the 30 amp low-season rate, and water-only, which is
+currently phone-only on the website.
+
+A stay that crosses the season line is charged each part at its own rate, and
+each run of nights takes whichever of its monthly, weekly or nightly rate is
+kinder. Booking stays open as long as *something* has a price; a type still
+waiting on its rate simply cannot be picked online.
+
+The deposit rule is the campground's own — `"mode": "greater_of"` takes one
+night or 10% of the stay, whichever is larger. `first_night`, `percent` and
+`full` are the other options.
+
+`config/rates.sample.json` shows the simpler flat-rate shape, and is what the
+test suite and `npm run dev:demo` use. Its numbers are made up — do not ship them.
 
 ### 2. Correct the site map
 
@@ -251,7 +270,7 @@ absent, keeps serving the website, and leaves booking closed.
 npm test
 ```
 
-67 tests over the pricing rules, the availability arithmetic, the site map, and
+75 tests over the pricing rules, seasonal rates, the availability arithmetic, the site map, and
 the booking and cancellation flows end to end — including selling the same
 square twice, changeover days, hand-written calendar blocks, expired holds,
 replayed webhooks, forged webhooks, a Stripe outage mid-checkout, forged

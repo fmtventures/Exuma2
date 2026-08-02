@@ -311,7 +311,11 @@ test('if Stripe fails to open a session, the site is not left held', async (t) =
 });
 
 test('with no rates entered, the site says call us instead of selling', async (t) => {
-  const unpriced = { ...require('../config/rates.json'), season: null };
+  // A fresh rate card, before anybody has typed a price into it.
+  const unpriced = {
+    ...rates,
+    siteTypes: rates.siteTypes.map((type) => ({ ...type, nightly: null, weekly: null, monthly: null })),
+  };
   const h = await harness({ rates: unpriced });
   t.after(() => h.close());
 

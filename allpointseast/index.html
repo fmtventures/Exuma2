@@ -574,6 +574,57 @@ a { color: inherit; }
   transform: rotate(45deg) translateY(-1px);
 }
 
+.rate-card {
+  margin-top: 2rem;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 1.35rem 1.5rem 1.25rem;
+  box-shadow: var(--shadow);
+}
+.rate-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--spruce);
+}
+.rate-scroll { overflow-x: auto; }
+table.rates {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 0.9rem;
+}
+table.rates th, table.rates td {
+  text-align: right;
+  padding: 0.7rem 0.5rem;
+  border-bottom: 1px solid var(--rule-soft);
+  white-space: nowrap;
+}
+table.rates th:first-child, table.rates td:first-child { text-align: left; white-space: normal; }
+table.rates thead th {
+  font-family: var(--ff-data);
+  font-size: 0.625rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--spruce-45);
+  font-weight: 400;
+}
+table.rates tbody th {
+  font-family: var(--ff-sign);
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+table.rates td { font-size: 0.9375rem; }
+table.rates td .per { font-family: var(--ff-data); font-size: 0.625rem; letter-spacing: 0.08em; color: var(--spruce-45); display: block; }
+table.rates td.call { color: var(--clay); font-size: 0.8125rem; }
+table.rates tbody tr:last-child th, table.rates tbody tr:last-child td { border-bottom: 0; }
+
 .rate-note {
   margin-top: 1.75rem;
   display: flex;
@@ -1457,12 +1508,12 @@ a { color: inherit; }
                 <path d="M33 17h4v5h-4"></path>
               </svg>
             </span>
-            <h3>Full service</h3>
-            <p>Three-way sites with power, water and sewer at the pad — level, roomy and easy to back into.</p>
+            <h3>Full service · 50 amp</h3>
+            <p>Three-way sites with 50 amp power, water and sewer at the pad. The ocean-side row is all pull-through.</p>
             <ul class="spec">
-              <li>30 or 50 amp power</li>
+              <li>50 amp power</li>
               <li>Water + sewer hookup</li>
-              <li>Pull-throughs available</li>
+              <li>Pull-through</li>
               <li>Fire ring · picnic table</li>
             </ul>
           </article>
@@ -1476,12 +1527,12 @@ a { color: inherit; }
                 <path d="M28 32h6"></path>
               </svg>
             </span>
-            <h3>Power &amp; water</h3>
-            <p>Two-way sites with power and water — same price as full service, so choose the spot you like best.</p>
+            <h3>Full service · 30 amp</h3>
+            <p>The same three-way hookups on 30 amp — the everyday site, and the easiest on the wallet for a longer stay.</p>
             <ul class="spec">
-              <li>15, 30 or 50 amp power</li>
-              <li>Water hookup</li>
-              <li>Dump station on site</li>
+              <li>30 amp power</li>
+              <li>Water + sewer hookup</li>
+              <li>Back-in, level pads</li>
               <li>Fire ring · picnic table</li>
             </ul>
           </article>
@@ -1494,10 +1545,10 @@ a { color: inherit; }
                 <path d="M14 32l6-11 6 11"></path>
               </svg>
             </span>
-            <h3>Tent sites</h3>
-            <p>Unserviced pads among the trees for tents and small trailers — quieter corners, softer ground.</p>
+            <h3>Water only &amp; tent</h3>
+            <p>Premium unserviced pads among the trees, plus a couple of water-only sites that suit a tent or car camping.</p>
             <ul class="spec">
-              <li>Water nearby</li>
+              <li>Water at the site or nearby</li>
               <li>Shaded &amp; sheltered</li>
               <li>Showers included</li>
               <li>Fire ring · picnic table</li>
@@ -1505,14 +1556,22 @@ a { color: inherit; }
           </article>
         </div>
 
-        <!-- Rates: paste the current season's nightly / weekly / monthly / seasonal figures here. -->
-        <div class="rate-note">
-          <p>
-            <strong>Current rates —</strong> nightly, weekly, monthly and seasonal rates are available, with
-            discounts for longer stays. Call or email and we'll confirm the rate and what's open for your dates.
-          </p>
-          <a class="btn" href="tel:+19023270356">Call (902) 327-0356</a>
+        <div class="rate-card" id="rateCard">
+          <div class="rate-head">
+            <span class="eyebrow">Rates</span>
+            <span class="coord" id="seasonNote"></span>
+          </div>
+          <div class="rate-scroll">
+            <table class="rates" id="rateTable">
+              <thead>
+                <tr><th scope="col">Site</th><th scope="col">High season</th><th scope="col">Low season</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p class="sum-note" id="ratePolicy"></p>
         </div>
+
       </div>
     </div>
   </section>
@@ -1669,6 +1728,18 @@ a { color: inherit; }
               <div class="answer"><p>Call us at (902) 327-0356 or send an email to camp@allpointseastcampground.ca with your dates, the size of your rig and the hookups you need. You can also use the request form below and we'll get back to you.</p></div>
             </details>
             <details>
+              <summary>What deposit do you take?</summary>
+              <div class="answer"><p>A deposit of one night, or 10% of the stay — whichever is greater — is charged when you book. The balance is settled at the office when you arrive.</p></div>
+            </details>
+            <details>
+              <summary>What if I need to cancel?</summary>
+              <div class="answer"><p>Cancel at least 30 days before you arrive and the deposit comes back in full — there's a link in your confirmation email that does it in two clicks. Closer to your arrival, give us a call and we'll do what we can.</p></div>
+            </details>
+            <details>
+              <summary>Are rates the same all season?</summary>
+              <div class="answer"><p>No — high season runs from late June to early September, and the shoulders either side are cheaper. The rate table above shows both, and the price you see when you pick your dates is the one you pay.</p></div>
+            </details>
+            <details>
               <summary>Will my rig fit?</summary>
               <div class="answer"><p>We have 15, 30 and 50 amp service and pull-through sites for larger rigs. Tell us your length when you call and we'll put you on a site that suits.</p></div>
             </details>
@@ -1679,6 +1750,10 @@ a { color: inherit; }
             <details>
               <summary>Is there a dump station?</summary>
               <div class="answer"><p>There is. Full-service sites have sewer at the pad, and everyone else can use the on-site dump station on the way out.</p></div>
+            </details>
+            <details>
+              <summary>Any rules we should know?</summary>
+              <div class="answer"><p>Only what "camp with kindness" implies: noise or language that spoils the stay for the people around you isn't on, and anything aggressive or threatening towards other campers means you'll be asked to leave. Everything else is common sense and a friendly wave down the loop.</p></div>
             </details>
             <details>
               <summary>What's nearby for supplies?</summary>
@@ -2181,6 +2256,8 @@ a { color: inherit; }
      design — the widget drops into a clearly-labelled sample mode so the flow
      can still be walked through. Nothing in sample mode can take a payment. */
 
+  var BAKED_RATES = {"seasons":[{"id":"high","name":"High season","ranges":[["06-23","09-07"]]},{"id":"low","name":"Low season","ranges":[["04-25","06-22"],["09-08","11-02"]]}],"siteTypes":[{"id":"full-service-50","name":"Full service \u00b7 50 amp","blurb":"Three-way site with 50 amp power, water and sewer at the pad.","inventory":12,"nightly":{"high":63,"low":54},"weekly":{"high":385,"low":325},"from":54,"bookable":true},{"id":"full-service-30","name":"Full service \u00b7 30 amp","blurb":"Three-way site with 30 amp power, water and sewer.","inventory":20,"nightly":{"high":43,"low":null},"weekly":{"high":260,"low":null},"from":43,"bookable":true},{"id":"water-only","name":"Water only","blurb":"Water at the site, no power \u2014 good for a tent or car camping.","inventory":2,"nightly":{"high":null,"low":null},"weekly":{"high":null,"low":null},"from":null,"bookable":false},{"id":"tent","name":"Unserviced / tent","blurb":"Premium unserviced pad among the trees.","inventory":6,"nightly":{"high":40,"low":33},"weekly":{"high":240,"low":200},"from":33,"bookable":true}]};
+
   var DEMO_CONFIG = {
     bookingOpen: false,
     demo: true,
@@ -2196,12 +2273,9 @@ a { color: inherit; }
     season: { opens: '04-25', closes: '11-03' },
     depositMode: 'first_night',
     holdMinutes: 35,
-    extras: { guestsIncluded: 4, extraGuestNightly: 5 },
-    siteTypes: [
-      { id: 'full-service', name: 'Full service', blurb: 'Power, water and sewer at the pad.', inventory: 20, nightly: 52, weekly: 312, monthly: 1150 },
-      { id: 'power-water', name: 'Power & water', blurb: 'Two-way site, 15/30/50 amp.', inventory: 12, nightly: 52, weekly: 312, monthly: 1150 },
-      { id: 'tent', name: 'Unserviced / tent', blurb: 'Unserviced pad among the trees.', inventory: 8, nightly: 38, weekly: 228, monthly: 840 }
-    ]
+    extras: { guestsIncluded: 4 },
+    seasons: (BAKED_RATES && BAKED_RATES.seasons) || [],
+    siteTypes: (BAKED_RATES && BAKED_RATES.siteTypes) || []
   };
 
   var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -2339,6 +2413,76 @@ a { color: inherit; }
     };
   }
 
+  var MONTH_NAMES = MONTHS;
+
+  function prettyMonthDay(md) {
+    var parts = md.split('-');
+    return MONTH_NAMES[+parts[0] - 1] + ' ' + (+parts[1]);
+  }
+
+  function seasonRangeText(season) {
+    return (season.ranges || []).map(function (r) {
+      return prettyMonthDay(r[0]) + ' – ' + prettyMonthDay(r[1]);
+    }).join(' & ');
+  }
+
+  /** A rate may be one number all year, or one per season. */
+  function rateIn(rate, seasonId) {
+    if (rate == null) return null;
+    if (typeof rate === 'number') return rate > 0 ? rate : null;
+    var value = rate[seasonId];
+    return typeof value === 'number' && value > 0 ? value : null;
+  }
+
+  function cheapestNightly(type, seasons) {
+    var prices = (seasons.length ? seasons.map(function (s) { return s.id; }) : ['all'])
+      .map(function (id) { return rateIn(type.nightly, id); })
+      .filter(function (p) { return p != null; });
+    return prices.length ? Math.min.apply(null, prices) : null;
+  }
+
+  function renderRateCard() {
+    var table = document.getElementById('rateTable');
+    if (!table || !B.config.siteTypes.length) return;
+
+    var seasons = B.config.seasons || [];
+    var head = table.querySelector('thead tr');
+    var body = table.querySelector('tbody');
+
+    head.innerHTML = '<th scope="col">Site</th>' + (seasons.length
+      ? seasons.map(function (s) { return '<th scope="col">' + s.name + '</th>'; }).join('')
+      : '<th scope="col">Rate</th>');
+
+    body.innerHTML = B.config.siteTypes.map(function (type) {
+      var cells = (seasons.length ? seasons : [{ id: 'all' }]).map(function (season) {
+        var nightly = rateIn(type.nightly, season.id);
+        var weekly = rateIn(type.weekly, season.id);
+        if (nightly == null) return '<td class="call">Call us</td>';
+        return '<td>' + money(Math.round(nightly * 100)) +
+          '<span class="per">per night' + (weekly ? ' · ' + money(Math.round(weekly * 100)) + ' weekly' : '') + '</span></td>';
+      }).join('');
+      return '<tr><th scope="row">' + type.name + '</th>' + cells + '</tr>';
+    }).join('');
+
+    var note = document.getElementById('seasonNote');
+    if (note) {
+      note.textContent = seasons.map(function (s) { return s.name + ': ' + seasonRangeText(s); }).join('  ·  ');
+    }
+
+    var policy = document.getElementById('ratePolicy');
+    if (policy) {
+      var deposit = B.config.depositMode === 'greater_of'
+        ? 'A deposit of one night or 10% of the stay, whichever is greater, is charged when you book; the balance is due on arrival.'
+        : B.config.depositMode === 'full'
+          ? 'The full stay is charged when you book.'
+          : 'The first night is charged when you book; the balance is due on arrival.';
+      var cancel = (B.config.cancellation && B.config.cancellation.refundDepositUntilDays)
+        ? ' Cancel at least ' + B.config.cancellation.refundDepositUntilDays + ' days before you arrive and the deposit comes back in full.'
+        : '';
+      policy.textContent = deposit + cancel + ' All rates are before ' + B.config.taxLabel + '.';
+    }
+  }
+
   function setStatus(tone, html) {
     if (!html) { el.status.hidden = true; return; }
     el.status.hidden = false;
@@ -2366,7 +2510,7 @@ a { color: inherit; }
      from the campground's own map file. The copy baked in below is the same
      file, so the map still draws when the page is opened without a server. */
 
-  var BAKED_SITE_MAP = {"bounds":{"width":100,"height":100},"water":[{"kind":"ocean","label":"Atlantic Ocean","points":[[0,0],[100,0],[100,5],[70,7],[30,5],[0,7]]},{"kind":"lake","label":"North Lake","points":[[0,14],[8,16],[10,30],[6,44],[0,46]]}],"roads":[{"label":"Entrance","points":[[4,100],[8,92],[10,84]]},{"label":"Loop","points":[[10,84],[10,74],[10,45],[10,24],[24,22],[50,22],[76,22],[92,24],[92,45],[92,74],[92,84],[60,86],[30,86],[10,84]]},{"label":"Mid road","points":[[10,45],[30,44],[60,44],[92,45]]},{"label":"Back lane","points":[[10,74],[40,75],[70,74],[92,74]]}],"landmarks":[{"id":"office","name":"Office","icon":"office","x":13,"y":93,"note":"Stop here first \u2014 firewood and ice too","w":10,"h":5},{"id":"pool","name":"Pool","icon":"pool","x":50,"y":53,"w":16,"h":9,"note":"Open late June to mid-September"},{"id":"washrooms","name":"Showers","icon":"showers","x":24,"y":53,"w":11,"h":7,"note":"Open all season, included with your site"},{"id":"laundry","name":"Laundry","icon":"laundry","x":38,"y":53,"w":8,"h":6},{"id":"playground","name":"Playground","icon":"playground","x":72,"y":53,"w":13,"h":8},{"id":"rec-hall","name":"Rec hall","icon":"hall","x":12,"y":56,"w":9,"h":6},{"id":"shop","name":"Ice cream & art","icon":"shop","x":40,"y":93,"w":13,"h":5},{"id":"dump","name":"Dump station","icon":"dump","x":82,"y":93,"w":12,"h":5},{"id":"beach-path","name":"Path to the shore","icon":"path","x":62,"y":9,"note":"A few minutes' walk to the water"}],"trees":[[5,58],[5,66],[5,88],[16,72],[30,72],[44,72],[58,72],[72,72],[86,72],[95,58],[95,66],[95,88],[16,9],[92,9],[4,34],[96,34],[24,90],[60,90],[70,90],[95,44]],"sites":[{"number":"1","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side","Corner site"],"x":13,"y":15,"nightly":null},{"number":"2","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":19.73,"y":15,"nightly":null},{"number":"3","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":26.45,"y":15,"nightly":null},{"number":"4","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":33.18,"y":15,"nightly":null},{"number":"5","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":39.91,"y":15,"nightly":null},{"number":"6","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":46.64,"y":15,"nightly":null},{"number":"7","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":53.36,"y":15,"nightly":null},{"number":"8","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":60.09,"y":15,"nightly":null},{"number":"9","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":66.82,"y":15,"nightly":null},{"number":"10","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":73.55,"y":15,"nightly":null},{"number":"11","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":80.27,"y":15,"nightly":null},{"number":"12","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side","Corner site"],"x":87,"y":15,"nightly":null},{"number":"13","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Back-in","Extra long"],"x":17,"y":32,"nightly":null},{"number":"14","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Back-in","Extra long"],"x":26.43,"y":32,"nightly":null},{"number":"15","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Back-in","Extra long"],"x":35.86,"y":32,"nightly":null},{"number":"16","typeId":"full-service","typeName":"Full service","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Near the pool"],"x":45.29,"y":32,"nightly":null},{"number":"17","typeId":"full-service","typeName":"Full service","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Near the pool"],"x":54.71,"y":32,"nightly":null},{"number":"18","typeId":"full-service","typeName":"Full service","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Near the pool"],"x":64.14,"y":32,"nightly":null},{"number":"19","typeId":"full-service","typeName":"Full service","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Back-in"],"x":73.57,"y":32,"nightly":null},{"number":"20","typeId":"full-service","typeName":"Full service","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Back-in"],"x":83,"y":32,"nightly":null},{"number":"21","typeId":"power-water","typeName":"Power & water","amps":30,"hookups":["power","water"],"pullThrough":false,"features":["Near washrooms"],"x":13,"y":64,"nightly":null},{"number":"22","typeId":"power-water","typeName":"Power & water","amps":30,"hookups":["power","water"],"pullThrough":false,"features":["Near washrooms"],"x":19.73,"y":64,"nightly":null},{"number":"23","typeId":"power-water","typeName":"Power & water","amps":30,"hookups":["power","water"],"pullThrough":false,"features":["Near washrooms"],"x":26.45,"y":64,"nightly":null},{"number":"24","typeId":"power-water","typeName":"Power & water","amps":30,"hookups":["power","water"],"pullThrough":false,"features":["Near washrooms"],"x":33.18,"y":64,"nightly":null},{"number":"25","typeId":"power-water","typeName":"Power & water","amps":30,"hookups":["power","water"],"pullThrough":false,"features":["Open outlook"],"x":39.91,"y":64,"nightly":null},{"number":"26","typeId":"power-water","typeName":"Power & water","amps":30,"hookups":["power","water"],"pullThrough":false,"features":["Open outlook"],"x":46.64,"y":64,"nightly":null},{"number":"27","typeId":"power-water","typeName":"Power & water","amps":30,"hookups":["power","water"],"pullThrough":false,"features":["Open outlook"],"x":53.36,"y":64,"nightly":null},{"number":"28","typeId":"power-water","typeName":"Power & water","amps":30,"hookups":["power","water"],"pullThrough":false,"features":["Open outlook"],"x":60.09,"y":64,"nightly":null},{"number":"29","typeId":"power-water","typeName":"Power & water","amps":15,"hookups":["power","water"],"pullThrough":false,"features":["Open outlook"],"x":66.82,"y":64,"nightly":null},{"number":"30","typeId":"power-water","typeName":"Power & water","amps":15,"hookups":["power","water"],"pullThrough":false,"features":["Quiet end"],"x":73.55,"y":64,"nightly":null},{"number":"31","typeId":"power-water","typeName":"Power & water","amps":15,"hookups":["power","water"],"pullThrough":false,"features":["Quiet end"],"x":80.27,"y":64,"nightly":null},{"number":"32","typeId":"power-water","typeName":"Power & water","amps":15,"hookups":["power","water"],"pullThrough":false,"features":["Quiet end"],"x":87,"y":64,"nightly":null},{"number":"33","typeId":"tent","typeName":"Unserviced / tent","amps":null,"hookups":[],"pullThrough":false,"features":["Shaded","Water tap nearby"],"x":20,"y":84,"nightly":null},{"number":"34","typeId":"tent","typeName":"Unserviced / tent","amps":null,"hookups":[],"pullThrough":false,"features":["Shaded","Water tap nearby"],"x":28.57,"y":84,"nightly":null},{"number":"35","typeId":"tent","typeName":"Unserviced / tent","amps":null,"hookups":[],"pullThrough":false,"features":["Shaded","Water tap nearby"],"x":37.14,"y":84,"nightly":null},{"number":"36","typeId":"tent","typeName":"Unserviced / tent","amps":null,"hookups":[],"pullThrough":false,"features":["Shaded","Water tap nearby"],"x":45.71,"y":84,"nightly":null},{"number":"37","typeId":"tent","typeName":"Unserviced / tent","amps":null,"hookups":[],"pullThrough":false,"features":["Shaded","Water tap nearby"],"x":54.29,"y":84,"nightly":null},{"number":"38","typeId":"tent","typeName":"Unserviced / tent","amps":null,"hookups":[],"pullThrough":false,"features":["Shaded","Water tap nearby"],"x":62.86,"y":84,"nightly":null},{"number":"39","typeId":"tent","typeName":"Unserviced / tent","amps":null,"hookups":[],"pullThrough":false,"features":["Shaded","Water tap nearby"],"x":71.43,"y":84,"nightly":null},{"number":"40","typeId":"tent","typeName":"Unserviced / tent","amps":null,"hookups":[],"pullThrough":false,"features":["Shaded","Water tap nearby"],"x":80,"y":84,"nightly":null}]};
+  var BAKED_SITE_MAP = {"bounds":{"width":100,"height":100},"water":[{"kind":"ocean","label":"Atlantic Ocean","points":[[0,0],[100,0],[100,5],[70,7],[30,5],[0,7]]},{"kind":"lake","label":"North Lake","points":[[0,14],[8,16],[10,30],[6,44],[0,46]]}],"roads":[{"label":"Entrance","points":[[4,100],[8,92],[10,84]]},{"label":"Loop","points":[[10,84],[10,74],[10,45],[10,24],[24,22],[50,22],[76,22],[92,24],[92,45],[92,74],[92,84],[60,86],[30,86],[10,84]]},{"label":"Mid road","points":[[10,45],[30,44],[60,44],[92,45]]},{"label":"Back lane","points":[[10,74],[40,75],[70,74],[92,74]]}],"landmarks":[{"id":"office","name":"Office","icon":"office","x":13,"y":93,"note":"Stop here first \u2014 firewood and ice too","w":10,"h":5},{"id":"pool","name":"Pool","icon":"pool","x":50,"y":53,"w":16,"h":9,"note":"Open late June to mid-September"},{"id":"washrooms","name":"Showers","icon":"showers","x":24,"y":53,"w":11,"h":7,"note":"Open all season, included with your site"},{"id":"laundry","name":"Laundry","icon":"laundry","x":38,"y":53,"w":8,"h":6},{"id":"playground","name":"Playground","icon":"playground","x":72,"y":53,"w":13,"h":8},{"id":"rec-hall","name":"Rec hall","icon":"hall","x":12,"y":56,"w":9,"h":6},{"id":"shop","name":"Ice cream & art","icon":"shop","x":40,"y":93,"w":13,"h":5},{"id":"dump","name":"Dump station","icon":"dump","x":82,"y":93,"w":12,"h":5},{"id":"beach-path","name":"Path to the shore","icon":"path","x":62,"y":9,"note":"A few minutes' walk to the water"}],"trees":[[5,58],[5,66],[5,88],[16,72],[30,72],[44,72],[58,72],[72,72],[86,72],[95,58],[95,66],[95,88],[16,9],[92,9],[4,34],[96,34],[24,90],[60,90],[70,90],[95,44]],"sites":[{"number":"1","typeId":"full-service-50","typeName":"Full service \u00b7 50 amp","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side","Corner site"],"x":13,"y":15,"nightly":54},{"number":"2","typeId":"full-service-50","typeName":"Full service \u00b7 50 amp","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":19.73,"y":15,"nightly":54},{"number":"3","typeId":"full-service-50","typeName":"Full service \u00b7 50 amp","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":26.45,"y":15,"nightly":54},{"number":"4","typeId":"full-service-50","typeName":"Full service \u00b7 50 amp","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":33.18,"y":15,"nightly":54},{"number":"5","typeId":"full-service-50","typeName":"Full service \u00b7 50 amp","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":39.91,"y":15,"nightly":54},{"number":"6","typeId":"full-service-50","typeName":"Full service \u00b7 50 amp","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":46.64,"y":15,"nightly":54},{"number":"7","typeId":"full-service-50","typeName":"Full service \u00b7 50 amp","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":53.36,"y":15,"nightly":54},{"number":"8","typeId":"full-service-50","typeName":"Full service \u00b7 50 amp","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":60.09,"y":15,"nightly":54},{"number":"9","typeId":"full-service-50","typeName":"Full service \u00b7 50 amp","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":66.82,"y":15,"nightly":54},{"number":"10","typeId":"full-service-50","typeName":"Full service \u00b7 50 amp","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":73.55,"y":15,"nightly":54},{"number":"11","typeId":"full-service-50","typeName":"Full service \u00b7 50 amp","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":80.27,"y":15,"nightly":54},{"number":"12","typeId":"full-service-50","typeName":"Full service \u00b7 50 amp","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side","Corner site"],"x":87,"y":15,"nightly":54},{"number":"13","typeId":"full-service-30","typeName":"Full service \u00b7 30 amp","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Back-in","Extra long"],"x":17,"y":32,"nightly":43},{"number":"14","typeId":"full-service-30","typeName":"Full service \u00b7 30 amp","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Back-in","Extra long"],"x":26.43,"y":32,"nightly":43},{"number":"15","typeId":"full-service-30","typeName":"Full service \u00b7 30 amp","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Back-in","Extra long"],"x":35.86,"y":32,"nightly":43},{"number":"16","typeId":"full-service-30","typeName":"Full service \u00b7 30 amp","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Near the pool"],"x":45.29,"y":32,"nightly":43},{"number":"17","typeId":"full-service-30","typeName":"Full service \u00b7 30 amp","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Near the pool"],"x":54.71,"y":32,"nightly":43},{"number":"18","typeId":"full-service-30","typeName":"Full service \u00b7 30 amp","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Near the pool"],"x":64.14,"y":32,"nightly":43},{"number":"19","typeId":"full-service-30","typeName":"Full service \u00b7 30 amp","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Near washrooms"],"x":73.57,"y":32,"nightly":43},{"number":"20","typeId":"full-service-30","typeName":"Full service \u00b7 30 amp","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Near washrooms"],"x":83,"y":32,"nightly":43},{"number":"21","typeId":"full-service-30","typeName":"Full service \u00b7 30 amp","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Near washrooms"],"x":13,"y":64,"nightly":43},{"number":"22","typeId":"full-service-30","typeName":"Full service \u00b7 30 amp","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Near washrooms"],"x":19.73,"y":64,"nightly":43},{"number":"23","typeId":"full-service-30","typeName":"Full service \u00b7 30 amp","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Near washrooms"],"x":26.45,"y":64,"nightly":43},{"number":"24","typeId":"full-service-30","typeName":"Full service \u00b7 30 amp","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Near washrooms"],"x":33.18,"y":64,"nightly":43},{"number":"25","typeId":"full-service-30","typeName":"Full service \u00b7 30 amp","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Open outlook"],"x":39.91,"y":64,"nightly":43},{"number":"26","typeId":"full-service-30","typeName":"Full service \u00b7 30 amp","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Open outlook"],"x":46.64,"y":64,"nightly":43},{"number":"27","typeId":"full-service-30","typeName":"Full service \u00b7 30 amp","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Open outlook"],"x":53.36,"y":64,"nightly":43},{"number":"28","typeId":"full-service-30","typeName":"Full service \u00b7 30 amp","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Open outlook"],"x":60.09,"y":64,"nightly":43},{"number":"29","typeId":"full-service-30","typeName":"Full service \u00b7 30 amp","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Open outlook"],"x":66.82,"y":64,"nightly":43},{"number":"30","typeId":"full-service-30","typeName":"Full service \u00b7 30 amp","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Quiet end"],"x":73.55,"y":64,"nightly":43},{"number":"31","typeId":"full-service-30","typeName":"Full service \u00b7 30 amp","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Quiet end"],"x":80.27,"y":64,"nightly":43},{"number":"32","typeId":"full-service-30","typeName":"Full service \u00b7 30 amp","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Quiet end"],"x":87,"y":64,"nightly":43},{"number":"33","typeId":"water-only","typeName":"Water only","amps":null,"hookups":["water"],"pullThrough":false,"features":["Water at the site","Tent or car camping"],"x":20,"y":84,"nightly":null},{"number":"34","typeId":"water-only","typeName":"Water only","amps":null,"hookups":["water"],"pullThrough":false,"features":["Water at the site","Tent or car camping"],"x":28.57,"y":84,"nightly":null},{"number":"35","typeId":"tent","typeName":"Unserviced / tent","amps":null,"hookups":[],"pullThrough":false,"features":["Shaded","Water tap nearby"],"x":37.14,"y":84,"nightly":33},{"number":"36","typeId":"tent","typeName":"Unserviced / tent","amps":null,"hookups":[],"pullThrough":false,"features":["Shaded","Water tap nearby"],"x":45.71,"y":84,"nightly":33},{"number":"37","typeId":"tent","typeName":"Unserviced / tent","amps":null,"hookups":[],"pullThrough":false,"features":["Shaded","Water tap nearby"],"x":54.29,"y":84,"nightly":33},{"number":"38","typeId":"tent","typeName":"Unserviced / tent","amps":null,"hookups":[],"pullThrough":false,"features":["Shaded","Water tap nearby"],"x":62.86,"y":84,"nightly":33},{"number":"39","typeId":"tent","typeName":"Unserviced / tent","amps":null,"hookups":[],"pullThrough":false,"features":["Shaded","Water tap nearby"],"x":71.43,"y":84,"nightly":33},{"number":"40","typeId":"tent","typeName":"Unserviced / tent","amps":null,"hookups":[],"pullThrough":false,"features":["Shaded","Water tap nearby"],"x":80,"y":84,"nightly":33}]};
 
   var MAP = {
     data: null,
@@ -2802,12 +2946,16 @@ a { color: inherit; }
     B.config.siteTypes.forEach(function (type) {
       var label = document.createElement('label');
       label.className = 'type';
-      var rate = type.nightly ? money(Math.round(type.nightly * 100)) + ' / night' : 'Rates by phone';
+      var from = typeof type.from === 'number' ? type.from : cheapestNightly(type, B.config.seasons || []);
+      var rate = from ? 'From ' + money(Math.round(from * 100)) + ' / night' : 'Rates by phone';
+      var bookable = type.bookable !== false && from != null;
       label.innerHTML =
-        '<input type="radio" name="siteType" value="' + type.id + '"' + (type.id === B.siteTypeId ? ' checked' : '') + '>' +
+        '<input type="radio" name="siteType" value="' + type.id + '"' + (type.id === B.siteTypeId ? ' checked' : '') +
+        (bookable ? '' : ' disabled') + '>' +
         '<span class="type-name">' + type.name + '</span>' +
-        '<span class="type-rate">' + rate + (type.weekly ? ' · ' + money(Math.round(type.weekly * 100)) + ' / week' : '') + '</span>' +
-        '<span class="type-blurb">' + type.blurb + '</span>';
+        '<span class="type-rate">' + rate + '</span>' +
+        '<span class="type-blurb">' + type.blurb + (bookable ? '' : ' — call to book this one.') + '</span>';
+      if (!bookable) label.style.opacity = '.55';
       label.querySelector('input').addEventListener('change', function () {
         B.siteTypeId = type.id;
         if (B.siteNumber && MAP.data) {
@@ -3098,7 +3246,8 @@ a { color: inherit; }
       .catch(function () { B.demo = true; return DEMO_CONFIG; })
       .then(function (config) {
         B.config = config;
-        B.siteTypeId = config.siteTypes[0].id;
+        var sellable = config.siteTypes.filter(function (t) { return t.bookable !== false; });
+        B.siteTypeId = (sellable[0] || config.siteTypes[0] || {}).id;
         B.cursor = monthStart(todayISO());
 
         var params = new URLSearchParams(window.location.search);
@@ -3115,6 +3264,7 @@ a { color: inherit; }
         }
 
         renderTypes();
+        renderRateCard();
         renderCalendar();
         renderSummary();
         bootMap().then(loadAvailability);

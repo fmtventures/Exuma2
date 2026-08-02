@@ -1,5 +1,5 @@
 {
-  "_comment": "Live rate card. Prices are in whole dollars, before tax. Set every `nightly` value to the campground's real rate before taking bookings — while any bookable site type has a null nightly rate, the server refuses to sell and the website falls back to 'call to book'. `weekly` and `monthly` are optional; when set they replace the nightly rate once a stay reaches 7 or 28 nights. Site inventory below totals 40; adjust the split to match the actual site map.",
+  "_comment": "Rate card. Prices are in whole dollars, before tax, and are given per season: high season is the peak summer band, low season the shoulders either side. A null price means that combination has not been confirmed yet — the server will refuse to sell those dates for that site type and the website will say to call, rather than quoting a number nobody entered. Figures below were taken from the campground's published rates; confirm them against the office before taking live payments, and fill in what is still null.",
 
   "currency": "cad",
   "taxRate": 0.15,
@@ -12,16 +12,21 @@
   "maxGuests": 8,
   "bookingWindowDays": 400,
 
-  "season": { "opens": "04-25", "closes": "11-03" },
+  "season": { "opens": "04-25", "closes": "11-02" },
+
+  "seasons": [
+    { "id": "high", "name": "High season", "ranges": [["06-23", "09-07"]] },
+    { "id": "low", "name": "Low season", "ranges": [["04-25", "06-22"], ["09-08", "11-02"]] }
+  ],
 
   "cancellation": {
-    "guestCancelUntilDays": 2,
-    "refundDepositUntilDays": 7
+    "guestCancelUntilDays": 30,
+    "refundDepositUntilDays": 30
   },
 
   "deposit": {
-    "mode": "first_night",
-    "percent": 0.5
+    "mode": "greater_of",
+    "percent": 0.1
   },
 
   "extras": {
@@ -32,31 +37,40 @@
 
   "siteTypes": [
     {
-      "id": "full-service",
-      "name": "Full service",
-      "blurb": "Power, water and sewer at the pad. Pull-throughs available.",
-      "inventory": 20,
-      "nightly": null,
-      "weekly": null,
-      "monthly": null
+      "id": "full-service-50",
+      "name": "Full service · 50 amp",
+      "blurb": "Three-way site with 50 amp power, water and sewer at the pad.",
+      "inventory": 12,
+      "nightly": { "high": 63, "low": 54 },
+      "weekly": { "high": 385, "low": 325 },
+      "monthly": { "high": null, "low": null }
     },
     {
-      "id": "power-water",
-      "name": "Power & water",
-      "blurb": "Two-way site with 15, 30 or 50 amp power and water.",
-      "inventory": 12,
-      "nightly": null,
-      "weekly": null,
-      "monthly": null
+      "id": "full-service-30",
+      "name": "Full service · 30 amp",
+      "blurb": "Three-way site with 30 amp power, water and sewer.",
+      "inventory": 20,
+      "nightly": { "high": 43, "low": null },
+      "weekly": { "high": 260, "low": null },
+      "monthly": { "high": null, "low": null }
+    },
+    {
+      "id": "water-only",
+      "name": "Water only",
+      "blurb": "Water at the site, no power — good for a tent or car camping.",
+      "inventory": 2,
+      "nightly": { "high": null, "low": null },
+      "weekly": { "high": null, "low": null },
+      "monthly": { "high": null, "low": null }
     },
     {
       "id": "tent",
       "name": "Unserviced / tent",
-      "blurb": "Unserviced pad among the trees. Water nearby.",
-      "inventory": 8,
-      "nightly": null,
-      "weekly": null,
-      "monthly": null
+      "blurb": "Premium unserviced pad among the trees.",
+      "inventory": 6,
+      "nightly": { "high": 40, "low": 33 },
+      "weekly": { "high": 240, "low": 200 },
+      "monthly": { "high": null, "low": null }
     }
   ]
 }

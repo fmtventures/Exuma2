@@ -4,7 +4,7 @@ const path = require('path');
 const express = require('express');
 
 const { assertDate, addDays, today } = require('./dates');
-const { ratesConfigured } = require('./pricing');
+const { ratesConfigured, isPriced, fromRate } = require('./pricing');
 const bookings = require('./bookings');
 const mail = require('./mailer');
 const tokens = require('./tokens');
@@ -54,6 +54,7 @@ function publicRates(rates, { bookingOpen, hasSiteMap }) {
     cancellation: rates.cancellation || {},
     hasSiteMap: Boolean(hasSiteMap),
     extras: rates.extras || {},
+    seasons: rates.seasons || [],
     siteTypes: rates.siteTypes.map((t) => ({
       id: t.id,
       name: t.name,
@@ -62,6 +63,9 @@ function publicRates(rates, { bookingOpen, hasSiteMap }) {
       nightly: t.nightly,
       weekly: t.weekly,
       monthly: t.monthly,
+      // What the chips say, and whether this type can be booked online at all.
+      from: fromRate(rates, t),
+      bookable: isPriced(rates, t),
     })),
   };
 }
