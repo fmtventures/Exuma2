@@ -8,10 +8,12 @@ without any of this. Add the server and the booking section on the page comes
 alive; leave it off and the page tells guests to phone.
 
 ```
-config/rates.json        the rate card and site inventory — the file you edit
+config/rates.json        the rate card — prices, tax, deposit, cancellation
+config/sites.json        the site map — every numbered site and where it sits
 lib/dates.js             calendar-date arithmetic (no time zones, ever)
 lib/pricing.js           nightly/weekly/monthly rates, HST, deposit
-lib/availability.js      how many sites of each type are free, night by night
+lib/availability.js      which sites are free, night by night
+lib/sitemap.js           the site map: validation, inventory, service levels
 lib/calendar.js          Google Calendar as the booking database (+ in-memory twin)
 lib/payments.js          Stripe Checkout and refunds
 lib/mailer.js            confirmation and cancellation email
@@ -48,7 +50,39 @@ should never quote a price nobody entered.
 `config/rates.sample.json` shows the shape with example numbers. Those numbers
 are made up — do not ship them.
 
-### 2. Connect Google Calendar
+### 2. Correct the site map
+
+`config/sites.json` is the campground drawn as data — every numbered site, its
+service level, and where it sits on the property. **The layout that ships is a
+placeholder**: the real map could not be reached when this was built, so the
+numbering, the service split and the positions are a working guess. Replace them
+with the real thing:
+
+```json
+{
+  "number": "14",
+  "typeId": "full-service",
+  "amps": 50,
+  "hookups": ["power", "water", "sewer"],
+  "pullThrough": true,
+  "x": 34, "y": 32,
+  "features": ["Back-in", "Extra long"]
+}
+```
+
+`x` and `y` are percentages across the map area, north at the top — moving a site
+on the website is nudging two numbers. `landmarks`, `roads`, `water` and `trees`
+work the same way and are what gets drawn around the sites.
+
+This file decides how many sites exist. If the rate card disagrees, the map wins
+and the server says so at start-up. Anything invalid — a repeated number, an
+unknown type, a site with no position — stops the server rather than half-loading.
+
+Guests can then filter the map by service (15 / 30 / 50 amp, full service,
+unserviced, pull-through) and click the square they want. If they don't pick one,
+the lowest-numbered free site of the type they chose is assigned automatically.
+
+### 3. Connect Google Calendar
 
 1. In the [Google Cloud console](https://console.cloud.google.com/), create a
    project and enable the **Google Calendar API**.
@@ -65,7 +99,7 @@ The service account is a robot with access to that one calendar and nothing
 else. Share the calendar with the family's own Google accounts as well, so the
 season fills up on everyone's phone.
 
-### 3. Connect Stripe
+### 4. Connect Stripe
 
 1. Stripe dashboard → **Developers → API keys** → copy the **secret key**.
 2. **Developers → Webhooks → Add endpoint**, pointing at
@@ -79,7 +113,7 @@ Testing locally:
 stripe listen --forward-to localhost:3000/api/stripe/webhook
 ```
 
-### 4. Turn on email (optional, but guests expect it)
+### 5. Turn on email (optional, but guests expect it)
 
 Set `SMTP_URL` — for a Gmail or Google Workspace address that means an
 [app password](https://support.google.com/accounts/answer/185833), not the
@@ -98,7 +132,7 @@ working, so set it once and leave it.
 Without SMTP the server keeps taking bookings and prints the emails it would
 have sent to the log — which is how you try the cancellation flow in demo mode.
 
-### 5. Set the environment and start
+### 6. Set the environment and start
 
 Copy `.env.example` to `.env` and fill it in, then:
 
@@ -162,11 +196,18 @@ lapse, so a forgotten checkout never keeps a site off the market.
 
 ## Running it day to day
 
-**Closing sites off.** Create an all-day event on the bookings calendar titled
-`BLOCK tent x2` — that takes two tent sites out of inventory for those dates.
-`BLOCK full-service` blocks one. `BLOCK all — road work` closes everything.
-Ordinary calendar events are ignored, so a dentist appointment on the same
-calendar will not shut the campground.
+**Closing sites off.** Create an all-day event on the bookings calendar:
+
+| Title | What it does |
+| --- | --- |
+| `BLOCK 14` | Takes site 14 off the map for those dates |
+| `BLOCK 14, 15, 16` | Takes all three off |
+| `BLOCK tent x2` | Two tent sites, no particular square |
+| `BLOCK all — road work` | Closes the campground |
+
+Numbered blocks grey out on the map; a type block only reduces what is for sale,
+because it names no square. Ordinary calendar events are ignored, so a dentist
+appointment on the same calendar will not shut the campground.
 
 **Bookings taken by phone.** Enter them the same way you always would; give the
 event the title `BLOCK <site type>` so the website counts them, or take the
@@ -198,6 +239,7 @@ event description.
 | `MAIL_FROM` | no | The From address on guest email. |
 | `OFFICE_EMAIL` | no | Where new-booking notices go. Defaults to the campground address. |
 | `RATES_FILE` | no | Point at a different rate card. |
+| `SITES_FILE` | no | Point at a different site map. |
 | `DEMO` | no | `1` runs the sample-data walkthrough described above. |
 
 Missing Google or Stripe settings do not crash the server — it logs what is
@@ -209,17 +251,19 @@ absent, keeps serving the website, and leaves booking closed.
 npm test
 ```
 
-50 tests over the pricing rules, the availability arithmetic, the booking flow
-end to end, and cancellation — including double-booking, expired holds,
+67 tests over the pricing rules, the availability arithmetic, the site map, and
+the booking and cancellation flows end to end — including selling the same
+square twice, changeover days, hand-written calendar blocks, expired holds,
 replayed webhooks, forged webhooks, a Stripe outage mid-checkout, forged
 cancellation links, double refunds, and a mail server that is down. No network
 access needed.
 
 ## Known limits
 
-- **Availability is counted per site type, not per numbered site.** The website
-  sells "a full-service site"; which one a guest gets is settled at the office.
-  Assigning specific sites would need a booking record per site.
+- **The shipped site map is a placeholder** — real numbering, service levels and
+  positions still need to be entered, as described above.
+- **Without a site map the server falls back to selling by type**, leaving which
+  site a guest gets to be settled at the office.
 - **Email is plain text.** It is written to read well in any mail client, but
   there is no branded HTML version.
 - **Guests cannot change a booking online**, only cancel it. Changing dates

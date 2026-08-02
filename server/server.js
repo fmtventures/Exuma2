@@ -12,6 +12,7 @@ const { GoogleCalendarStore, MemoryCalendarStore } = require('./lib/calendar');
 const { StripePayments } = require('./lib/payments');
 const { ConsoleMailer, SmtpMailer, CAMPGROUND } = require('./lib/mailer');
 const { ratesConfigured } = require('./lib/pricing');
+const sitemap = require('./lib/sitemap');
 
 const DEMO = process.env.DEMO === '1';
 const PORT = Number(process.env.PORT || 3000);
@@ -106,7 +107,30 @@ function buildPayments() {
   return new StripePayments({ stripe, webhookSecret });
 }
 
-const { rates, file } = loadRates();
+/**
+ * The site map is optional. Without it the campground sells "a full-service
+ * site" and sorts out which one at the office; with it, guests pick their own
+ * square and the map is what says how many sites exist.
+ */
+function loadSiteMap(rates) {
+  const file = process.env.SITES_FILE
+    ? path.resolve(process.env.SITES_FILE)
+    : path.join(__dirname, 'config', 'sites.json');
+  if (!fs.existsSync(file)) {
+    console.warn('▸ No site map found — the website will sell by site type only.');
+    return null;
+  }
+  const map = sitemap.validate(JSON.parse(fs.readFileSync(file, 'utf8')), rates);
+  console.log(`▸ Site map: ${map.sites.length} sites from ${path.basename(file)}`);
+  return map;
+}
+
+const { rates: cardRates, file } = loadRates();
+const siteMap = loadSiteMap(cardRates);
+// The map is what can be walked and counted, so it settles how many sites of
+// each type exist; the rate card settles what they cost.
+const rates = siteMap ? sitemap.reconcile(siteMap, cardRates) : cardRates;
+
 if (!ratesConfigured(rates)) {
   console.warn(`▸ No rates set in ${file} — online booking stays closed until every site type has a nightly rate.`);
 }
@@ -162,6 +186,7 @@ const app = createApp({
   payments,
   mailer,
   secret,
+  siteMap,
   staticDir: STATIC_DIR,
   publicUrl: PUBLIC_URL,
 });

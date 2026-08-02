@@ -1094,6 +1094,183 @@ a { color: inherit; }
 }
 .book-error:empty { display: none; }
 
+/* ---------- site map ---------- */
+
+.map-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1.75rem 0 1rem;
+}
+.chip {
+  font-family: var(--ff-data);
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.45rem 0.8rem;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  color: var(--spruce-70);
+  cursor: pointer;
+  transition: border-color .2s ease, color .2s ease, background .2s ease;
+}
+.chip:hover { border-color: var(--tide); color: var(--spruce); }
+.chip[aria-pressed="true"] { background: var(--tide-deep); border-color: var(--tide-deep); color: var(--panel); }
+.map-tools .spacer { margin-left: auto; }
+.map-dates {
+  font-family: var(--ff-data);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  color: var(--spruce-45);
+  text-align: right;
+}
+
+.map-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+@media (max-width: 720px) {
+  .map-frame { aspect-ratio: 3 / 4; }
+  /* Twelve pads across a phone: shrink them so a row reads as a row of sites
+     rather than one long block. */
+  .pad { min-width: 1.45rem; font-size: 0.5625rem; padding: 0.2rem 0.15rem; }
+  .map-label { font-size: 0.5rem; letter-spacing: 0.08em; }
+  .site-card { width: min(13rem, 62vw); }
+}
+.map-frame svg.backdrop { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+.pad {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  min-width: 2.15rem;
+  padding: 0.3rem 0.35rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--panel);
+  border: 1px solid var(--spruce-45);
+  border-radius: 3px;
+  font-family: var(--ff-data);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--spruce);
+  cursor: pointer;
+  transition: transform .18s cubic-bezier(.32,.72,0,1), background .18s ease, border-color .18s ease, color .18s ease, opacity .18s ease;
+}
+.pad:hover:not(:disabled), .pad:focus-visible { transform: translate(-50%, -50%) scale(1.22); z-index: 5; border-color: var(--tide); }
+.pad.free { border-color: var(--tide); color: var(--tide-deep); }
+.pad.taken { background: transparent; border-style: dashed; border-color: var(--rule); color: var(--spruce-45); cursor: not-allowed; }
+.pad.taken::after {
+  content: "";
+  position: absolute;
+  inset: 45% 12% auto;
+  height: 1px;
+  background: var(--spruce-45);
+}
+.pad.chosen {
+  background: var(--clay);
+  border-color: var(--clay);
+  color: #FBF8F2;
+  transform: translate(-50%, -50%) scale(1.25);
+  z-index: 6;
+  box-shadow: 0 4px 14px -4px rgba(0,0,0,.4);
+}
+.pad.dimmed { opacity: .22; }
+.pad.pull::before {
+  content: "";
+  position: absolute;
+  top: -3px; right: -3px;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--tide);
+}
+
+.map-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-family: var(--ff-data);
+  font-size: 0.5625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--spruce-45);
+  text-align: center;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.map-label.water { color: var(--tide-deep); opacity: .9; }
+.map-label.inside { white-space: normal; line-height: 1.25; letter-spacing: 0.08em; }
+.map-label.edge { transform: translate(0, -50%); }
+
+.site-card {
+  position: absolute;
+  z-index: 20;
+  width: min(15rem, 68vw);
+  background: var(--panel);
+  border: 1px solid var(--spruce);
+  border-radius: 3px;
+  box-shadow: 0 12px 30px -12px rgba(0,0,0,.45);
+  padding: 0.9rem 1rem;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity .16s ease, transform .16s ease;
+}
+.site-card[data-open="true"] { opacity: 1; transform: translateY(0); }
+.site-card h4 {
+  font-family: var(--ff-sign);
+  font-size: 0.9375rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 0 0 0.15rem;
+}
+.site-card .svc { display: block; font-family: var(--ff-data); font-size: 0.5625rem; letter-spacing: 0.08em; line-height: 1.5; text-transform: uppercase; color: var(--tide-deep); }
+.site-card ul { list-style: none; margin: 0.6rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.site-card li {
+  font-family: var(--ff-data);
+  font-size: 0.625rem;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.45rem;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  color: var(--spruce-70);
+}
+.site-card .state { margin: 0.6rem 0 0; font-size: 0.8125rem; color: var(--spruce-70); }
+.site-card .state strong { color: var(--clay); }
+
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.25rem;
+  margin-top: 1rem;
+  font-family: var(--ff-data);
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--spruce-45);
+}
+.map-legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
+.map-legend i { width: 14px; height: 12px; border-radius: 2px; display: inline-block; border: 1px solid var(--tide); }
+.map-legend i.k-taken { border: 1px dashed var(--rule); }
+.map-legend i.k-chosen { background: var(--clay); border-color: var(--clay); }
+.map-legend i.k-pull { border: none; background: var(--tide); width: 6px; height: 6px; border-radius: 50%; }
+
+.map-note {
+  margin-top: 1rem;
+  font-size: 0.9375rem;
+  color: var(--spruce-70);
+  max-width: 62ch;
+}
+.map-note strong { font-family: var(--ff-sign); text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.875rem; }
+
 .cancel-panel {
   max-width: 44rem;
   margin-top: 1.75rem;
@@ -1552,6 +1729,26 @@ a { color: inherit; }
               <span><i class="k-full"></i>Full</span>
               <span><i class="k-closed"></i>Closed</span>
             </p>
+          </div>
+
+          <div class="step" id="map">
+            <p class="step-label">Your spot<span class="hint" id="mapHint">Pick your dates, then choose a site</span></p>
+
+            <div class="map-tools" id="mapTools"></div>
+
+            <div class="map-frame" id="mapFrame">
+              <svg class="backdrop" id="mapBackdrop" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+              <div id="mapPads"></div>
+              <div class="site-card" id="siteCard" role="status" aria-live="polite"></div>
+            </div>
+
+            <p class="map-legend">
+              <span><i></i>Open</span>
+              <span><i class="k-taken"></i>Taken</span>
+              <span><i class="k-chosen"></i>Your site</span>
+              <span><i class="k-pull"></i>Pull-through</span>
+            </p>
+            <p class="map-note" id="mapNote"></p>
           </div>
 
           <div class="step">
@@ -2014,6 +2211,8 @@ a { color: inherit; }
     config: null,
     demo: false,
     grid: {},
+    siteGrid: null,
+    siteNumber: null,
     siteTypeId: null,
     arrival: null,
     departure: null,
@@ -2162,6 +2361,325 @@ a { color: inherit; }
     return false;
   }
 
+  /* ---------- the site map ----------
+     The layout is data: every square, its service level and its position come
+     from the campground's own map file. The copy baked in below is the same
+     file, so the map still draws when the page is opened without a server. */
+
+  var BAKED_SITE_MAP = {"bounds":{"width":100,"height":100},"water":[{"kind":"ocean","label":"Atlantic Ocean","points":[[0,0],[100,0],[100,5],[70,7],[30,5],[0,7]]},{"kind":"lake","label":"North Lake","points":[[0,14],[8,16],[10,30],[6,44],[0,46]]}],"roads":[{"label":"Entrance","points":[[4,100],[8,92],[10,84]]},{"label":"Loop","points":[[10,84],[10,74],[10,45],[10,24],[24,22],[50,22],[76,22],[92,24],[92,45],[92,74],[92,84],[60,86],[30,86],[10,84]]},{"label":"Mid road","points":[[10,45],[30,44],[60,44],[92,45]]},{"label":"Back lane","points":[[10,74],[40,75],[70,74],[92,74]]}],"landmarks":[{"id":"office","name":"Office","icon":"office","x":13,"y":93,"note":"Stop here first \u2014 firewood and ice too","w":10,"h":5},{"id":"pool","name":"Pool","icon":"pool","x":50,"y":53,"w":16,"h":9,"note":"Open late June to mid-September"},{"id":"washrooms","name":"Showers","icon":"showers","x":24,"y":53,"w":11,"h":7,"note":"Open all season, included with your site"},{"id":"laundry","name":"Laundry","icon":"laundry","x":38,"y":53,"w":8,"h":6},{"id":"playground","name":"Playground","icon":"playground","x":72,"y":53,"w":13,"h":8},{"id":"rec-hall","name":"Rec hall","icon":"hall","x":12,"y":56,"w":9,"h":6},{"id":"shop","name":"Ice cream & art","icon":"shop","x":40,"y":93,"w":13,"h":5},{"id":"dump","name":"Dump station","icon":"dump","x":82,"y":93,"w":12,"h":5},{"id":"beach-path","name":"Path to the shore","icon":"path","x":62,"y":9,"note":"A few minutes' walk to the water"}],"trees":[[5,58],[5,66],[5,88],[16,72],[30,72],[44,72],[58,72],[72,72],[86,72],[95,58],[95,66],[95,88],[16,9],[92,9],[4,34],[96,34],[24,90],[60,90],[70,90],[95,44]],"sites":[{"number":"1","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side","Corner site"],"x":13,"y":15,"nightly":null},{"number":"2","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":19.73,"y":15,"nightly":null},{"number":"3","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":26.45,"y":15,"nightly":null},{"number":"4","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":33.18,"y":15,"nightly":null},{"number":"5","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":39.91,"y":15,"nightly":null},{"number":"6","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":46.64,"y":15,"nightly":null},{"number":"7","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":53.36,"y":15,"nightly":null},{"number":"8","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":60.09,"y":15,"nightly":null},{"number":"9","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":66.82,"y":15,"nightly":null},{"number":"10","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":73.55,"y":15,"nightly":null},{"number":"11","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side"],"x":80.27,"y":15,"nightly":null},{"number":"12","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":true,"features":["Pull-through","Ocean side","Corner site"],"x":87,"y":15,"nightly":null},{"number":"13","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Back-in","Extra long"],"x":17,"y":32,"nightly":null},{"number":"14","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Back-in","Extra long"],"x":26.43,"y":32,"nightly":null},{"number":"15","typeId":"full-service","typeName":"Full service","amps":50,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Back-in","Extra long"],"x":35.86,"y":32,"nightly":null},{"number":"16","typeId":"full-service","typeName":"Full service","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Near the pool"],"x":45.29,"y":32,"nightly":null},{"number":"17","typeId":"full-service","typeName":"Full service","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Near the pool"],"x":54.71,"y":32,"nightly":null},{"number":"18","typeId":"full-service","typeName":"Full service","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Near the pool"],"x":64.14,"y":32,"nightly":null},{"number":"19","typeId":"full-service","typeName":"Full service","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Back-in"],"x":73.57,"y":32,"nightly":null},{"number":"20","typeId":"full-service","typeName":"Full service","amps":30,"hookups":["power","water","sewer"],"pullThrough":false,"features":["Back-in"],"x":83,"y":32,"nightly":null},{"number":"21","typeId":"power-water","typeName":"Power & water","amps":30,"hookups":["power","water"],"pullThrough":false,"features":["Near washrooms"],"x":13,"y":64,"nightly":null},{"number":"22","typeId":"power-water","typeName":"Power & water","amps":30,"hookups":["power","water"],"pullThrough":false,"features":["Near washrooms"],"x":19.73,"y":64,"nightly":null},{"number":"23","typeId":"power-water","typeName":"Power & water","amps":30,"hookups":["power","water"],"pullThrough":false,"features":["Near washrooms"],"x":26.45,"y":64,"nightly":null},{"number":"24","typeId":"power-water","typeName":"Power & water","amps":30,"hookups":["power","water"],"pullThrough":false,"features":["Near washrooms"],"x":33.18,"y":64,"nightly":null},{"number":"25","typeId":"power-water","typeName":"Power & water","amps":30,"hookups":["power","water"],"pullThrough":false,"features":["Open outlook"],"x":39.91,"y":64,"nightly":null},{"number":"26","typeId":"power-water","typeName":"Power & water","amps":30,"hookups":["power","water"],"pullThrough":false,"features":["Open outlook"],"x":46.64,"y":64,"nightly":null},{"number":"27","typeId":"power-water","typeName":"Power & water","amps":30,"hookups":["power","water"],"pullThrough":false,"features":["Open outlook"],"x":53.36,"y":64,"nightly":null},{"number":"28","typeId":"power-water","typeName":"Power & water","amps":30,"hookups":["power","water"],"pullThrough":false,"features":["Open outlook"],"x":60.09,"y":64,"nightly":null},{"number":"29","typeId":"power-water","typeName":"Power & water","amps":15,"hookups":["power","water"],"pullThrough":false,"features":["Open outlook"],"x":66.82,"y":64,"nightly":null},{"number":"30","typeId":"power-water","typeName":"Power & water","amps":15,"hookups":["power","water"],"pullThrough":false,"features":["Quiet end"],"x":73.55,"y":64,"nightly":null},{"number":"31","typeId":"power-water","typeName":"Power & water","amps":15,"hookups":["power","water"],"pullThrough":false,"features":["Quiet end"],"x":80.27,"y":64,"nightly":null},{"number":"32","typeId":"power-water","typeName":"Power & water","amps":15,"hookups":["power","water"],"pullThrough":false,"features":["Quiet end"],"x":87,"y":64,"nightly":null},{"number":"33","typeId":"tent","typeName":"Unserviced / tent","amps":null,"hookups":[],"pullThrough":false,"features":["Shaded","Water tap nearby"],"x":20,"y":84,"nightly":null},{"number":"34","typeId":"tent","typeName":"Unserviced / tent","amps":null,"hookups":[],"pullThrough":false,"features":["Shaded","Water tap nearby"],"x":28.57,"y":84,"nightly":null},{"number":"35","typeId":"tent","typeName":"Unserviced / tent","amps":null,"hookups":[],"pullThrough":false,"features":["Shaded","Water tap nearby"],"x":37.14,"y":84,"nightly":null},{"number":"36","typeId":"tent","typeName":"Unserviced / tent","amps":null,"hookups":[],"pullThrough":false,"features":["Shaded","Water tap nearby"],"x":45.71,"y":84,"nightly":null},{"number":"37","typeId":"tent","typeName":"Unserviced / tent","amps":null,"hookups":[],"pullThrough":false,"features":["Shaded","Water tap nearby"],"x":54.29,"y":84,"nightly":null},{"number":"38","typeId":"tent","typeName":"Unserviced / tent","amps":null,"hookups":[],"pullThrough":false,"features":["Shaded","Water tap nearby"],"x":62.86,"y":84,"nightly":null},{"number":"39","typeId":"tent","typeName":"Unserviced / tent","amps":null,"hookups":[],"pullThrough":false,"features":["Shaded","Water tap nearby"],"x":71.43,"y":84,"nightly":null},{"number":"40","typeId":"tent","typeName":"Unserviced / tent","amps":null,"hookups":[],"pullThrough":false,"features":["Shaded","Water tap nearby"],"x":80,"y":84,"nightly":null}]};
+
+  var MAP = {
+    data: null,
+    filters: { typeId: null, amps: null, pullThrough: false },
+    hover: null
+  };
+
+  var mapEl = {
+    tools: document.getElementById('mapTools'),
+    frame: document.getElementById('mapFrame'),
+    backdrop: document.getElementById('mapBackdrop'),
+    pads: document.getElementById('mapPads'),
+    card: document.getElementById('siteCard'),
+    hint: document.getElementById('mapHint'),
+    note: document.getElementById('mapNote')
+  };
+
+  function svgEl(name, attrs) {
+    var node = document.createElementNS('http://www.w3.org/2000/svg', name);
+    Object.keys(attrs).forEach(function (k) { node.setAttribute(k, attrs[k]); });
+    return node;
+  }
+
+  function serviceLabel(site) {
+    if (!site.hookups.length) return 'Unserviced';
+    var power = site.amps ? site.amps + ' amp' : 'power';
+    if (site.hookups.indexOf('sewer') > -1) return 'Full service · ' + power;
+    if (site.hookups.indexOf('water') > -1) return 'Power & water · ' + power;
+    return power;
+  }
+
+  function drawBackdrop() {
+    var svg = mapEl.backdrop;
+    svg.innerHTML = '';
+    var ink = getComputedStyle(document.documentElement);
+
+    // faint chart grid
+    for (var g = 10; g < 100; g += 10) {
+      svg.appendChild(svgEl('line', { x1: g, y1: 0, x2: g, y2: 100, stroke: 'currentColor', 'stroke-width': 0.15, opacity: 0.12 }));
+      svg.appendChild(svgEl('line', { x1: 0, y1: g, x2: 100, y2: g, stroke: 'currentColor', 'stroke-width': 0.15, opacity: 0.12 }));
+    }
+
+    (MAP.data.water || []).forEach(function (body) {
+      var points = body.points.map(function (p) { return p.join(','); }).join(' ');
+      svg.appendChild(svgEl('polygon', {
+        points: body.kind === 'ocean' ? points + ' 100,0 0,0' : points,
+        fill: 'var(--tide)',
+        opacity: body.kind === 'ocean' ? 0.3 : 0.35
+      }));
+    });
+
+    (MAP.data.roads || []).forEach(function (road) {
+      svg.appendChild(svgEl('polyline', {
+        points: road.points.map(function (p) { return p.join(','); }).join(' '),
+        fill: 'none',
+        stroke: 'var(--spruce-45)',
+        'stroke-width': 1.9,
+        'stroke-linejoin': 'round',
+        'stroke-linecap': 'round',
+        opacity: 0.45
+      }));
+    });
+
+    (MAP.data.landmarks || []).forEach(function (mark) {
+      if (!mark.w) return;
+      svg.appendChild(svgEl('rect', {
+        x: mark.x - mark.w / 2, y: mark.y - mark.h / 2, width: mark.w, height: mark.h, rx: 1.2,
+        fill: mark.id === 'pool' ? 'var(--tide)' : 'var(--sand-deep)',
+        opacity: mark.id === 'pool' ? 0.55 : 0.9,
+        stroke: 'var(--rule)', 'stroke-width': 0.3
+      }));
+    });
+  }
+
+  function drawFurniture() {
+    // Trees, landmark names and water labels are HTML so they stay round and
+    // readable however the frame is stretched.
+    (MAP.data.trees || []).forEach(function (t) {
+      var dot = document.createElement('span');
+      dot.className = 'map-label';
+      dot.style.left = t[0] + '%';
+      dot.style.top = t[1] + '%';
+      dot.style.color = 'var(--tide-deep)';
+      dot.style.opacity = '.5';
+      dot.style.fontSize = '0.75rem';
+      dot.textContent = '▲';
+      mapEl.pads.appendChild(dot);
+    });
+
+    (MAP.data.landmarks || []).forEach(function (mark) {
+      var label = document.createElement('span');
+      label.className = 'map-label' + (mark.w ? ' inside' : '');
+      label.style.left = mark.x + '%';
+      label.style.top = (mark.w ? mark.y : mark.y + 3) + '%';
+      if (mark.w) label.style.maxWidth = 'calc(' + mark.w + '% + 1rem)';
+      if (mark.id === 'pool') label.style.color = 'var(--panel)';
+      label.textContent = mark.name;
+      label.title = mark.note || mark.name;
+      mapEl.pads.appendChild(label);
+    });
+
+    (MAP.data.water || []).forEach(function (body) {
+      if (!body.label) return;
+      var xs = body.points.map(function (p) { return p[0]; });
+      var ys = body.points.map(function (p) { return p[1]; });
+      var label = document.createElement('span');
+      label.className = 'map-label water' + (body.kind === 'ocean' ? '' : ' edge');
+      label.style.left = (body.kind === 'ocean' ? 50 : 1) + '%';
+      label.style.top = (body.kind === 'ocean' ? 2.5 : 50) + '%';
+      label.textContent = body.label;
+      mapEl.pads.appendChild(label);
+    });
+  }
+
+  /** Free, taken, or not known yet because no dates are chosen. */
+  function siteState(site) {
+    if (!B.arrival || !B.departure) return 'unknown';
+    if (!B.siteGrid) return 'unknown';
+    for (var d = B.arrival; d < B.departure; d = addDays(d, 1)) {
+      var night = B.siteGrid[d];
+      if (!night) return 'unknown';
+      if (night.taken.indexOf(String(site.number)) > -1) return 'taken';
+    }
+    return 'free';
+  }
+
+  function passesFilters(site) {
+    var f = MAP.filters;
+    if (f.typeId && site.typeId !== f.typeId) return false;
+    if (f.amps && site.amps !== f.amps) return false;
+    if (f.pullThrough && !site.pullThrough) return false;
+    return true;
+  }
+
+  function renderPads() {
+    mapEl.pads.innerHTML = '';
+    drawFurniture();
+
+    MAP.data.sites.forEach(function (site) {
+      var state = siteState(site);
+      var shown = passesFilters(site);
+
+      var pad = document.createElement('button');
+      pad.type = 'button';
+      pad.className = 'pad ' + (state === 'taken' ? 'taken' : state === 'free' ? 'free' : '');
+      if (site.pullThrough) pad.classList.add('pull');
+      if (!shown) pad.classList.add('dimmed');
+      if (B.siteNumber === site.number) pad.classList.add('chosen');
+      pad.style.left = site.x + '%';
+      pad.style.top = site.y + '%';
+      pad.textContent = site.number;
+      pad.disabled = state === 'taken' || !shown;
+
+      pad.setAttribute('aria-label',
+        'Site ' + site.number + ', ' + serviceLabel(site) +
+        (state === 'taken' ? ', taken for your dates' : state === 'free' ? ', open for your dates' : '') +
+        (site.features.length ? ', ' + site.features.join(', ') : ''));
+
+      pad.addEventListener('mouseenter', function () { showSiteCard(site, pad, state); });
+      pad.addEventListener('focus', function () { showSiteCard(site, pad, state); });
+      pad.addEventListener('mouseleave', hideSiteCard);
+      pad.addEventListener('blur', hideSiteCard);
+      pad.addEventListener('click', function () { chooseSite(site); });
+
+      mapEl.pads.appendChild(pad);
+    });
+
+    renderMapNote();
+  }
+
+  function showSiteCard(site, pad, state) {
+    var price = site.nightly ? money(Math.round(site.nightly * 100)) + ' / night' : 'Rates by phone';
+    var status = state === 'taken'
+      ? '<strong>Taken</strong> for your dates.'
+      : state === 'free'
+        ? 'Open for your dates — click to choose it.'
+        : 'Pick your dates above to see if it\'s free.';
+
+    mapEl.card.innerHTML =
+      '<h4>Site ' + site.number + '</h4>' +
+      '<span class="svc">' + serviceLabel(site) + ' · ' + price + '</span>' +
+      (site.features.length
+        ? '<ul>' + site.features.map(function (f) { return '<li>' + f + '</li>'; }).join('') + '</ul>'
+        : '') +
+      '<p class="state">' + status + '</p>';
+
+    var frame = mapEl.frame.getBoundingClientRect();
+    var spot = pad.getBoundingClientRect();
+    var left = spot.left - frame.left + spot.width / 2;
+    var top = spot.top - frame.top;
+
+    mapEl.card.style.left = Math.min(Math.max(left - 120, 8), Math.max(8, frame.width - 250)) + 'px';
+    mapEl.card.style.top = (top > frame.height * 0.55 ? top - mapEl.card.offsetHeight - 12 : top + spot.height + 12) + 'px';
+    mapEl.card.setAttribute('data-open', 'true');
+  }
+
+  function hideSiteCard() {
+    mapEl.card.setAttribute('data-open', 'false');
+  }
+
+  function chooseSite(site) {
+    B.siteNumber = site.number;
+    B.siteTypeId = site.typeId;
+
+    var radio = el.typeList.querySelector('input[value="' + site.typeId + '"]');
+    if (radio) radio.checked = true;
+
+    renderPads();
+    renderSummary();
+    refreshQuote();
+  }
+
+  function renderMapNote() {
+    if (!B.arrival || !B.departure) {
+      mapEl.hint.textContent = 'Pick your dates, then choose a site';
+      mapEl.note.innerHTML = 'Every site is drawn where it sits on the property. Choose your dates above and the map will grey out whatever is already spoken for.';
+      return;
+    }
+
+    var open = MAP.data.sites.filter(function (s) { return siteState(s) === 'free' && passesFilters(s); }).length;
+    mapEl.hint.textContent = open + (open === 1 ? ' site open' : ' sites open') + ' for your dates';
+    mapEl.note.innerHTML = B.siteNumber
+      ? '<strong>Site ' + B.siteNumber + ' selected.</strong> Add your details below to hold it.'
+      : 'Click any open site to claim it, or leave it to us and we\'ll put you on the best free one.';
+  }
+
+  function renderMapTools() {
+    mapEl.tools.innerHTML = '';
+
+    var groups = [{ label: 'All sites', apply: { typeId: null, amps: null, pullThrough: false } }];
+    MAP.data.sites.reduce(function (seen, site) {
+      if (seen.indexOf(site.typeId) === -1) {
+        seen.push(site.typeId);
+        groups.push({ label: site.typeName, apply: { typeId: site.typeId } });
+      }
+      return seen;
+    }, []);
+
+    var amps = [];
+    MAP.data.sites.forEach(function (s) { if (s.amps && amps.indexOf(s.amps) === -1) amps.push(s.amps); });
+    amps.sort(function (a, b) { return a - b; }).forEach(function (a) {
+      groups.push({ label: a + ' amp', apply: { amps: a } });
+    });
+    if (MAP.data.sites.some(function (s) { return s.pullThrough; })) {
+      groups.push({ label: 'Pull-through', apply: { pullThrough: true }, toggle: true });
+    }
+
+    groups.forEach(function (group) {
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip';
+      chip.textContent = group.label;
+
+      var isOn = function () {
+        var f = MAP.filters;
+        if (group.toggle) return f.pullThrough;
+        if (group.apply.typeId) return f.typeId === group.apply.typeId;
+        if (group.apply.amps) return f.amps === group.apply.amps;
+        return !f.typeId && !f.amps && !f.pullThrough;
+      };
+      chip.setAttribute('aria-pressed', String(isOn()));
+
+      chip.addEventListener('click', function () {
+        if (group.toggle) {
+          MAP.filters.pullThrough = !MAP.filters.pullThrough;
+        } else if (group.apply.typeId) {
+          MAP.filters.typeId = MAP.filters.typeId === group.apply.typeId ? null : group.apply.typeId;
+        } else if (group.apply.amps) {
+          MAP.filters.amps = MAP.filters.amps === group.apply.amps ? null : group.apply.amps;
+        } else {
+          MAP.filters = { typeId: null, amps: null, pullThrough: false };
+        }
+        renderMapTools();
+        renderPads();
+      });
+
+      mapEl.tools.appendChild(chip);
+    });
+  }
+
+  /** Sample occupancy, so the map is explorable with no server behind it. */
+  function synthSiteGrid(from, to) {
+    var grid = {};
+    for (var d = from; d <= to; d = addDays(d, 1)) {
+      var taken = [];
+      MAP.data.sites.forEach(function (site, i) {
+        var seed = (toMs(d) / 86400000 + i * 7) % 9;
+        if (seed < 3) taken.push(site.number);
+      });
+      grid[d] = { taken: taken, typeHolds: {} };
+    }
+    return grid;
+  }
+
+  function bootMap() {
+    var source = B.demo
+      ? Promise.reject(new Error('sample mode'))
+      : getJSON('/api/sites');
+
+    return source
+      .catch(function () { return BAKED_SITE_MAP; })
+      .then(function (data) {
+        if (!data || !data.sites || !data.sites.length) {
+          document.getElementById('map').hidden = true;
+          return;
+        }
+        MAP.data = data;
+        drawBackdrop();
+        renderMapTools();
+        renderPads();
+      });
+  }
+
   /* -- the cancellation link from a confirmation email lands here -- */
   var cancelEl = {
     panel: document.getElementById('cancelPanel'),
@@ -2292,7 +2810,12 @@ a { color: inherit; }
         '<span class="type-blurb">' + type.blurb + '</span>';
       label.querySelector('input').addEventListener('change', function () {
         B.siteTypeId = type.id;
+        if (B.siteNumber && MAP.data) {
+          var chosen = MAP.data.sites.filter(function (s) { return s.number === B.siteNumber; })[0];
+          if (!chosen || chosen.typeId !== type.id) B.siteNumber = null;
+        }
         renderCalendar();
+        if (MAP.data) renderPads();
         refreshQuote();
       });
       el.typeList.appendChild(label);
@@ -2415,6 +2938,7 @@ a { color: inherit; }
     }
 
     renderCalendar();
+    if (MAP.data) renderPads();
     renderSummary();
     refreshQuote();
   }
@@ -2426,7 +2950,8 @@ a { color: inherit; }
       var n = nightsBetween(B.arrival, B.departure);
       el.nights.textContent = n + (n === 1 ? ' night' : ' nights');
       el.dates.innerHTML = longDate(B.arrival) + ' &rarr; ' + longDate(B.departure) +
-        '<br><span class="muted">' + guests + (guests === 1 ? ' guest' : ' guests') + '</span>';
+        '<br><span class="muted">' + guests + (guests === 1 ? ' guest' : ' guests') +
+        (B.siteNumber ? ' · Site ' + B.siteNumber : '') + '</span>';
     } else if (B.arrival) {
       el.nights.textContent = '—';
       el.dates.innerHTML = 'Arriving ' + longDate(B.arrival) + '<br><span class="muted">Now pick your departure day.</span>';
@@ -2513,12 +3038,19 @@ a { color: inherit; }
 
     if (B.demo) {
       Object.assign(B.grid, synthAvailability(from, to));
+      if (MAP.data) B.siteGrid = Object.assign(B.siteGrid || {}, synthSiteGrid(from, to));
       renderCalendar();
+      if (MAP.data) renderPads();
       return Promise.resolve();
     }
 
     return getJSON('/api/availability?from=' + from + '&to=' + to)
-      .then(function (res) { Object.assign(B.grid, res.grid); renderCalendar(); })
+      .then(function (res) {
+        Object.assign(B.grid, res.grid);
+        if (res.sites) B.siteGrid = Object.assign(B.siteGrid || {}, res.sites);
+        renderCalendar();
+        if (MAP.data) renderPads();
+      })
       .catch(function () {
         el.error.textContent = 'We couldn\'t load the calendar just now. Please call (902) 327-0356 and we\'ll book you in.';
       });
@@ -2530,6 +3062,7 @@ a { color: inherit; }
 
     var body = {
       siteTypeId: B.siteTypeId,
+      siteNumber: B.siteNumber,
       arrival: B.arrival,
       departure: B.departure,
       guests: Number(document.getElementById('b-guests').value || 1),
@@ -2547,8 +3080,9 @@ a { color: inherit; }
     getJSON('/api/checkout', { method: 'POST', body: JSON.stringify(body) })
       .then(function (res) { window.location.href = res.url; })
       .catch(function (err) {
-        el.error.textContent = err.message + (err.code === 'unavailable' ? ' Someone may have just taken it — please pick again.' : '');
-        if (err.code === 'unavailable') { B.departure = null; loadAvailability(); }
+        el.error.textContent = err.message;
+        if (err.code === 'site_taken') { B.siteNumber = null; loadAvailability(); }
+        else if (err.code === 'unavailable') { B.departure = null; loadAvailability(); }
         renderSummary();
       });
   }
@@ -2583,7 +3117,7 @@ a { color: inherit; }
         renderTypes();
         renderCalendar();
         renderSummary();
-        loadAvailability();
+        bootMap().then(loadAvailability);
 
         el.prev.addEventListener('click', function () { B.cursor = addMonths(B.cursor, -1); renderCalendar(); loadAvailability(); });
         el.next.addEventListener('click', function () { B.cursor = addMonths(B.cursor, 1); renderCalendar(); loadAvailability(); });

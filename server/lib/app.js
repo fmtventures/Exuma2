@@ -8,6 +8,7 @@ const { ratesConfigured } = require('./pricing');
 const bookings = require('./bookings');
 const mail = require('./mailer');
 const tokens = require('./tokens');
+const sitemap = require('./sitemap');
 
 /**
  * The booking API. Built as a factory so the tests can drive it with a memory
@@ -35,7 +36,7 @@ function rateLimiter({ windowMs = 60000, max = 20 } = {}) {
   };
 }
 
-function publicRates(rates, { bookingOpen }) {
+function publicRates(rates, { bookingOpen, hasSiteMap }) {
   return {
     bookingOpen,
     currency: rates.currency,
@@ -51,6 +52,7 @@ function publicRates(rates, { bookingOpen }) {
     depositMode: (rates.deposit && rates.deposit.mode) || 'first_night',
     holdMinutes: bookings.HOLD_MINUTES,
     cancellation: rates.cancellation || {},
+    hasSiteMap: Boolean(hasSiteMap),
     extras: rates.extras || {},
     siteTypes: rates.siteTypes.map((t) => ({
       id: t.id,
@@ -73,9 +75,16 @@ function sendError(res, err) {
   });
 }
 
-function createApp({ rates, store, payments, mailer, secret, staticDir, publicUrl }) {
+function createApp({ rates, store, payments, mailer, secret, siteMap, staticDir, publicUrl }) {
   const app = express();
-  const deps = { rates, store, payments, secret: secret || 'insecure-development-secret' };
+  const deps = {
+    rates,
+    store,
+    payments,
+    secret: secret || 'insecure-development-secret',
+    siteMap: siteMap || null,
+    siteIndex: siteMap ? sitemap.index(siteMap) : null,
+  };
   const bookingOpen = Boolean(payments) && ratesConfigured(rates);
 
   app.set('trust proxy', 1);
@@ -127,7 +136,13 @@ function createApp({ rates, store, payments, mailer, secret, staticDir, publicUr
   });
 
   app.get('/api/config', (req, res) => {
-    res.json(publicRates(rates, { bookingOpen }));
+    res.json(publicRates(rates, { bookingOpen, hasSiteMap: Boolean(deps.siteMap) }));
+  });
+
+  app.get('/api/sites', (req, res) => {
+    if (!deps.siteMap) return res.status(404).json({ error: 'No site map is configured', code: 'no_site_map' });
+    res.set('Cache-Control', 'public, max-age=300');
+    res.json(sitemap.publicMap(deps.siteMap, rates));
   });
 
   app.get('/api/availability', async (req, res) => {
@@ -137,9 +152,9 @@ function createApp({ rates, store, payments, mailer, secret, staticDir, publicUr
       if (to < from) throw Object.assign(new Error('`to` must not precede `from`'), { status: 400, code: 'bad_range' });
       const capped = to > addDays(from, AVAILABILITY_MAX_DAYS) ? addDays(from, AVAILABILITY_MAX_DAYS) : to;
 
-      const grid = await bookings.availabilityWindow(deps, from, capped);
+      const window = await bookings.availabilityWindow(deps, from, capped);
       res.set('Cache-Control', 'no-store');
-      res.json({ from, to: capped, bookingOpen, grid });
+      res.json({ from, to: capped, bookingOpen, grid: window.grid, sites: window.sites });
     } catch (err) {
       sendError(res, err);
     }

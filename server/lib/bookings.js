@@ -4,7 +4,13 @@ const crypto = require('crypto');
 const { assertDate, addDays, nights, today, inSeason, eachNight } = require('./dates');
 const tokens = require('./tokens');
 const { quote, ratesConfigured } = require('./pricing');
-const { computeAvailability, isStayAvailable, unavailableNights } = require('./availability');
+const {
+  computeAvailability,
+  computeSiteOccupancy,
+  freeSitesForStay,
+  isStayAvailable,
+  unavailableNights,
+} = require('./availability');
 
 // Stripe will not expire a Checkout Session sooner than 30 minutes, so the
 // hold has to outlast that or a lapsed hold could still take a payment.
@@ -86,11 +92,12 @@ function validate(rates, input, now = Date.now()) {
 }
 
 /** Price plus an availability check, without holding anything. Drives the live summary on the page. */
-async function priceStay({ rates, store }, input, now = Date.now()) {
-  const request = validateStay(rates, input, now);
+async function priceStay(deps, input, now = Date.now()) {
+  const { rates, store } = deps;
+  const request = validateStay(rates, resolveSite(deps, input), now);
   const priced = quote(rates, request);
 
-  const occupancy = await store.listOccupancy(request.arrival, request.departure, rates.siteTypes);
+  const occupancy = await store.listOccupancy(request.arrival, request.departure, rates.siteTypes, deps.siteIndex);
   const grid = computeAvailability(rates, occupancy, request.arrival, request.departure, now);
 
   if (!isStayAvailable(grid, request.siteTypeId, request.arrival, request.departure)) {
@@ -116,11 +123,38 @@ async function createHold(deps, input, now = Date.now()) {
     throw fail('Online booking is not open yet — please call the campground', 'rates_unconfigured', 503);
   }
 
-  const { request: stay, quote: priced } = await priceStay(deps, input, now);
+  const resolved = resolveSite(deps, input);
+  const { request: stay, quote: priced } = await priceStay(deps, resolved, now);
   const request = { ...stay, ...validateGuest(input) };
+
+  if (deps.siteMap) {
+    const free = await freeSites(deps, stay, now);
+    if (resolved.siteNumber) {
+      if (!free.some((site) => String(site.number) === String(resolved.siteNumber))) {
+        throw fail(
+          `Site ${resolved.siteNumber} is taken for those dates — the map shows what's still open`,
+          'site_taken',
+          409
+        );
+      }
+      request.siteNumber = String(resolved.siteNumber);
+    } else {
+      if (!free.length) {
+        throw fail('Those dates are full for that kind of site', 'unavailable', 409);
+      }
+      // Nobody picked, so give them the first free one rather than leaving it
+      // to be sorted out at the gate.
+      request.siteNumber = String(free[0].number);
+    }
+  }
+
   const ref = reference();
   const holdExpires = new Date(now + HOLD_MINUTES * 60000).toISOString();
-  const event = await store.createHold({ ...request, ref, siteTypeName: priced.siteTypeName }, priced, holdExpires);
+  const event = await store.createHold(
+    { ...request, ref, siteTypeName: priced.siteTypeName, siteNumber: request.siteNumber },
+    priced,
+    holdExpires
+  );
 
   /**
    * Google Calendar has no transactions, so two guests clicking "book" in the
@@ -142,8 +176,20 @@ async function createHold(deps, input, now = Date.now()) {
   return { event, quote: priced, request, ref, holdExpires };
 }
 
-async function findOversoldNight({ rates, store }, request, now) {
-  const occupancy = await store.listOccupancy(request.arrival, request.departure, rates.siteTypes);
+async function findOversoldNight(deps, request, now) {
+  const { rates, store } = deps;
+  const occupancy = await store.listOccupancy(request.arrival, request.departure, rates.siteTypes, deps.siteIndex);
+
+  // With a site map, the question is simpler and stricter: has anyone else
+  // claimed this exact square on any of these nights?
+  if (request.siteNumber) {
+    const grid = computeSiteOccupancy(occupancy, request.arrival, request.departure, now);
+    return eachNight(request.arrival, request.departure).find((night) => {
+      const claims = (grid[night] && grid[night].claims) || {};
+      return (claims[String(request.siteNumber)] || 0) > 1;
+    }) || null;
+  }
+
   const type = rates.siteTypes.find((t) => t.id === request.siteTypeId);
   const inventory = (type && type.inventory) || 0;
   const nowMs = typeof now === 'number' ? now : Date.parse(now);
@@ -258,9 +304,35 @@ async function releaseBySession(deps, sessionId) {
 }
 
 /** The availability grid the calendar widget paints. */
-async function availabilityWindow({ rates, store }, from, to, now = Date.now()) {
-  const occupancy = await store.listOccupancy(from, to, rates.siteTypes);
-  return computeAvailability(rates, occupancy, from, to, now);
+async function availabilityWindow(deps, from, to, now = Date.now()) {
+  const { rates, store } = deps;
+  const occupancy = await store.listOccupancy(from, to, rates.siteTypes, deps.siteIndex);
+  return {
+    grid: computeAvailability(rates, occupancy, from, to, now),
+    sites: deps.siteIndex ? computeSiteOccupancy(occupancy, from, to, now) : null,
+  };
+}
+
+/**
+ * A guest who picked a square on the map tells us the site; the type follows
+ * from it. A guest who only picked a type gets a site chosen for them further
+ * down, once we know what is free.
+ */
+function resolveSite(deps, input) {
+  if (!deps.siteIndex || !input || !input.siteNumber) return input;
+
+  const site = deps.siteIndex.get(String(input.siteNumber));
+  if (!site) throw fail(`We don't have a site ${input.siteNumber}`, 'unknown_site', 400);
+
+  return { ...input, siteNumber: String(site.number), siteTypeId: site.typeId };
+}
+
+/** Which numbered sites can still be booked for these dates. */
+async function freeSites(deps, { arrival, departure, siteTypeId }, now = Date.now()) {
+  if (!deps.siteMap) return [];
+  const occupancy = await deps.store.listOccupancy(arrival, departure, deps.rates.siteTypes, deps.siteIndex);
+  const grid = computeSiteOccupancy(occupancy, arrival, departure, now);
+  return freeSitesForStay(deps.siteMap.sites, grid, siteTypeId, arrival, departure);
 }
 
 module.exports = {
@@ -273,6 +345,8 @@ module.exports = {
   confirmBySession,
   releaseBySession,
   availabilityWindow,
+  freeSites,
+  resolveSite,
   reference,
   readBooking,
   cancellationTerms,

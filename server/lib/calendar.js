@@ -19,13 +19,33 @@ const { addDays } = require('./dates');
 
 const APP = 'ape';
 
-/** Owner-created blocks: "BLOCK full-service x3" or "BLOCK all — road work". */
-function parseBlock(summary, siteTypes) {
+/**
+ * Owner-created blocks, written straight into the calendar from a phone:
+ *   "BLOCK 14"              one numbered site
+ *   "BLOCK 14, 15, 16"      several
+ *   "BLOCK tent x2"         two of a type, no particular square
+ *   "BLOCK all — road work" the whole campground
+ */
+function parseBlock(summary, siteTypes, siteIndex) {
   if (!summary) return null;
   const text = String(summary).trim();
   if (!/^block\b/i.test(text)) return null;
 
   const rest = text.slice(5).trim().toLowerCase();
+
+  if (siteIndex && siteIndex.size) {
+    const numbers = (rest.match(/\d+/g) || []).filter((n) => siteIndex.has(n));
+    // "tent x2" also contains a digit; only treat digits as site numbers when
+    // they are not the multiplier of a type block.
+    const isTypeBlock = siteTypes.some((t) => rest.includes(t.id) || rest.includes(t.name.toLowerCase()));
+    if (numbers.length && !isTypeBlock) {
+      return numbers.map((number) => ({
+        siteTypeId: siteIndex.get(number).typeId,
+        siteNumber: number,
+        units: 1,
+      }));
+    }
+  }
   const unitsMatch = rest.match(/\bx\s*(\d+)\b/);
   const units = unitsMatch ? Math.max(1, parseInt(unitsMatch[1], 10)) : 1;
 
@@ -38,7 +58,7 @@ function parseBlock(summary, siteTypes) {
   return type ? [{ siteTypeId: type.id, units }] : null;
 }
 
-function eventToRecords(event, siteTypes) {
+function eventToRecords(event, siteTypes, siteIndex) {
   const props = (event.extendedProperties && event.extendedProperties.private) || {};
   const arrival = event.start && event.start.date;
   const departure = event.end && event.end.date;
@@ -52,6 +72,7 @@ function eventToRecords(event, siteTypes) {
       arrival,
       departure,
       units: Number(props.units || 1),
+      siteNumber: props.siteNumber || null,
       state: props.state || 'confirmed',
       holdExpires: props.holdExpires || null,
       sessionId: props.sessionId || null,
@@ -61,11 +82,12 @@ function eventToRecords(event, siteTypes) {
     }];
   }
 
-  const blocks = parseBlock(event.summary, siteTypes);
+  const blocks = parseBlock(event.summary, siteTypes, siteIndex);
   if (!blocks) return [];
   return blocks.map((b) => ({
     eventId: event.id,
     siteTypeId: b.siteTypeId,
+    siteNumber: b.siteNumber || null,
     arrival,
     departure,
     units: b.units,
@@ -77,13 +99,14 @@ function eventToRecords(event, siteTypes) {
 function bookingSummary(record, state) {
   const who = record.name || 'Guest';
   const label = state === 'hold' ? 'HOLD' : 'Booked';
-  return `${label} · ${record.siteTypeName} · ${who}`;
+  const where = record.siteNumber ? `Site ${record.siteNumber}` : record.siteTypeName;
+  return `${label} · ${where} · ${who}`;
 }
 
 function bookingDescription(record, quote) {
   const money = (cents) => `$${(cents / 100).toFixed(2)}`;
   return [
-    `${record.siteTypeName} — ${quote.nights} night${quote.nights === 1 ? '' : 's'}, ${record.guests} guest${record.guests === 1 ? '' : 's'}`,
+    `${record.siteNumber ? `Site ${record.siteNumber} · ` : ''}${record.siteTypeName} — ${quote.nights} night${quote.nights === 1 ? '' : 's'}, ${record.guests} guest${record.guests === 1 ? '' : 's'}`,
     `Reference: ${record.ref}`,
     '',
     `Name:  ${record.name}`,
@@ -132,9 +155,9 @@ class GoogleCalendarStore {
     return items;
   }
 
-  async listOccupancy(from, to, siteTypes) {
+  async listOccupancy(from, to, siteTypes, siteIndex) {
     const events = await this.listEvents(from, to);
-    return events.flatMap((e) => eventToRecords(e, siteTypes));
+    return events.flatMap((e) => eventToRecords(e, siteTypes, siteIndex));
   }
 
   async createHold(record, quote, holdExpires) {
@@ -152,6 +175,7 @@ class GoogleCalendarStore {
             app: APP,
             state: 'hold',
             siteTypeId: quote.siteTypeId,
+            siteNumber: record.siteNumber,
             units: 1,
             guests: record.guests,
             name: record.name,
@@ -274,11 +298,11 @@ class MemoryCalendarStore {
     return [...this.events.values()];
   }
 
-  async listOccupancy(from, to, siteTypes) {
+  async listOccupancy(from, to, siteTypes, siteIndex) {
     const events = await this.listEvents();
     return events
       .filter((e) => e.start.date < addDays(to, 1) && e.end.date > from)
-      .flatMap((e) => eventToRecords(e, siteTypes));
+      .flatMap((e) => eventToRecords(e, siteTypes, siteIndex));
   }
 
   async createHold(record, quote, holdExpires) {
@@ -293,6 +317,7 @@ class MemoryCalendarStore {
           app: APP,
           state: 'hold',
           siteTypeId: quote.siteTypeId,
+          siteNumber: record.siteNumber,
           units: 1,
           guests: record.guests,
           name: record.name,

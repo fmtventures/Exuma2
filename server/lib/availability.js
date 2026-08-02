@@ -69,4 +69,75 @@ function unavailableNights(grid, siteTypeId, arrival, departure) {
   );
 }
 
-module.exports = { computeAvailability, isStayAvailable, unavailableNights, inventoryOf, isLive };
+/**
+ * Which numbered sites are spoken for, night by night.
+ *
+ * Records that name a site block that site. Records that only name a type — an
+ * owner blocking "two tent sites", say — cannot be pinned to a square on the
+ * map, so they are reported separately as a count. The map then greys out what
+ * it truly knows and says how many more of that type are unavailable, rather
+ * than guessing at squares.
+ */
+function computeSiteOccupancy(occupancy, from, to, now = Date.now()) {
+  const nowMs = typeof now === 'number' ? now : Date.parse(now);
+  const grid = {};
+
+  for (const date of eachDay(from, to)) grid[date] = { taken: [], claims: {}, typeHolds: {} };
+
+  for (const record of occupancy) {
+    if (!isLive(record, nowMs)) continue;
+    for (const night of eachNight(record.arrival, record.departure)) {
+      const row = grid[night];
+      if (!row) continue;
+      if (record.siteNumber) {
+        const number = String(record.siteNumber);
+        // `claims` counts how many records want the square — two is the
+        // signature of a race — while `taken` is the plain list the map draws.
+        row.claims[number] = (row.claims[number] || 0) + 1;
+        if (row.claims[number] === 1) row.taken.push(number);
+      } else {
+        const units = record.units || 1;
+        row.typeHolds[record.siteTypeId] = (row.typeHolds[record.siteTypeId] || 0) + units;
+      }
+    }
+  }
+
+  return grid;
+}
+
+/** The sites of a type that are free every night of a stay, lowest number first. */
+function freeSitesForStay(sites, siteGrid, siteTypeId, arrival, departure) {
+  const nights = eachNight(arrival, departure);
+  if (!nights.length) return [];
+
+  const candidates = sites.filter((site) => !siteTypeId || site.typeId === siteTypeId);
+
+  const free = candidates.filter((site) =>
+    nights.every((night) => siteGrid[night] && !siteGrid[night].taken.includes(String(site.number)))
+  );
+
+  // Type-level blocks still consume capacity even though they name no square.
+  const byType = {};
+  for (const site of free) (byType[site.typeId] = byType[site.typeId] || []).push(site);
+
+  const out = [];
+  for (const [typeId, list] of Object.entries(byType)) {
+    const held = nights.reduce(
+      (most, night) => Math.max(most, (siteGrid[night] && siteGrid[night].typeHolds[typeId]) || 0),
+      0
+    );
+    out.push(...list.slice(0, Math.max(0, list.length - held)));
+  }
+
+  return out.sort((a, b) => String(a.number).localeCompare(String(b.number), undefined, { numeric: true }));
+}
+
+module.exports = {
+  computeAvailability,
+  computeSiteOccupancy,
+  freeSitesForStay,
+  isStayAvailable,
+  unavailableNights,
+  inventoryOf,
+  isLive,
+};
