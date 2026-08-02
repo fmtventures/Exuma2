@@ -1,0 +1,57 @@
+{
+  "_comment": "Live rate card. Prices are in whole dollars, before tax. Set every `nightly` value to the campground's real rate before taking bookings — while any bookable site type has a null nightly rate, the server refuses to sell and the website falls back to 'call to book'. `weekly` and `monthly` are optional; when set they replace the nightly rate once a stay reaches 7 or 28 nights. Site inventory below totals 40; adjust the split to match the actual site map.",
+
+  "currency": "cad",
+  "taxRate": 0.15,
+  "taxLabel": "HST",
+
+  "checkIn": "14:00",
+  "checkOut": "11:00",
+  "minNights": 1,
+  "maxNights": 30,
+  "maxGuests": 8,
+  "bookingWindowDays": 400,
+
+  "season": { "opens": "04-25", "closes": "11-03" },
+
+  "deposit": {
+    "mode": "first_night",
+    "percent": 0.5
+  },
+
+  "extras": {
+    "extraGuestNightly": null,
+    "guestsIncluded": 4,
+    "petNightly": null
+  },
+
+  "siteTypes": [
+    {
+      "id": "full-service",
+      "name": "Full service",
+      "blurb": "Power, water and sewer at the pad. Pull-throughs available.",
+      "inventory": 20,
+      "nightly": null,
+      "weekly": null,
+      "monthly": null
+    },
+    {
+      "id": "power-water",
+      "name": "Power & water",
+      "blurb": "Two-way site with 15, 30 or 50 amp power and water.",
+      "inventory": 12,
+      "nightly": null,
+      "weekly": null,
+      "monthly": null
+    },
+    {
+      "id": "tent",
+      "name": "Unserviced / tent",
+      "blurb": "Unserviced pad among the trees. Water nearby.",
+      "inventory": 8,
+      "nightly": null,
+      "weekly": null,
+      "monthly": null
+    }
+  ]
+}
