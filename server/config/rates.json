@@ -1,76 +1,129 @@
 {
-  "_comment": "Rate card. Prices are in whole dollars, before tax, and are given per season: high season is the peak summer band, low season the shoulders either side. A null price means that combination has not been confirmed yet — the server will refuse to sell those dates for that site type and the website will say to call, rather than quoting a number nobody entered. Figures below were taken from the campground's published rates; confirm them against the office before taking live payments, and fill in what is still null.",
-
+  "_comment": "Rate card. Prices are in whole dollars, before tax, and are given per season: high season is the peak summer band, low season the shoulders either side. A null price means that combination has not been confirmed yet \u2014 the server will refuse to sell those dates for that site type and the website will say to call, rather than quoting a number nobody entered. Figures below were taken from the campground's published rates; confirm them against the office before taking live payments, and fill in what is still null.",
   "currency": "cad",
   "taxRate": 0.15,
   "taxLabel": "HST",
-
   "checkIn": "14:00",
   "checkOut": "11:00",
   "minNights": 1,
   "maxNights": 30,
   "maxGuests": 8,
   "bookingWindowDays": 400,
-
-  "season": { "opens": "04-25", "closes": "11-02" },
-
+  "season": {
+    "opens": "04-25",
+    "closes": "11-02"
+  },
   "seasons": [
-    { "id": "high", "name": "High season", "ranges": [["06-23", "09-07"]] },
-    { "id": "low", "name": "Low season", "ranges": [["04-25", "06-22"], ["09-08", "11-02"]] }
+    {
+      "id": "high",
+      "name": "High season",
+      "ranges": [
+        [
+          "06-23",
+          "09-07"
+        ]
+      ]
+    },
+    {
+      "id": "low",
+      "name": "Low season",
+      "ranges": [
+        [
+          "04-25",
+          "06-22"
+        ],
+        [
+          "09-08",
+          "11-02"
+        ]
+      ]
+    }
   ],
-
   "cancellation": {
     "guestCancelUntilDays": 30,
     "refundDepositUntilDays": 30
   },
-
   "deposit": {
     "mode": "greater_of",
     "percent": 0.1
   },
-
   "extras": {
     "extraGuestNightly": null,
     "guestsIncluded": 4,
     "petNightly": null
   },
-
   "siteTypes": [
     {
       "id": "full-service-50",
-      "name": "Full service · 50 amp",
+      "name": "Full service \u00b7 50 amp",
       "blurb": "Three-way site with 50 amp power, water and sewer at the pad.",
       "inventory": 12,
-      "nightly": { "high": 63, "low": 54 },
-      "weekly": { "high": 385, "low": 325 },
-      "monthly": { "high": null, "low": null }
+      "nightly": {
+        "high": 63,
+        "low": 54
+      },
+      "weekly": {
+        "high": 385,
+        "low": 325
+      },
+      "monthly": {
+        "high": null,
+        "low": null
+      }
     },
     {
       "id": "full-service-30",
-      "name": "Full service · 30 amp",
+      "name": "Full service \u00b7 30 amp",
       "blurb": "Three-way site with 30 amp power, water and sewer.",
       "inventory": 20,
-      "nightly": { "high": 43, "low": null },
-      "weekly": { "high": 260, "low": null },
-      "monthly": { "high": null, "low": null }
+      "nightly": {
+        "high": 43,
+        "low": null
+      },
+      "weekly": {
+        "high": 260,
+        "low": null
+      },
+      "monthly": {
+        "high": null,
+        "low": null
+      }
     },
     {
       "id": "water-only",
       "name": "Water only",
-      "blurb": "Water at the site, no power — good for a tent or car camping.",
+      "blurb": "Water at the site, no power \u2014 good for a tent or car camping.",
       "inventory": 2,
-      "nightly": { "high": null, "low": null },
-      "weekly": { "high": null, "low": null },
-      "monthly": { "high": null, "low": null }
+      "nightly": {
+        "high": null,
+        "low": null
+      },
+      "weekly": {
+        "high": null,
+        "low": null
+      },
+      "monthly": {
+        "high": null,
+        "low": null
+      }
     },
     {
       "id": "tent",
       "name": "Unserviced / tent",
-      "blurb": "Premium unserviced pad among the trees.",
-      "inventory": 6,
-      "nightly": { "high": 40, "low": 33 },
-      "weekly": { "high": 240, "low": 200 },
-      "monthly": { "high": null, "low": null }
+      "blurb": "Unserviced pad in a quiet corner of the campground.",
+      "inventory": 5,
+      "nightly": {
+        "high": 40,
+        "low": 33
+      },
+      "weekly": {
+        "high": 240,
+        "low": 200
+      },
+      "monthly": {
+        "high": null,
+        "low": null
+      }
     }
   ]
 }

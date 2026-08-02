@@ -85,11 +85,14 @@ function reconcile(map, rates, log = console.warn) {
 
 /** Everything the website needs to draw the map and describe each site. */
 function publicMap(map, rates) {
+  const { fromRate } = require('./pricing');
   const priced = new Map(rates.siteTypes.map((t) => [t.id, t]));
   return {
     bounds: map.bounds || { width: 100, height: 100 },
     orientation: map.orientation || '',
+    notToScale: Boolean(map.notToScale),
     water: map.water || [],
+    zones: map.zones || [],
     roads: map.roads || [],
     landmarks: map.landmarks || [],
     trees: map.trees || [],
@@ -104,7 +107,9 @@ function publicMap(map, rates) {
       features: site.features || [],
       x: site.x,
       y: site.y,
-      nightly: (priced.get(site.typeId) || {}).nightly ?? null,
+      // The cheapest published nightly rate for this site's type, or null when
+      // that type is still phone-only.
+      nightly: priced.has(site.typeId) ? fromRate(rates, priced.get(site.typeId)) : null,
     })),
   };
 }

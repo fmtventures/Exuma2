@@ -72,10 +72,15 @@ test suite and `npm run dev:demo` use. Its numbers are made up — do not ship t
 ### 2. Correct the site map
 
 `config/sites.json` is the campground drawn as data — every numbered site, its
-service level, and where it sits on the property. **The layout that ships is a
-placeholder**: the real map could not be reached when this was built, so the
-numbering, the service split and the positions are a working guess. Replace them
-with the real thing:
+service level, and where it sits on the property. It is **traced from the
+campground's own updated site map**, gaps and all: there is no site 1, 8, 40 or
+41. The group tenting area is a closed zone rather than a site while storm
+damage is repaired, and B40 — "Bunkin' at the Lake" — is drawn as a landmark
+because it is a rental unit, not a campsite.
+
+**What is still a guess is which sites carry which service.** The map does not
+mark 50 amp against 30 amp against water-only, so the split below only
+reconciles with the published inventory totals. Correct it before going live:
 
 ```json
 {
@@ -97,9 +102,15 @@ This file decides how many sites exist. If the rate card disagrees, the map wins
 and the server says so at start-up. Anything invalid — a repeated number, an
 unknown type, a site with no position — stops the server rather than half-loading.
 
-Guests can then filter the map by service (15 / 30 / 50 amp, full service,
-unserviced, pull-through) and click the square they want. If they don't pick one,
+Guests filter the map by service (30 amp, 50 amp, full service, unserviced,
+water-only, pull-through) and click the square they want. If they don't pick one,
 the lowest-numbered free site of the type they chose is assigned automatically.
+Sites whose type has no published rate — water-only today — are drawn dashed and
+send the guest to the phone rather than into a checkout that would fail.
+
+`zones` draws areas rather than sites: a `closed` zone is hatched in red and
+sells nothing, while `grass` and `play` zones are just scenery. `notToScale`
+prints the same caveat the campground's own map carries.
 
 ### 3. Connect Google Calendar
 
