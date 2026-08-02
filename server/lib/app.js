@@ -6,6 +6,8 @@ const express = require('express');
 const { assertDate, addDays, today } = require('./dates');
 const { ratesConfigured } = require('./pricing');
 const bookings = require('./bookings');
+const mail = require('./mailer');
+const tokens = require('./tokens');
 
 /**
  * The booking API. Built as a factory so the tests can drive it with a memory
@@ -48,6 +50,7 @@ function publicRates(rates, { bookingOpen }) {
     season: rates.season,
     depositMode: (rates.deposit && rates.deposit.mode) || 'first_night',
     holdMinutes: bookings.HOLD_MINUTES,
+    cancellation: rates.cancellation || {},
     extras: rates.extras || {},
     siteTypes: rates.siteTypes.map((t) => ({
       id: t.id,
@@ -70,9 +73,9 @@ function sendError(res, err) {
   });
 }
 
-function createApp({ rates, store, payments, staticDir, publicUrl }) {
+function createApp({ rates, store, payments, mailer, secret, staticDir, publicUrl }) {
   const app = express();
-  const deps = { rates, store };
+  const deps = { rates, store, payments, secret: secret || 'insecure-development-secret' };
   const bookingOpen = Boolean(payments) && ratesConfigured(rates);
 
   app.set('trust proxy', 1);
@@ -99,7 +102,13 @@ function createApp({ rates, store, payments, staticDir, publicUrl }) {
           paymentRef: session.payment_intent || session.id,
           paidCents: session.amount_total,
         });
-        if (!confirmed) console.warn(`No hold found for session ${session.id} — booking may need manual entry`);
+        if (!confirmed) {
+          console.warn(`No hold found for session ${session.id} — booking may need manual entry`);
+        } else if (confirmed.changed) {
+          // Only on the transition. Stripe retries webhooks, and nobody wants
+          // the same confirmation four times.
+          await sendConfirmation(confirmed.event);
+        }
       } else if (event.type === 'checkout.session.expired') {
         await bookings.releaseBySession(deps, event.data.object.id);
       }
@@ -177,6 +186,92 @@ function createApp({ rates, store, payments, staticDir, publicUrl }) {
       sendError(res, err);
     }
   });
+
+  async function sendConfirmation(event) {
+    const booking = bookings.readBooking(event);
+    const type = rates.siteTypes.find((t) => t.id === booking.siteTypeId);
+    const quote = {
+      siteTypeName: (type && type.name) || booking.siteTypeId,
+      arrival: booking.arrival,
+      departure: booking.departure,
+      nights: Math.round((Date.parse(booking.departure) - Date.parse(booking.arrival)) / 86400000),
+      total: booking.totalCents,
+      deposit: booking.paidCents || booking.depositCents,
+      balance: Math.max(0, booking.totalCents - (booking.paidCents || booking.depositCents)),
+      tax: Math.round(booking.totalCents - booking.totalCents / (1 + rates.taxRate)),
+      taxLabel: rates.taxLabel,
+    };
+
+    const guest = mail.guestConfirmation({
+      booking,
+      quote,
+      checkIn: rates.checkIn,
+      checkOut: rates.checkOut,
+      cancelLink: tokens.cancelUrl(publicUrl, booking.ref, deps.secret),
+      cancellation: rates.cancellation || {},
+    });
+    await mail.trySend(mailer, { to: booking.email, ...guest });
+
+    const office = process.env.OFFICE_EMAIL || mail.CAMPGROUND.email;
+    await mail.trySend(mailer, { to: office, ...mail.officeNotification({ booking, quote }) });
+  }
+
+  /** What the guest sees when they follow the cancellation link in their email. */
+  app.get('/api/booking', async (req, res) => {
+    try {
+      const { booking, terms } = await bookings.lookupBooking(deps, req.query.ref, req.query.t);
+      res.set('Cache-Control', 'no-store');
+      res.json({
+        booking: {
+          ref: booking.ref,
+          state: booking.state,
+          siteTypeName: (rates.siteTypes.find((t) => t.id === booking.siteTypeId) || {}).name,
+          arrival: booking.arrival,
+          departure: booking.departure,
+          guests: booking.guests,
+          name: booking.name,
+          totalCents: booking.totalCents,
+          paidCents: booking.paidCents,
+          refundCents: booking.refundCents,
+        },
+        terms,
+      });
+    } catch (err) {
+      sendError(res, err);
+    }
+  });
+
+  app.post('/api/cancel', rateLimiter({ max: 10 }), async (req, res) => {
+    try {
+      const body = req.body || {};
+      const result = await bookings.cancelBooking(deps, { ref: body.ref, token: body.token });
+
+      if (!result.alreadyCancelled) {
+        await mail.trySend(mailer, {
+          to: result.booking.email,
+          ...mail.cancellationNotice({ booking: result.booking, refundCents: result.refundCents }),
+        });
+        await mail.trySend(mailer, {
+          to: process.env.OFFICE_EMAIL || mail.CAMPGROUND.email,
+          subject: `Cancelled — ${result.booking.ref}, ${result.booking.arrival}`,
+          text: `${result.booking.name} cancelled ${result.booking.ref} (${result.booking.arrival} to ${result.booking.departure}).\nRefunded: $${(result.refundCents / 100).toFixed(2)}.\nThe site is back on sale.`,
+        });
+      }
+
+      res.json({
+        cancelled: true,
+        alreadyCancelled: result.alreadyCancelled,
+        refundCents: result.refundCents,
+        ref: result.booking.ref,
+      });
+    } catch (err) {
+      sendError(res, err);
+    }
+  });
+
+  // server.js reuses this for the demo payment route, so the sample walkthrough
+  // exercises the same confirmation email as a real booking.
+  app.locals.sendConfirmation = sendConfirmation;
 
   if (staticDir) {
     app.use(express.static(staticDir, { extensions: ['html'], maxAge: '1h' }));

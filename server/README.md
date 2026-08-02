@@ -13,7 +13,9 @@ lib/dates.js             calendar-date arithmetic (no time zones, ever)
 lib/pricing.js           nightly/weekly/monthly rates, HST, deposit
 lib/availability.js      how many sites of each type are free, night by night
 lib/calendar.js          Google Calendar as the booking database (+ in-memory twin)
-lib/payments.js          Stripe Checkout
+lib/payments.js          Stripe Checkout and refunds
+lib/mailer.js            confirmation and cancellation email
+lib/tokens.js            signed cancellation links
 lib/bookings.js          validation, holds, confirmations
 lib/app.js               the HTTP API
 server.js                wiring and start-up
@@ -77,7 +79,26 @@ Testing locally:
 stripe listen --forward-to localhost:3000/api/stripe/webhook
 ```
 
-### 4. Set the environment and start
+### 4. Turn on email (optional, but guests expect it)
+
+Set `SMTP_URL` — for a Gmail or Google Workspace address that means an
+[app password](https://support.google.com/accounts/answer/185833), not the
+account password:
+
+```
+SMTP_URL=smtps://camp%40allpointseastcampground.ca:APP_PASSWORD@smtp.gmail.com:465
+MAIL_FROM="All Points East Campground <camp@allpointseastcampground.ca>"
+OFFICE_EMAIL=camp@allpointseastcampground.ca
+```
+
+Also set `BOOKING_SECRET` to a long random string. It signs the cancellation
+link in every confirmation email; if it changes, links already sent stop
+working, so set it once and leave it.
+
+Without SMTP the server keeps taking bookings and prints the emails it would
+have sent to the log — which is how you try the cancellation flow in demo mode.
+
+### 5. Set the environment and start
 
 Copy `.env.example` to `.env` and fill it in, then:
 
@@ -98,9 +119,43 @@ back to it after paying.
 3. On **Book**, `/api/checkout` writes a *hold* to the calendar — a tentative
    all-day event — and opens a Stripe Checkout session.
 4. The guest pays on Stripe's page.
-5. Stripe's webhook flips the hold to a confirmed booking. If the guest wanders
-   off, the session expires, the webhook releases the hold, and the site goes
-   back on sale.
+5. Stripe's webhook flips the hold to a confirmed booking, emails the guest
+   their details and cancellation link, and emails the office a heads-up. If
+   the guest wanders off, the session expires, the webhook releases the hold,
+   and the site goes back on sale.
+
+Stripe retries webhooks, so the confirmation only fires on the transition from
+hold to booked — nobody gets the same email four times. Email failures are
+logged and swallowed: a mail server having a bad morning must never cost the
+campground a paid booking.
+
+## Cancellations
+
+The confirmation email carries a link back to the site with the booking
+reference and a signature. Knowing a reference is not enough — without the
+signature the link is refused, so one guest can never reach another's booking.
+
+Following it opens a panel with the booking, what a cancellation would refund,
+and a two-step confirm button. On cancelling, the deposit is refunded through
+Stripe if the policy allows, the calendar event is marked `CANCELLED` (kept for
+the record, but no longer holding a site), and both guest and office are
+emailed.
+
+Two windows in `config/rates.json` set the policy:
+
+```json
+"cancellation": {
+  "guestCancelUntilDays": 2,
+  "refundDepositUntilDays": 7
+}
+```
+
+Guests can cancel online until 2 days before arrival — closer than that they
+are sent to the phone. Deposits come back in full when cancelling at least 7
+days out; inside that, the cancellation still goes through but the deposit is
+kept. The money moves before the calendar changes, so if Stripe refuses the
+refund the booking stands and the guest is told to call, rather than losing
+both their site and their deposit.
 
 Holds last 35 minutes and stop counting against availability the moment they
 lapse, so a forgotten checkout never keeps a site off the market.
@@ -117,8 +172,10 @@ calendar will not shut the campground.
 event the title `BLOCK <site type>` so the website counts them, or take the
 booking through the site yourself.
 
-**Cancellations and refunds.** Refund in the Stripe dashboard, then delete the
-event from the calendar. The site is free again the moment the event is gone.
+**Cancellations you handle yourself.** Guests can cancel from their
+confirmation email. To do it for them, refund in the Stripe dashboard and
+delete the event from the calendar — the site is free again the moment the
+event is gone.
 
 **Reading a booking.** Every booking event carries the guest's name, email,
 phone, party size, total, what they paid and what is owed on arrival, in the
@@ -135,6 +192,11 @@ event description.
 | `GOOGLE_SERVICE_ACCOUNT_FILE` | alternative | Path to the key file instead of the above. |
 | `STRIPE_SECRET_KEY` | yes | `sk_live_…` in production, `sk_test_…` while testing. |
 | `STRIPE_WEBHOOK_SECRET` | yes | `whsec_…` from the webhook endpoint. |
+| `BOOKING_SECRET` | yes | Signs cancellation links; keep it stable. |
+| `SMTP_URL` | no | Full SMTP URL. Without it, email is logged, not sent. |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` | no | The same thing in pieces. |
+| `MAIL_FROM` | no | The From address on guest email. |
+| `OFFICE_EMAIL` | no | Where new-booking notices go. Defaults to the campground address. |
 | `RATES_FILE` | no | Point at a different rate card. |
 | `DEMO` | no | `1` runs the sample-data walkthrough described above. |
 
@@ -147,19 +209,21 @@ absent, keeps serving the website, and leaves booking closed.
 npm test
 ```
 
-39 tests over the pricing rules, the availability arithmetic, and the booking
-flow end to end — including double-booking, expired holds, replayed webhooks,
-forged webhooks, and a Stripe outage mid-checkout. No network access needed.
+50 tests over the pricing rules, the availability arithmetic, the booking flow
+end to end, and cancellation — including double-booking, expired holds,
+replayed webhooks, forged webhooks, a Stripe outage mid-checkout, forged
+cancellation links, double refunds, and a mail server that is down. No network
+access needed.
 
 ## Known limits
 
 - **Availability is counted per site type, not per numbered site.** The website
   sells "a full-service site"; which one a guest gets is settled at the office.
   Assigning specific sites would need a booking record per site.
-- **The app sends no email.** Stripe emails the payment receipt if receipts are
-  switched on in the Stripe dashboard; there is no separate confirmation email
-  with directions and check-in times yet.
-- **Cancellations are manual** — refund in Stripe, delete the calendar event.
+- **Email is plain text.** It is written to read well in any mail client, but
+  there is no branded HTML version.
+- **Guests cannot change a booking online**, only cancel it. Changing dates
+  means cancelling and rebooking, or a phone call.
 - **The rate limiter is per process.** Running more than one instance behind a
   load balancer weakens it; put rate limiting at the proxy in that case.
 - **A lapsed hold may linger on the calendar** as a tentative event if Stripe's

@@ -2,6 +2,7 @@
 
 const crypto = require('crypto');
 const { assertDate, addDays, nights, today, inSeason, eachNight } = require('./dates');
+const tokens = require('./tokens');
 const { quote, ratesConfigured } = require('./pricing');
 const { computeAvailability, isStayAvailable, unavailableNights } = require('./availability');
 
@@ -165,6 +166,88 @@ async function confirmBySession(deps, sessionId, { paymentRef, paidCents }) {
   return deps.store.confirm(event.id, { paymentRef, paidCents });
 }
 
+/** The booking as the calendar holds it, in the shape the rest of the code wants. */
+function readBooking(event) {
+  const p = (event.extendedProperties && event.extendedProperties.private) || {};
+  return {
+    eventId: event.id,
+    ref: p.ref,
+    state: p.state,
+    siteTypeId: p.siteTypeId,
+    arrival: event.start.date,
+    departure: event.end.date,
+    guests: Number(p.guests || 1),
+    name: p.name || '',
+    email: p.email || '',
+    phone: p.phone || '',
+    notes: p.notes || '',
+    totalCents: Number(p.totalCents || 0),
+    depositCents: Number(p.depositCents || 0),
+    paidCents: Number(p.paidCents || 0),
+    refundCents: Number(p.refundCents || 0),
+    paymentRef: p.paymentRef || null,
+  };
+}
+
+/**
+ * What the guest may still do, given how close their arrival is. Both windows
+ * are set in the rate card so the office can change the policy without code.
+ */
+function cancellationTerms(rates, arrival, now = Date.now()) {
+  const policy = rates.cancellation || {};
+  const daysOut = nights(today(now), arrival);
+  const cancelBy = policy.guestCancelUntilDays == null ? 0 : policy.guestCancelUntilDays;
+  const refundBy = policy.refundDepositUntilDays == null ? 0 : policy.refundDepositUntilDays;
+  return {
+    daysOut,
+    canSelfCancel: daysOut >= cancelBy,
+    refundsDeposit: daysOut >= refundBy,
+    guestCancelUntilDays: cancelBy,
+    refundDepositUntilDays: refundBy,
+  };
+}
+
+async function lookupBooking(deps, ref, token, now = Date.now()) {
+  if (!tokens.verify(String(ref || ''), String(token || ''), deps.secret)) {
+    throw fail('That cancellation link isn\'t valid. Please call us and we\'ll sort it out.', 'bad_token', 403);
+  }
+  const event = await deps.store.findByRef(String(ref));
+  if (!event) throw fail('We couldn\'t find that booking', 'not_found', 404);
+
+  const booking = readBooking(event);
+  return { booking, terms: cancellationTerms(deps.rates, booking.arrival, now) };
+}
+
+/**
+ * Guest-initiated cancellation. The refund is decided by the policy in the rate
+ * card, the money moves first, and only then is the calendar changed — if
+ * Stripe refuses, the booking stands and the guest is told to call, rather than
+ * losing their site and their deposit both.
+ */
+async function cancelBooking(deps, { ref, token }, now = Date.now()) {
+  const { booking, terms } = await lookupBooking(deps, ref, token, now);
+
+  if (booking.state === 'cancelled') {
+    return { booking, terms, refundCents: booking.refundCents, alreadyCancelled: true };
+  }
+  if (!terms.canSelfCancel) {
+    throw fail(
+      `Bookings can only be cancelled online up to ${terms.guestCancelUntilDays} day${terms.guestCancelUntilDays === 1 ? '' : 's'} before arrival — please call us`,
+      'too_late',
+      409
+    );
+  }
+
+  let refundCents = 0;
+  if (terms.refundsDeposit && booking.paidCents > 0 && booking.paymentRef && deps.payments) {
+    await deps.payments.refund(booking.paymentRef, booking.paidCents, booking.ref);
+    refundCents = booking.paidCents;
+  }
+
+  await deps.store.cancel(booking.eventId, { refundCents, by: 'guest' });
+  return { booking, terms, refundCents, alreadyCancelled: false };
+}
+
 async function releaseBySession(deps, sessionId) {
   const event = await deps.store.findBySession(sessionId);
   if (!event) return false;
@@ -191,4 +274,8 @@ module.exports = {
   releaseBySession,
   availabilityWindow,
   reference,
+  readBooking,
+  cancellationTerms,
+  lookupBooking,
+  cancelBooking,
 };

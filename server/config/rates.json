@@ -14,6 +14,11 @@
 
   "season": { "opens": "04-25", "closes": "11-03" },
 
+  "cancellation": {
+    "guestCancelUntilDays": 2,
+    "refundDepositUntilDays": 7
+  },
+
   "deposit": {
     "mode": "first_night",
     "percent": 0.5

@@ -77,6 +77,17 @@ class StripePayments {
   parseWebhook(rawBody, signature) {
     return this.stripe.webhooks.constructEvent(rawBody, signature, this.webhookSecret);
   }
+
+  /**
+   * Refund a deposit. Keyed on the booking reference, so a guest who
+   * double-clicks cancel gets one refund rather than two.
+   */
+  async refund(paymentRef, amountCents, ref) {
+    return this.stripe.refunds.create(
+      { payment_intent: paymentRef, amount: amountCents, metadata: { ref } },
+      { idempotencyKey: `refund_${ref}` }
+    );
+  }
 }
 
 module.exports = { StripePayments, describe, money };

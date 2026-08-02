@@ -45,6 +45,7 @@ function eventToRecords(event, siteTypes) {
   if (!arrival || !departure) return []; // timed events are somebody's meeting, not a stay
 
   if (props.app === APP && props.siteTypeId) {
+    if (props.state === 'cancelled') return []; // kept for the record, but back on sale
     return [{
       eventId: event.id,
       siteTypeId: props.siteTypeId,
@@ -178,7 +179,7 @@ class GoogleCalendarStore {
   async confirm(eventId, { paymentRef, paidCents }) {
     const { data: event } = await this.api.events.get({ calendarId: this.calendarId, eventId });
     const existing = (event.extendedProperties && event.extendedProperties.private) || {};
-    if (existing.state === 'confirmed') return event; // webhooks retry; confirming twice is a no-op
+    if (existing.state === 'confirmed') return { event, changed: false }; // webhooks retry
 
     const res = await this.api.events.patch({
       calendarId: this.calendarId,
@@ -193,7 +194,47 @@ class GoogleCalendarStore {
         },
       },
     });
-    return res.data;
+    return { event: res.data, changed: true };
+  }
+
+  async findByRef(ref) {
+    const res = await this.api.events.list({
+      calendarId: this.calendarId,
+      privateExtendedProperty: [`app=${APP}`, `ref=${ref}`],
+      showDeleted: false,
+      singleEvents: true,
+      maxResults: 5,
+    });
+    return (res.data.items || [])[0] || null;
+  }
+
+  /**
+   * A cancelled booking stays on the calendar, clearly marked. Google treats
+   * status:'cancelled' as a deletion, so the record is kept with its own flag
+   * instead — the office can still see who cancelled and when.
+   */
+  async cancel(eventId, { refundCents = 0, by = 'guest' } = {}) {
+    const { data: event } = await this.api.events.get({ calendarId: this.calendarId, eventId });
+    const existing = (event.extendedProperties && event.extendedProperties.private) || {};
+    if (existing.state === 'cancelled') return { event, changed: false };
+
+    const note = refundCents > 0
+      ? `Cancelled by ${by} — refunded ${(refundCents / 100).toFixed(2)}`
+      : `Cancelled by ${by} — no refund due`;
+
+    const res = await this.api.events.patch({
+      calendarId: this.calendarId,
+      eventId,
+      requestBody: {
+        summary: `CANCELLED · ${(event.summary || '').replace(/^(Booked|HOLD) · /, '')}`,
+        transparency: 'transparent',
+        description: `${event.description || ''}\n\n${note}`,
+        extendedProperties: {
+          private: props({ ...existing, state: 'cancelled', refundCents, cancelledBy: by }),
+        },
+      },
+    });
+    return { event: res.data, changed: true };
   }
 
   async release(eventId) {
@@ -281,7 +322,7 @@ class MemoryCalendarStore {
       throw err;
     }
     const p = event.extendedProperties.private;
-    if (p.state === 'confirmed') return event;
+    if (p.state === 'confirmed') return { event, changed: false };
     p.state = 'confirmed';
     p.holdExpires = '';
     p.paymentRef = String(paymentRef);
@@ -289,7 +330,33 @@ class MemoryCalendarStore {
     event.description = `${event.description || ''}\n\nPayment: ${paymentRef} (${(paidCents / 100).toFixed(2)})`;
     event.status = 'confirmed';
     event.summary = (event.summary || '').replace(/^HOLD · /, 'Booked · ');
-    return event;
+    return { event, changed: true };
+  }
+
+  async findByRef(ref) {
+    for (const event of this.events.values()) {
+      const p = (event.extendedProperties && event.extendedProperties.private) || {};
+      if (p.ref === String(ref)) return event;
+    }
+    return null;
+  }
+
+  async cancel(eventId, { refundCents = 0, by = 'guest' } = {}) {
+    const event = this.events.get(eventId);
+    if (!event) {
+      const err = new Error('That booking is no longer on the calendar');
+      err.status = 404;
+      err.code = 'booking_missing';
+      throw err;
+    }
+    const p = event.extendedProperties.private;
+    if (p.state === 'cancelled') return { event, changed: false };
+    p.state = 'cancelled';
+    p.refundCents = String(refundCents);
+    p.cancelledBy = by;
+    event.summary = `CANCELLED · ${(event.summary || '').replace(/^(Booked|HOLD) · /, '')}`;
+    event.description = `${event.description || ''}\n\nCancelled by ${by}`;
+    return { event, changed: true };
   }
 
   async release(eventId) {

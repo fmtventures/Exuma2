@@ -1094,6 +1094,38 @@ a { color: inherit; }
 }
 .book-error:empty { display: none; }
 
+.cancel-panel {
+  max-width: 44rem;
+  margin-top: 1.75rem;
+  padding: 1.5rem;
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--clay);
+  border-radius: 3px;
+  box-shadow: var(--shadow);
+}
+.cancel-panel[hidden] { display: none; }
+.cancel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.85rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid var(--spruce);
+}
+.cancel-head h3 {
+  font-family: var(--ff-sign);
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0;
+}
+.cancel-panel p { margin: 0 0 0.75rem; font-size: 0.9375rem; }
+.cancel-panel p:last-child { margin-bottom: 0; }
+.cancel-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-top: 1.25rem; }
+.cancel-actions:empty { display: none; }
+
 .phone-panel {
   background: var(--panel);
   border: 1px solid var(--rule);
@@ -1488,6 +1520,15 @@ a { color: inherit; }
       <h2 class="sign" style="font-size: clamp(1.75rem, 4vw, 2.75rem); max-width: 18ch;">Hold your site</h2>
 
       <div class="book-status" id="bookStatus" hidden role="status"></div>
+
+      <section class="cancel-panel" id="cancelPanel" hidden aria-live="polite">
+        <div class="cancel-head">
+          <h3 id="cancelTitle">Your booking</h3>
+          <span class="coord" id="cancelRef"></span>
+        </div>
+        <div id="cancelBody"></div>
+        <div class="cancel-actions" id="cancelActions"></div>
+      </section>
 
       <div class="booker">
         <form class="picker" id="booker" novalidate>
@@ -2121,6 +2162,123 @@ a { color: inherit; }
     return false;
   }
 
+  /* -- the cancellation link from a confirmation email lands here -- */
+  var cancelEl = {
+    panel: document.getElementById('cancelPanel'),
+    title: document.getElementById('cancelTitle'),
+    ref: document.getElementById('cancelRef'),
+    body: document.getElementById('cancelBody'),
+    actions: document.getElementById('cancelActions')
+  };
+
+  function cancelRows(booking) {
+    var rows = [
+      ['Site', booking.siteTypeName || '—'],
+      ['Arriving', longDate(booking.arrival)],
+      ['Leaving', longDate(booking.departure)],
+      ['Guests', String(booking.guests)],
+      ['Paid', money(booking.paidCents)]
+    ];
+    return rows.map(function (r) {
+      return '<div class="sum-row"><span class="k">' + r[0] + '</span><span class="v">' + r[1] + '</span></div>';
+    }).join('');
+  }
+
+  function showCancelled(booking, refundCents) {
+    cancelEl.title.textContent = 'Booking cancelled';
+    cancelEl.body.innerHTML =
+      '<div class="sum-lines">' + cancelRows(booking) + '</div>' +
+      '<p style="margin-top:1rem;">' +
+      (refundCents > 0
+        ? 'A refund of <strong>' + money(refundCents) + '</strong> is on its way back to your card. It usually lands within a few business days.'
+        : 'No refund was due under the cancellation policy for these dates.') +
+      '</p>' +
+      '<p>Sorry to miss you — call <a href="tel:+19023270356">(902) 327-0356</a> any time to rebook.</p>';
+    cancelEl.actions.innerHTML = '';
+  }
+
+  function renderCancelPanel(data, ref, token) {
+    var booking = data.booking;
+    var terms = data.terms;
+    cancelEl.ref.textContent = ref;
+
+    if (booking.state === 'cancelled') {
+      showCancelled(booking, booking.refundCents);
+      return;
+    }
+
+    var refundIfCancelled = terms.refundsDeposit ? booking.paidCents : 0;
+    cancelEl.title.textContent = 'Your booking';
+    cancelEl.body.innerHTML =
+      '<div class="sum-lines">' + cancelRows(booking) + '</div>' +
+      '<p style="margin-top:1rem;">' +
+      (!terms.canSelfCancel
+        ? 'Your arrival is too close to cancel online. Call <a href="tel:+19023270356">(902) 327-0356</a> and we\'ll help.'
+        : refundIfCancelled > 0
+          ? 'Cancelling now refunds <strong>' + money(refundIfCancelled) + '</strong> to your card.'
+          : 'Cancelling now is possible, but no refund is due this close to arrival.') +
+      '</p>';
+
+    cancelEl.actions.innerHTML = '';
+    if (!terms.canSelfCancel) return;
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-ghost';
+    btn.textContent = 'Cancel this booking';
+    var armed = false;
+
+    btn.addEventListener('click', function () {
+      if (!armed) {
+        // One click arms, the second commits — nobody should lose a site by
+        // mis-tapping a link on their phone.
+        armed = true;
+        btn.className = 'btn';
+        btn.textContent = 'Yes, cancel it';
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = 'Cancelling…';
+      getJSON('/api/cancel', { method: 'POST', body: JSON.stringify({ ref: ref, token: token }) })
+        .then(function (res) { showCancelled(booking, res.refundCents); })
+        .catch(function (err) {
+          btn.disabled = false;
+          btn.className = 'btn btn-ghost';
+          btn.textContent = 'Cancel this booking';
+          armed = false;
+          cancelEl.actions.querySelector('.book-error').textContent = err.message;
+        });
+    });
+
+    var error = document.createElement('p');
+    error.className = 'book-error';
+    cancelEl.actions.appendChild(btn);
+    cancelEl.actions.appendChild(error);
+  }
+
+  function bootCancellation(ref, token) {
+    cancelEl.panel.hidden = false;
+    cancelEl.ref.textContent = ref;
+    cancelEl.body.innerHTML = '<p>Looking up your booking…</p>';
+
+    getJSON('/api/booking?ref=' + encodeURIComponent(ref) + '&t=' + encodeURIComponent(token))
+      .then(function (data) { renderCancelPanel(data, ref, token); })
+      .catch(function (err) {
+        cancelEl.title.textContent = 'We couldn\'t open that booking';
+        cancelEl.body.innerHTML = '<p>' + err.message + '</p>' +
+          '<p>Call <a href="tel:+19023270356">(902) 327-0356</a> and we\'ll take care of it.</p>';
+      })
+      .finally(function () {
+        cancelEl.panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+  }
+
+  function policyLine() {
+    var c = B.config.cancellation || {};
+    if (!c.refundDepositUntilDays) return '';
+    return 'Free cancellation up to ' + c.refundDepositUntilDays + ' days before arrival. ';
+  }
+
   function renderTypes() {
     el.typeList.innerHTML = '';
     B.config.siteTypes.forEach(function (type) {
@@ -2295,7 +2453,7 @@ a { color: inherit; }
 
     var note = 'Check-in ' + B.config.checkIn + ' · Check-out ' + B.config.checkOut;
     if (q && q.estimate) note = 'Sample pricing — not a live quote. ' + note;
-    else if (q) note = 'Card handled by Stripe. Your site is held ' + B.config.holdMinutes + ' minutes while you pay. ' + note;
+    else if (q) note = policyLine() + 'Card handled by Stripe. Your site is held ' + B.config.holdMinutes + ' minutes while you pay. ' + note;
     el.note.textContent = note;
 
     updateSubmit();
@@ -2408,6 +2566,11 @@ a { color: inherit; }
         B.config = config;
         B.siteTypeId = config.siteTypes[0].id;
         B.cursor = monthStart(todayISO());
+
+        var params = new URLSearchParams(window.location.search);
+        if (params.get('cancel') && params.get('t') && !B.demo) {
+          bootCancellation(params.get('cancel'), params.get('t'));
+        }
 
         if (!announceReturn()) {
           if (B.demo) {

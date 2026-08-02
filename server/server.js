@@ -5,9 +5,12 @@ require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
 
+const crypto = require('crypto');
+
 const { createApp } = require('./lib/app');
 const { GoogleCalendarStore, MemoryCalendarStore } = require('./lib/calendar');
 const { StripePayments } = require('./lib/payments');
+const { ConsoleMailer, SmtpMailer, CAMPGROUND } = require('./lib/mailer');
 const { ratesConfigured } = require('./lib/pricing');
 
 const DEMO = process.env.DEMO === '1';
@@ -79,6 +82,11 @@ class DemoPayments {
   parseWebhook() {
     throw new Error('Demo mode does not accept webhooks');
   }
+
+  async refund(paymentRef, amountCents) {
+    console.log(`▸ DEMO refund of ${(amountCents / 100).toFixed(2)} against ${paymentRef} (no money moved)`);
+    return { id: `re_demo_${Math.random().toString(36).slice(2, 8)}` };
+  }
 }
 
 function buildPayments() {
@@ -103,13 +111,57 @@ if (!ratesConfigured(rates)) {
   console.warn(`▸ No rates set in ${file} — online booking stays closed until every site type has a nightly rate.`);
 }
 
+/**
+ * Mail is optional. Without SMTP the server keeps taking bookings and writes
+ * what it would have sent to the log, so a mail outage never blocks a payment.
+ */
+function buildMailer() {
+  const { SMTP_URL, SMTP_HOST, SMTP_USER, SMTP_PASS, MAIL_FROM } = process.env;
+  if (!SMTP_URL && !SMTP_HOST) {
+    console.warn('▸ Email is not configured — confirmations will be logged, not sent.');
+    console.warn('  Set SMTP_URL (or SMTP_HOST/SMTP_USER/SMTP_PASS) and MAIL_FROM to send them.');
+    return new ConsoleMailer();
+  }
+
+  const nodemailer = require('nodemailer');
+  const transport = SMTP_URL
+    ? nodemailer.createTransport(SMTP_URL)
+    : nodemailer.createTransport({
+        host: SMTP_HOST,
+        port: Number(process.env.SMTP_PORT || 587),
+        secure: String(process.env.SMTP_SECURE || '') === '1',
+        auth: SMTP_USER ? { user: SMTP_USER, pass: SMTP_PASS } : undefined,
+      });
+
+  console.log(`▸ Email via ${SMTP_HOST || 'SMTP_URL'}`);
+  return new SmtpMailer({
+    transport,
+    from: MAIL_FROM || `${CAMPGROUND.name} <${CAMPGROUND.email}>`,
+    replyTo: process.env.OFFICE_EMAIL || CAMPGROUND.email,
+  });
+}
+
+/**
+ * Signs cancellation links. Without a fixed secret the links in already-sent
+ * emails stop working after a restart, so production must set one.
+ */
+function bookingSecret() {
+  if (process.env.BOOKING_SECRET) return process.env.BOOKING_SECRET;
+  console.warn('▸ BOOKING_SECRET is not set — cancellation links will stop working when this process restarts.');
+  return crypto.randomBytes(32).toString('hex');
+}
+
 const store = buildStore();
 const payments = buildPayments();
+const mailer = buildMailer();
+const secret = bookingSecret();
 
 const app = createApp({
   rates,
   store,
   payments,
+  mailer,
+  secret,
   staticDir: STATIC_DIR,
   publicUrl: PUBLIC_URL,
 });
@@ -119,10 +171,11 @@ if (payments instanceof DemoPayments) {
   app.get('/api/demo/pay', async (req, res) => {
     const session = payments.sessions.get(String(req.query.session || ''));
     if (!session) return res.status(404).send('Unknown demo session');
-    await confirmBySession({ rates, store }, session.id, {
+    const confirmed = await confirmBySession({ rates, store }, session.id, {
       paymentRef: `demo_${session.id}`,
       paidCents: session.amount_total,
     });
+    if (confirmed && confirmed.changed) await app.locals.sendConfirmation(confirmed.event);
     res.redirect(`/?booking=confirmed&ref=${encodeURIComponent(session.ref)}`);
   });
 }
