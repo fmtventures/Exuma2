@@ -1499,6 +1499,37 @@ table.rates tbody tr:last-child th, table.rates tbody tr:last-child td { border-
     </div>
   </section>
 
+  <!-- ============ SITE MAP ============ -->
+  <section class="band reveal" id="map">
+    <div class="wrap">
+      <p class="eyebrow">Site map</p>
+      <h2 class="sign" style="font-size: clamp(1.75rem, 4vw, 2.75rem); max-width: 20ch;">Every site, where it sits</h2>
+      <p class="lede" style="margin-top: 1rem;">
+        Forty-odd sites between North Lake and the shore. Pick your dates in the booking form below and
+        the map shows you exactly what's still open — then click the one you want.
+      </p>
+
+          
+            <p class="step-label">Choose a site<span class="hint" id="mapHint">Pick your dates, then choose a site</span></p>
+
+            <div class="map-tools" id="mapTools"></div>
+
+            <div class="map-frame" id="mapFrame">
+              <svg class="backdrop" id="mapBackdrop" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+              <div id="mapPads"></div>
+              <div class="site-card" id="siteCard" role="status" aria-live="polite"></div>
+            </div>
+
+            <p class="map-legend">
+              <span><i></i>Open</span>
+              <span><i class="k-taken"></i>Taken</span>
+              <span><i class="k-chosen"></i>Your site</span>
+              <span><i class="k-pull"></i>Pull-through</span>
+            </p>
+            <p class="map-note" id="mapNote"></p>
+    </div>
+  </section>
+
   <!-- ============ STORY ============ -->
   <section class="band story reveal">
     <div class="wrap story-grid">
@@ -1863,26 +1894,6 @@ table.rates tbody tr:last-child th, table.rates tbody tr:last-child td { border-
               <span><i class="k-full"></i>Full</span>
               <span><i class="k-closed"></i>Closed</span>
             </p>
-          </div>
-
-          <div class="step" id="map">
-            <p class="step-label">Your spot<span class="hint" id="mapHint">Pick your dates, then choose a site</span></p>
-
-            <div class="map-tools" id="mapTools"></div>
-
-            <div class="map-frame" id="mapFrame">
-              <svg class="backdrop" id="mapBackdrop" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
-              <div id="mapPads"></div>
-              <div class="site-card" id="siteCard" role="status" aria-live="polite"></div>
-            </div>
-
-            <p class="map-legend">
-              <span><i></i>Open</span>
-              <span><i class="k-taken"></i>Taken</span>
-              <span><i class="k-chosen"></i>Your site</span>
-              <span><i class="k-pull"></i>Pull-through</span>
-            </p>
-            <p class="map-note" id="mapNote"></p>
           </div>
 
           <div class="step">
