@@ -1,0 +1,1189 @@
+{
+  "_comment": "Traced from All Points East's own site map. Numbering and positions follow it, gaps and all \u2014 there is no site 1, 8, 40 or 41. The group tenting area is drawn as a closed zone rather than a site, because it is shut while storm damage is repaired, and B40 ('Bunkin' at the Lake') is a rental unit drawn as a landmark rather than a campsite. STILL A GUESS: which sites carry 50 amp, 30 amp, water-only or no service \u2014 the map does not say, so the split below only reconciles with the published inventory. x and y are percentages of the map area, north at the top.",
+  "bounds": {
+    "width": 100,
+    "height": 100
+  },
+  "orientation": "North is up. North Lake lies along the north edge; the entrance is at the south-west corner.",
+  "notToScale": true,
+  "water": [
+    {
+      "kind": "lake",
+      "label": "North Lake",
+      "shape": "ellipse",
+      "x": 38.9,
+      "y": 6,
+      "rx": 22,
+      "ry": 6.6
+    }
+  ],
+  "zones": [
+    {
+      "id": "storm",
+      "kind": "closed",
+      "label": "Group tenting \u2014 closed while storm damage is repaired",
+      "short": "Area closed",
+      "x": 34.5,
+      "y": 22,
+      "w": 28,
+      "h": 15
+    },
+    {
+      "id": "greenspace",
+      "kind": "grass",
+      "label": "Green space",
+      "x": 92.2,
+      "y": 48.4,
+      "w": 13,
+      "h": 7,
+      "short": "Green space"
+    },
+    {
+      "id": "play",
+      "kind": "play",
+      "label": "Play area",
+      "x": 82.5,
+      "y": 57.5,
+      "w": 6.5,
+      "h": 8,
+      "short": "Play"
+    }
+  ],
+  "roads": [
+    {
+      "label": "Entrance",
+      "points": [
+        [
+          3.5,
+          99
+        ],
+        [
+          5,
+          94
+        ],
+        [
+          10,
+          90
+        ]
+      ]
+    },
+    {
+      "label": "Highway",
+      "points": [
+        [
+          1.5,
+          33
+        ],
+        [
+          1.5,
+          60
+        ],
+        [
+          1.5,
+          92
+        ]
+      ]
+    },
+    {
+      "label": "One way",
+      "oneWay": true,
+      "points": [
+        [
+          39,
+          40.3
+        ],
+        [
+          24,
+          40.3
+        ],
+        [
+          10,
+          41
+        ],
+        [
+          6,
+          45
+        ]
+      ]
+    },
+    {
+      "label": "West drive",
+      "points": [
+        [
+          6,
+          45
+        ],
+        [
+          6,
+          60
+        ],
+        [
+          6.5,
+          76
+        ],
+        [
+          8,
+          88
+        ]
+      ]
+    },
+    {
+      "label": "Row 15-20 lane",
+      "points": [
+        [
+          8,
+          60
+        ],
+        [
+          24,
+          59.6
+        ],
+        [
+          40,
+          59.3
+        ]
+      ]
+    },
+    {
+      "label": "Row 9-14 lane",
+      "points": [
+        [
+          9,
+          84
+        ],
+        [
+          26,
+          83.6
+        ],
+        [
+          44,
+          83.4
+        ]
+      ]
+    },
+    {
+      "label": "South drive",
+      "points": [
+        [
+          10,
+          90
+        ],
+        [
+          30,
+          89.6
+        ],
+        [
+          50,
+          89
+        ],
+        [
+          62,
+          88
+        ]
+      ]
+    },
+    {
+      "label": "Centre drive",
+      "points": [
+        [
+          58.4,
+          40
+        ],
+        [
+          58.4,
+          58
+        ],
+        [
+          58.4,
+          74
+        ],
+        [
+          58,
+          88
+        ]
+      ]
+    },
+    {
+      "label": "North lane",
+      "points": [
+        [
+          46,
+          42
+        ],
+        [
+          56,
+          41
+        ],
+        [
+          68,
+          41
+        ],
+        [
+          78,
+          43
+        ]
+      ]
+    },
+    {
+      "label": "East loop",
+      "points": [
+        [
+          64,
+          46
+        ],
+        [
+          82,
+          45
+        ],
+        [
+          88,
+          50
+        ],
+        [
+          88,
+          66
+        ],
+        [
+          84,
+          78
+        ],
+        [
+          66,
+          80
+        ],
+        [
+          60,
+          74
+        ]
+      ]
+    },
+    {
+      "label": "Pool lane",
+      "points": [
+        [
+          64,
+          66
+        ],
+        [
+          84,
+          66
+        ]
+      ]
+    }
+  ],
+  "landmarks": [
+    {
+      "id": "office",
+      "name": "Office",
+      "icon": "office",
+      "x": 12,
+      "y": 80.2,
+      "w": 8,
+      "h": 6,
+      "note": "Office & ice cream \u2014 stop here first"
+    },
+    {
+      "id": "washrooms",
+      "name": "Washroom / showers",
+      "icon": "showers",
+      "x": 46.9,
+      "y": 69.8,
+      "w": 9.5,
+      "h": 6.5
+    },
+    {
+      "id": "pool",
+      "name": "Pool",
+      "icon": "pool",
+      "x": 91.5,
+      "y": 64.8,
+      "w": 8,
+      "h": 11
+    },
+    {
+      "id": "sundeck",
+      "name": "Sun deck",
+      "icon": "deck",
+      "x": 91.5,
+      "y": 52.5,
+      "w": 8,
+      "h": 4
+    },
+    {
+      "id": "stage",
+      "name": "Stage",
+      "icon": "stage",
+      "x": 95.5,
+      "y": 81.3,
+      "w": 7,
+      "h": 6
+    },
+    {
+      "id": "bunkie",
+      "name": "B40 bunkie",
+      "icon": "bunkie",
+      "x": 53.5,
+      "y": 36.5,
+      "w": 6,
+      "h": 4.5,
+      "note": "Rental unit \u2014 book by phone"
+    },
+    {
+      "id": "common",
+      "name": "Common area",
+      "icon": "common",
+      "x": 62.2,
+      "y": 20.9
+    },
+    {
+      "id": "beach",
+      "name": "To the beach",
+      "icon": "path",
+      "x": 61,
+      "y": 30
+    },
+    {
+      "id": "waste",
+      "name": "Waste disposal",
+      "icon": "waste",
+      "x": 52.5,
+      "y": 62
+    },
+    {
+      "id": "entrance",
+      "name": "Entrance",
+      "icon": "gate",
+      "x": 5.5,
+      "y": 96.5
+    },
+    {
+      "id": "exit",
+      "name": "Exit",
+      "icon": "gate",
+      "x": 2.5,
+      "y": 66
+    }
+  ],
+  "trees": [
+    [
+      8,
+      36
+    ],
+    [
+      12,
+      35.5
+    ],
+    [
+      16,
+      35
+    ],
+    [
+      20,
+      35
+    ],
+    [
+      24,
+      35
+    ],
+    [
+      28,
+      35
+    ],
+    [
+      32,
+      35.5
+    ],
+    [
+      36,
+      36
+    ],
+    [
+      10,
+      62.5
+    ],
+    [
+      15,
+      62.5
+    ],
+    [
+      20,
+      62.5
+    ],
+    [
+      25,
+      62.5
+    ],
+    [
+      30,
+      62.5
+    ],
+    [
+      35,
+      62.5
+    ],
+    [
+      40,
+      63
+    ],
+    [
+      12,
+      76
+    ],
+    [
+      17,
+      76
+    ],
+    [
+      22,
+      76
+    ],
+    [
+      27,
+      76
+    ],
+    [
+      32,
+      76
+    ],
+    [
+      37,
+      76
+    ],
+    [
+      50,
+      30
+    ],
+    [
+      54,
+      28
+    ],
+    [
+      58,
+      26
+    ],
+    [
+      62,
+      26
+    ],
+    [
+      66,
+      27
+    ],
+    [
+      70,
+      27
+    ],
+    [
+      74,
+      28
+    ],
+    [
+      78,
+      28
+    ],
+    [
+      82,
+      29
+    ],
+    [
+      86,
+      30
+    ],
+    [
+      90,
+      31
+    ],
+    [
+      63,
+      49
+    ],
+    [
+      63,
+      62
+    ],
+    [
+      66,
+      63
+    ],
+    [
+      90,
+      39
+    ],
+    [
+      12,
+      92
+    ],
+    [
+      22,
+      93
+    ],
+    [
+      32,
+      93
+    ],
+    [
+      42,
+      93
+    ],
+    [
+      52,
+      93
+    ],
+    [
+      62,
+      94
+    ],
+    [
+      72,
+      94
+    ],
+    [
+      82,
+      94
+    ],
+    [
+      92,
+      93
+    ],
+    [
+      44,
+      44
+    ],
+    [
+      47,
+      46
+    ],
+    [
+      59,
+      83
+    ],
+    [
+      66,
+      88
+    ]
+  ],
+  "sites": [
+    {
+      "number": "2",
+      "x": 18.3,
+      "y": 80.5,
+      "pullThrough": false,
+      "features": [
+        "Near the office",
+        "Back-in"
+      ],
+      "typeId": "full-service-30",
+      "amps": 30,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "3",
+      "x": 22.1,
+      "y": 80.5,
+      "pullThrough": false,
+      "features": [
+        "Near the office",
+        "Back-in"
+      ],
+      "typeId": "full-service-30",
+      "amps": 30,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "4",
+      "x": 26.9,
+      "y": 80.5,
+      "pullThrough": false,
+      "features": [
+        "Near the office",
+        "Back-in"
+      ],
+      "typeId": "full-service-30",
+      "amps": 30,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "5",
+      "x": 31.7,
+      "y": 80.5,
+      "pullThrough": false,
+      "features": [
+        "Near the office",
+        "Back-in"
+      ],
+      "typeId": "full-service-30",
+      "amps": 30,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "6",
+      "x": 36.5,
+      "y": 80.5,
+      "pullThrough": false,
+      "features": [
+        "Near the office",
+        "Back-in"
+      ],
+      "typeId": "full-service-30",
+      "amps": 30,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "7",
+      "x": 41.2,
+      "y": 80.5,
+      "pullThrough": false,
+      "features": [
+        "Near the office",
+        "Back-in"
+      ],
+      "typeId": "full-service-30",
+      "amps": 30,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "9",
+      "x": 36.6,
+      "y": 67.4,
+      "pullThrough": false,
+      "features": [
+        "Back-in",
+        "Near the washrooms"
+      ],
+      "typeId": "full-service-30",
+      "amps": 30,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "10",
+      "x": 31.9,
+      "y": 67.4,
+      "pullThrough": false,
+      "features": [
+        "Back-in",
+        "Near the washrooms"
+      ],
+      "typeId": "full-service-30",
+      "amps": 30,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "11",
+      "x": 26.7,
+      "y": 67.4,
+      "pullThrough": false,
+      "features": [
+        "Back-in",
+        "Near the washrooms"
+      ],
+      "typeId": "full-service-30",
+      "amps": 30,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "12",
+      "x": 22.0,
+      "y": 67.4,
+      "pullThrough": false,
+      "features": [
+        "Back-in",
+        "Near the washrooms"
+      ],
+      "typeId": "full-service-30",
+      "amps": 30,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "13",
+      "x": 17.2,
+      "y": 67.4,
+      "pullThrough": false,
+      "features": [
+        "Back-in",
+        "Near the washrooms"
+      ],
+      "typeId": "full-service-30",
+      "amps": 30,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "14",
+      "x": 12.4,
+      "y": 67.4,
+      "pullThrough": false,
+      "features": [
+        "Back-in",
+        "Near the washrooms"
+      ],
+      "typeId": "full-service-30",
+      "amps": 30,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "15",
+      "x": 11.3,
+      "y": 49.1,
+      "pullThrough": false,
+      "features": [
+        "Back-in",
+        "Top of the campground"
+      ],
+      "typeId": "full-service-50",
+      "amps": 50,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "16",
+      "x": 16.3,
+      "y": 49.1,
+      "pullThrough": false,
+      "features": [
+        "Back-in",
+        "Top of the campground"
+      ],
+      "typeId": "full-service-50",
+      "amps": 50,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "17",
+      "x": 21.2,
+      "y": 49.1,
+      "pullThrough": false,
+      "features": [
+        "Back-in",
+        "Top of the campground"
+      ],
+      "typeId": "full-service-50",
+      "amps": 50,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "18",
+      "x": 26.2,
+      "y": 49.1,
+      "pullThrough": false,
+      "features": [
+        "Back-in",
+        "Top of the campground"
+      ],
+      "typeId": "full-service-50",
+      "amps": 50,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "19",
+      "x": 31.3,
+      "y": 49.1,
+      "pullThrough": false,
+      "features": [
+        "Back-in",
+        "Top of the campground"
+      ],
+      "typeId": "full-service-50",
+      "amps": 50,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "20",
+      "x": 36.3,
+      "y": 49.1,
+      "pullThrough": false,
+      "features": [
+        "Back-in",
+        "Top of the campground"
+      ],
+      "typeId": "full-service-50",
+      "amps": 50,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "21",
+      "x": 56.0,
+      "y": 70.1,
+      "pullThrough": false,
+      "features": [
+        "Central",
+        "Near the washrooms"
+      ],
+      "typeId": "full-service-30",
+      "amps": 30,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "22",
+      "x": 51.5,
+      "y": 83.0,
+      "pullThrough": false,
+      "features": [
+        "Central",
+        "Near the washrooms"
+      ],
+      "typeId": "full-service-30",
+      "amps": 30,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "23",
+      "x": 65.4,
+      "y": 91.0,
+      "pullThrough": false,
+      "features": [
+        "Quiet corner"
+      ],
+      "typeId": "tent",
+      "amps": null,
+      "hookups": []
+    },
+    {
+      "number": "24",
+      "x": 71.1,
+      "y": 85.4,
+      "pullThrough": false,
+      "features": [
+        "Quiet corner"
+      ],
+      "typeId": "full-service-30",
+      "amps": 30,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "25",
+      "x": 79.2,
+      "y": 87.4,
+      "pullThrough": false,
+      "features": [
+        "Quiet corner"
+      ],
+      "typeId": "tent",
+      "amps": null,
+      "hookups": []
+    },
+    {
+      "number": "26",
+      "x": 83.8,
+      "y": 87.4,
+      "pullThrough": false,
+      "features": [
+        "Quiet corner"
+      ],
+      "typeId": "tent",
+      "amps": null,
+      "hookups": []
+    },
+    {
+      "number": "27",
+      "x": 55.0,
+      "y": 55.5,
+      "pullThrough": false,
+      "features": [
+        "Quiet middle row"
+      ],
+      "typeId": "full-service-30",
+      "amps": 30,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "28",
+      "x": 55.0,
+      "y": 50.1,
+      "pullThrough": false,
+      "features": [
+        "Quiet middle row"
+      ],
+      "typeId": "full-service-30",
+      "amps": 30,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "29",
+      "x": 55.0,
+      "y": 44.6,
+      "pullThrough": false,
+      "features": [
+        "Quiet middle row"
+      ],
+      "typeId": "full-service-30",
+      "amps": 30,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "30",
+      "x": 75.3,
+      "y": 53.5,
+      "pullThrough": false,
+      "features": [
+        "Near the play area"
+      ],
+      "typeId": "full-service-50",
+      "amps": 50,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "31",
+      "x": 75.6,
+      "y": 58.6,
+      "pullThrough": false,
+      "features": [
+        "Near the play area"
+      ],
+      "typeId": "full-service-50",
+      "amps": 50,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "32",
+      "x": 69.2,
+      "y": 58.6,
+      "pullThrough": false,
+      "features": [
+        "Near the play area"
+      ],
+      "typeId": "full-service-30",
+      "amps": 30,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "33",
+      "x": 69.2,
+      "y": 53.5,
+      "pullThrough": false,
+      "features": [
+        "Near the play area"
+      ],
+      "typeId": "full-service-30",
+      "amps": 30,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "34",
+      "x": 67.2,
+      "y": 71.1,
+      "pullThrough": false,
+      "features": [
+        "Near the pool"
+      ],
+      "typeId": "full-service-50",
+      "amps": 50,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "35",
+      "x": 72.3,
+      "y": 71.1,
+      "pullThrough": false,
+      "features": [
+        "Near the pool"
+      ],
+      "typeId": "full-service-50",
+      "amps": 50,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "36",
+      "x": 77.1,
+      "y": 71.1,
+      "pullThrough": false,
+      "features": [
+        "Near the pool"
+      ],
+      "typeId": "full-service-50",
+      "amps": 50,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "37",
+      "x": 81.9,
+      "y": 71.1,
+      "pullThrough": false,
+      "features": [
+        "Near the pool"
+      ],
+      "typeId": "full-service-50",
+      "amps": 50,
+      "hookups": [
+        "power",
+        "water",
+        "sewer"
+      ]
+    },
+    {
+      "number": "38",
+      "x": 88.3,
+      "y": 87.4,
+      "pullThrough": false,
+      "features": [
+        "Quiet corner"
+      ],
+      "typeId": "tent",
+      "amps": null,
+      "hookups": []
+    },
+    {
+      "number": "39",
+      "x": 73.3,
+      "y": 39.9,
+      "pullThrough": false,
+      "features": [
+        "Up among the trees"
+      ],
+      "typeId": "tent",
+      "amps": null,
+      "hookups": []
+    },
+    {
+      "number": "42",
+      "x": 45.0,
+      "y": 39.0,
+      "pullThrough": false,
+      "features": [
+        "By the lake",
+        "Tent or car camping"
+      ],
+      "typeId": "water-only",
+      "amps": null,
+      "hookups": [
+        "water"
+      ]
+    },
+    {
+      "number": "43",
+      "x": 45.0,
+      "y": 34.3,
+      "pullThrough": false,
+      "features": [
+        "By the lake",
+        "Tent or car camping"
+      ],
+      "typeId": "water-only",
+      "amps": null,
+      "hookups": [
+        "water"
+      ]
+    }
+  ]
+}

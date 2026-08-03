@@ -1,0 +1,29 @@
+{
+  "name": "allpointseast-booking",
+  "version": "1.0.0",
+  "description": "Booking server for All Points East Campground — availability, Stripe deposits, Google Calendar",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "dev:demo": "DEMO=1 node --watch server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "googleapis": "^173.0.0",
+    "nodemailer": "^9.0.3",
+    "stripe": "^22.4.0"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  }
+}

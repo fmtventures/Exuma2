@@ -1,0 +1,62 @@
+{
+  "_comment": "Sample rate card used by the test suite and by `npm run dev:demo`. The numbers here are illustrative only — they are NOT the campground's rates. Copy this file over config/rates.json and replace every price before going live.",
+
+  "currency": "cad",
+  "taxRate": 0.15,
+  "taxLabel": "HST",
+
+  "checkIn": "14:00",
+  "checkOut": "11:00",
+  "minNights": 1,
+  "maxNights": 30,
+  "maxGuests": 8,
+  "bookingWindowDays": 400,
+
+  "season": { "opens": "04-25", "closes": "11-03" },
+
+  "cancellation": {
+    "guestCancelUntilDays": 2,
+    "refundDepositUntilDays": 7
+  },
+
+  "deposit": {
+    "mode": "first_night",
+    "percent": 0.5
+  },
+
+  "extras": {
+    "extraGuestNightly": 5,
+    "guestsIncluded": 4,
+    "petNightly": null
+  },
+
+  "siteTypes": [
+    {
+      "id": "full-service",
+      "name": "Full service",
+      "blurb": "Power, water and sewer at the pad. Pull-throughs available.",
+      "inventory": 20,
+      "nightly": 52,
+      "weekly": 312,
+      "monthly": 1150
+    },
+    {
+      "id": "power-water",
+      "name": "Power & water",
+      "blurb": "Two-way site with 15, 30 or 50 amp power and water.",
+      "inventory": 12,
+      "nightly": 52,
+      "weekly": 312,
+      "monthly": 1150
+    },
+    {
+      "id": "tent",
+      "name": "Unserviced / tent",
+      "blurb": "Unserviced pad among the trees. Water nearby.",
+      "inventory": 8,
+      "nightly": 38,
+      "weekly": 228,
+      "monthly": 840
+    }
+  ]
+}
