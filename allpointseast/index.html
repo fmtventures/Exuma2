@@ -905,8 +905,8 @@ table.rates tbody tr:last-child th, table.rates tbody tr:last-child td { border-
 
 /* ---------- reveal ---------- */
 
-.reveal { opacity: 0; transform: translateY(18px); }
-.reveal.is-in { opacity: 1; transform: none; transition: opacity .7s ease, transform .7s cubic-bezier(.32,.72,0,1); }
+html.js-reveal .reveal { opacity: 0; transform: translateY(18px); }
+html.js-reveal .reveal.is-in { opacity: 1; transform: none; transition: opacity .7s ease, transform .7s cubic-bezier(.32,.72,0,1); }
 
 @media (prefers-reduced-motion: reduce) {
   .reveal, .reveal.is-in { opacity: 1; transform: none; transition: none; }
@@ -2071,11 +2071,20 @@ table.rates tbody tr:last-child th, table.rates tbody tr:last-child td { border-
     }
   });
 
-  /* ---------- scroll reveal ---------- */
+  /* ---------- scroll reveal ----------
+     Content is visible by default. Only once we know the observer exists do we
+     opt into hiding it, and a timer puts everything back if the observer never
+     reports — a section of this site must never be invisible because an
+     animation did not run. */
   var reveals = document.querySelectorAll(".reveal");
+  var showAll = function () {
+    for (var i = 0; i < reveals.length; i++) reveals[i].classList.add("is-in");
+  };
+
   if (reduced || !("IntersectionObserver" in window)) {
-    reveals.forEach(function (el) { el.classList.add("is-in"); });
+    showAll();
   } else {
+    document.documentElement.classList.add("js-reveal");
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
         if (entry.isIntersecting) {
@@ -2085,6 +2094,7 @@ table.rates tbody tr:last-child th, table.rates tbody tr:last-child td { border-
       });
     }, { rootMargin: "0px 0px -12% 0px", threshold: 0.06 });
     reveals.forEach(function (el) { io.observe(el); });
+    window.setTimeout(showAll, 2500);
   }
 
   /* ---------- hero: chart-line horizon with the East Point beam ---------- */
@@ -3443,11 +3453,18 @@ table.rates tbody tr:last-child th, table.rates tbody tr:last-child td { border-
     resizeTimer = window.setTimeout(redrawAll, 160);
   });
 
-  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", redrawAll);
-  new MutationObserver(redrawAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  var scheme = window.matchMedia("(prefers-color-scheme: dark)");
+  if (scheme.addEventListener) scheme.addEventListener("change", redrawAll);
+  else if (scheme.addListener) scheme.addListener(redrawAll);
 
-  redrawAll();
-  bootBooking();
+  if (window.MutationObserver) {
+    new MutationObserver(redrawAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  }
+
+  // Start-up is three independent jobs. One failing browser API must not take
+  // the other two with it.
+  try { redrawAll(); } catch (err) { console.error('Map drawing failed:', err); }
+  try { bootBooking(); } catch (err) { console.error('Booking failed to start:', err); }
 })();
 </script>
 </body>
