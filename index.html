@@ -157,6 +157,7 @@
                     <button onclick="switchTab('financial')" class="tab-btn" id="tab-financial">Market Overview</button>
                     <button onclick="switchTab('structure')" class="tab-btn" id="tab-structure">Structure</button>
                     <button onclick="switchTab('steps')" class="tab-btn text-brand-teal font-bold bg-brand-sand/50" id="tab-steps">Execution Plan</button>
+                    <button onclick="switchTab('dataroom')" class="tab-btn" id="tab-dataroom">🔒 Data Room</button>
                 </nav>
             </div>
         </div>
@@ -482,6 +483,41 @@
                 </div>
             </div>
 
+            <div id="content-dataroom" class="hidden space-y-8">
+                <div class="bg-brand-navy text-white p-8 rounded-2xl shadow-xl text-center">
+                    <h3 class="text-3xl font-bold text-brand-gold mb-2">🔒 Investor Data Room</h3>
+                    <p class="text-white/70 text-sm max-w-xl mx-auto">Secure, role-based access to due-diligence documents for investors, brokers, and lenders.</p>
+                </div>
+
+                <div id="dr-picker" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- populated by dr_init() -->
+                </div>
+
+                <div id="dr-gate" class="hidden max-w-md mx-auto bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
+                    <div id="dr-gate-icon" class="text-4xl mb-3"></div>
+                    <h4 id="dr-gate-title" class="font-serif text-xl font-bold text-brand-navy mb-1"></h4>
+                    <p class="text-xs text-gray-500 mb-6">Enter the access password provided to you.</p>
+                    <input type="password" id="dr-password-input" class="input-clean text-center mb-3" placeholder="Access Password" onkeydown="if(event.key==='Enter') dr_submitPassword()">
+                    <button onclick="dr_submitPassword()" class="w-full bg-brand-teal text-white font-bold py-2 rounded hover:bg-brand-darkteal transition-colors">Unlock</button>
+                    <p id="dr-gate-error" class="text-brand-coral text-xs font-bold mt-3 hidden">Incorrect password. Please try again.</p>
+                    <button onclick="dr_backToPicker()" class="text-xs text-gray-400 mt-4 hover:underline no-print">← Back</button>
+                </div>
+
+                <div id="dr-documents" class="hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h4 id="dr-doc-title" class="font-serif text-2xl font-bold text-brand-navy"></h4>
+                        <button onclick="dr_lock()" class="text-xs text-gray-400 hover:text-brand-coral font-bold no-print">🔒 Lock / Switch Access</button>
+                    </div>
+                    <div id="dr-doc-list" class="space-y-3"></div>
+                </div>
+
+                <div id="dr-admin" class="bg-brand-sand/30 border border-brand-beige rounded-xl p-6 no-print">
+                    <h5 class="font-bold text-brand-navy text-sm mb-3">🔑 Share Links (for you to send out)</h5>
+                    <p class="text-xs text-gray-500 mb-4">Send the link below to a recipient, then share the password separately (text, phone, or email). Passwords and document links are configured in the ROOMS object in the page source.</p>
+                    <div class="space-y-2" id="dr-admin-links"></div>
+                </div>
+            </div>
+
             <div id="content-steps" class="hidden space-y-8">
                 <div class="bg-brand-navy text-white p-8 rounded-2xl shadow-xl sticky top-4 z-30 border-b-4 border-brand-gold mb-8">
                     <div class="flex flex-col md:flex-row justify-between items-end gap-4 mb-8">
@@ -548,12 +584,14 @@
         document.addEventListener('DOMContentLoaded', () => {
             initFinancialTool();
             initCharts();
-            switchTab('general');
+            dr_init();
+            const roomParam = new URLSearchParams(window.location.search).get('room');
+            switchTab(roomParam && ROOMS[roomParam] ? 'dataroom' : 'general');
         });
 
         // --- TAB LOGIC ---
         function switchTab(tabId) {
-            ['general', 'model', 'financial', 'structure', 'steps'].forEach(id => {
+            ['general', 'model', 'financial', 'structure', 'steps', 'dataroom'].forEach(id => {
                 const c = document.getElementById(`content-${id}`);
                 const t = document.getElementById(`tab-${id}`);
                 if(c) c.classList.add('hidden');
@@ -561,7 +599,7 @@
             });
             document.getElementById(`content-${tabId}`).classList.remove('hidden');
             document.getElementById(`tab-${tabId}`).classList.add('active', 'text-brand-navy', 'border-brand-teal', 'font-bold', 'bg-white');
-            
+
             if(tabId === 'steps') renderExecutionPlan();
             if(tabId === 'general' && compsChart) setTimeout(() => compsChart.resize(), 10);
             if(tabId === 'financial') { if(arbitrageChart) arbitrageChart.resize(); if(financingChart) financingChart.resize(); }
@@ -766,6 +804,157 @@
             finally { element.style.backgroundColor = originalBg; }
         }
         function exportAllDataCSV() { alert("CSV Export coming soon."); }
+
+        // --- DATA ROOM (role-based access for investors / brokers / bankers) ---
+        // To change a password: edit the plaintext in this comment, then run
+        //   printf "%s" "YourNewPassword" | sha256sum
+        // and paste the resulting hash into that role's passwordHash below.
+        // Current passwords (keep private, share by phone/email — not in the link):
+        //   Investor: SandyPalms2026   Broker: BrokerAccess2026   Banker: BankerAccess2026
+        // Replace each document's url with the real shareable link (Google Drive, Dropbox, hosted PDF, etc).
+        const ROOMS = {
+            investor: {
+                label: "Investor Data Room", icon: "💼",
+                passwordHash: "fd250f64016f021ce07c68146a76c46b3d8e6fb784e76637982019e329d83993",
+                description: "Full due-diligence package for prospective equity partners.",
+                documents: [
+                    { name: "Financial Model & 30-Yr Projections", desc: "Live modeling tool with full return projections.", url: "?room=investor#content-model" },
+                    { name: "Independent Appraisal Report", desc: "Third-party valuation of the property.", url: "#" },
+                    { name: "Purchase & Sale Agreement (Draft)", desc: "Summary of proposed deal terms.", url: "#" },
+                    { name: "Market Comparables Report", desc: "Detailed comp sales & rental analysis.", url: "#" },
+                    { name: "Entity & Structure Overview", desc: "GP/LP structure, holding corp details.", url: "#" }
+                ]
+            },
+            broker: {
+                label: "Broker Access", icon: "🤝",
+                passwordHash: "afd8d2a35ce821357450f88bfdd109643a2a97f2df1ffd16adc419b35ed931c1",
+                description: "Listing details and comparables for co-op and referral brokers.",
+                documents: [
+                    { name: "Property Listing / Spec Sheet", desc: "Full specs, unit configuration, photos.", url: "#" },
+                    { name: "Market Comparables Report", desc: "Comp sales analysis for the area.", url: "#" },
+                    { name: "Commission & Referral Terms", desc: "Co-broke terms for this deal.", url: "#" }
+                ]
+            },
+            banker: {
+                label: "Lender / Banker Access", icon: "🏦",
+                passwordHash: "50ceb0f468c1c28dc37f5386e438cd20ad2d5cd02fcf61339f50ac299cfe4cfc",
+                description: "Underwriting documents for mortgage and financing review.",
+                documents: [
+                    { name: "Independent Appraisal Report", desc: "Third-party valuation of the property.", url: "#" },
+                    { name: "Pro Forma / Financial Projections", desc: "Income, expenses, and debt service detail.", url: "#" },
+                    { name: "Entity & Structure Overview", desc: "Holding corp / operating corp structure.", url: "#" },
+                    { name: "Proof of Funds / Down Payment Source", desc: "Source of down payment documentation.", url: "#" }
+                ]
+            }
+        };
+        let dr_currentRoom = null;
+
+        async function dr_sha256(text) {
+            const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+            return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        function dr_init() {
+            const adminDiv = document.getElementById('dr-admin-links');
+            if (adminDiv) {
+                adminDiv.innerHTML = Object.keys(ROOMS).map(key => {
+                    const url = window.location.origin + window.location.pathname + '?room=' + key;
+                    return `<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-white border border-gray-200 rounded px-3 py-2 text-xs">
+                        <span class="font-bold text-brand-navy">${ROOMS[key].icon} ${ROOMS[key].label}</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-gray-400 truncate max-w-[240px]">${url}</span>
+                            <button onclick="dr_copyLink('${key}', this)" class="bg-brand-teal text-white px-2 py-1 rounded font-bold shrink-0">Copy Link</button>
+                        </div>
+                    </div>`;
+                }).join('');
+            }
+
+            const picker = document.getElementById('dr-picker');
+            if (picker) {
+                picker.innerHTML = Object.keys(ROOMS).map(key => {
+                    const room = ROOMS[key];
+                    return `<div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 text-center flex flex-col items-center">
+                        <span class="text-3xl mb-2">${room.icon}</span>
+                        <h4 class="font-serif font-bold text-brand-navy mb-1">${room.label}</h4>
+                        <p class="text-xs text-gray-500 mb-4">${room.description}</p>
+                        <button onclick="dr_openRoom('${key}')" class="mt-auto bg-brand-navy text-white text-xs font-bold px-4 py-2 rounded hover:bg-brand-teal transition-colors">Enter</button>
+                    </div>`;
+                }).join('');
+            }
+
+            const roomParam = new URLSearchParams(window.location.search).get('room');
+            if (roomParam && ROOMS[roomParam]) dr_openRoom(roomParam);
+        }
+
+        function dr_copyLink(key, btn) {
+            const url = window.location.origin + window.location.pathname + '?room=' + key;
+            navigator.clipboard.writeText(url).then(() => {
+                const old = btn.innerText; btn.innerText = "Copied!";
+                setTimeout(() => btn.innerText = old, 1500);
+            });
+        }
+
+        function dr_openRoom(key) {
+            dr_currentRoom = key;
+            const room = ROOMS[key];
+            document.getElementById('dr-picker').classList.add('hidden');
+            document.getElementById('dr-documents').classList.add('hidden');
+            document.getElementById('dr-admin').classList.add('hidden');
+
+            if (sessionStorage.getItem('dr-unlocked-' + key) === '1') {
+                document.getElementById('dr-gate').classList.add('hidden');
+                dr_showDocuments(key);
+            } else {
+                document.getElementById('dr-gate').classList.remove('hidden');
+                document.getElementById('dr-gate-icon').innerText = room.icon;
+                document.getElementById('dr-gate-title').innerText = room.label;
+                document.getElementById('dr-password-input').value = '';
+                document.getElementById('dr-gate-error').classList.add('hidden');
+                document.getElementById('dr-password-input').focus();
+            }
+        }
+
+        async function dr_submitPassword() {
+            const key = dr_currentRoom;
+            if (!key) return;
+            const val = document.getElementById('dr-password-input').value;
+            const hash = await dr_sha256(val);
+            if (hash === ROOMS[key].passwordHash) {
+                sessionStorage.setItem('dr-unlocked-' + key, '1');
+                document.getElementById('dr-gate').classList.add('hidden');
+                dr_showDocuments(key);
+            } else {
+                document.getElementById('dr-gate-error').classList.remove('hidden');
+            }
+        }
+
+        function dr_showDocuments(key) {
+            const room = ROOMS[key];
+            document.getElementById('dr-documents').classList.remove('hidden');
+            document.getElementById('dr-doc-title').innerText = room.icon + ' ' + room.label;
+            document.getElementById('dr-doc-list').innerHTML = room.documents.map(d => `
+                <a href="${d.url}" target="_blank" class="block bg-white p-4 rounded-lg border border-gray-100 hover:border-brand-teal transition-colors flex items-center justify-between gap-4">
+                    <div><div class="font-bold text-brand-navy text-sm">${d.name}</div><div class="text-xs text-gray-500">${d.desc}</div></div>
+                    <span class="text-brand-teal text-xs font-bold uppercase shrink-0">Open ↗</span>
+                </a>`).join('');
+        }
+
+        function dr_backToPicker() {
+            document.getElementById('dr-gate').classList.add('hidden');
+            document.getElementById('dr-picker').classList.remove('hidden');
+            document.getElementById('dr-admin').classList.remove('hidden');
+            history.replaceState(null, '', window.location.pathname);
+            dr_currentRoom = null;
+        }
+
+        function dr_lock() {
+            if (dr_currentRoom) sessionStorage.removeItem('dr-unlocked-' + dr_currentRoom);
+            document.getElementById('dr-documents').classList.add('hidden');
+            document.getElementById('dr-picker').classList.remove('hidden');
+            document.getElementById('dr-admin').classList.remove('hidden');
+            history.replaceState(null, '', window.location.pathname);
+            dr_currentRoom = null;
+        }
     </script>
 </body>
 </html>
