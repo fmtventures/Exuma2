@@ -125,6 +125,7 @@ if (window.tailwind) tailwind.config = {
   <nav class="max-w-[1600px] mx-auto px-2 flex gap-0 overflow-x-auto scroll-thin border-t border-brand-beige/60">
     <button class="tab-btn active" data-tab="tree"      onclick="switchTab('tree')">🌳 Tree &amp; Branches</button>
     <button class="tab-btn"        data-tab="person"    onclick="switchTab('person')">👤 Person Record</button>
+    <button class="tab-btn"        data-tab="search"    onclick="switchTab('search')">🔎 Find Records</button>
     <button class="tab-btn"        data-tab="research"  onclick="switchTab('research')">🔍 Research Log</button>
     <button class="tab-btn"        data-tab="directory" onclick="switchTab('directory')">🏛️ Archives &amp; Museums</button>
     <button class="tab-btn"        data-tab="timeline"  onclick="switchTab('timeline')">📜 Timeline</button>
@@ -204,6 +205,21 @@ if (window.tailwind) tailwind.config = {
 <!-- ══════════════════════ TAB: PERSON ══════════════════════ -->
 <section id="tab-person" class="tab-panel hidden">
   <div id="personEditor" class="p-4 lg:p-6"></div>
+</section>
+
+<!-- ══════════════════════ TAB: FIND RECORDS ══════════════════════ -->
+<section id="tab-search" class="tab-panel hidden">
+  <div class="p-4 lg:p-6 space-y-4">
+    <div class="flex flex-wrap items-end gap-3">
+      <div>
+        <h2 class="text-2xl font-bold text-brand-navy">Find Records</h2>
+        <p class="text-sm text-gray-600 max-w-2xl">Enter what you know about a person and this turns it into real
+          searches — across every spelling their name was ever written under.</p>
+      </div>
+      <select id="searchPerson" class="fld !w-auto ml-auto" onchange="setSearchPerson(this.value)"></select>
+    </div>
+    <div id="searchBody"></div>
+  </div>
 </section>
 
 <!-- ══════════════════════ TAB: RESEARCH LOG ══════════════════════ -->
@@ -1090,6 +1106,7 @@ function renderBranchPanel(){
         </span>
       </div>
       <p class="text-[11px] text-gray-500 mb-2">${(p.tasks||[]).filter(t=>t.status!=='done').length} open research question(s)</p>
+      <button onclick="openSearchFor('${id}')" class="btn btn-primary btn-sm w-full justify-center mb-1">🔎 Find records</button>
       <button onclick="openSourceModal('${id}')" class="btn btn-ghost btn-sm w-full justify-center mb-1">+ Add source</button>
       <button onclick="openTaskModal('${id}')" class="btn btn-ghost btn-sm w-full justify-center">+ Research task</button>
     </div>`;
@@ -1264,6 +1281,7 @@ function renderPersonEditor(){
     </div>
     <div class="ml-auto flex flex-wrap gap-2">
       <button onclick="switchTab('tree')" class="btn btn-ghost btn-sm">← Back to chart</button>
+      <button onclick="openSearchFor('${p.id}')" class="btn btn-primary btn-sm">🔎 Find records</button>
       <button onclick="setAsRoot('${p.id}')" class="btn btn-ghost btn-sm">Centre chart here</button>
       <button onclick="confirmDeletePerson('${p.id}')" class="btn btn-danger btn-sm">Delete person</button>
     </div>
@@ -2663,6 +2681,475 @@ function loadSample(){
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   FIND RECORDS — turn the data the user entered into actual searches
+
+   Two things defeat searches on these lines more than anything else: the
+   spelling is not stable, and in English-language records the name was often
+   translated outright. Both are handled before a single link is built.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Documented Acadian / French-Canadian spelling variants and dit names. */
+const SURNAME_VARIANTS = {
+  arsenault:['Arsenault','Arseneau','Arseneaux','Arsenau','Arcenault'],
+  theriault:['Thériault','Theriault','Terriot','Terriau','Terriault','Theriot'],
+  gallant:['Gallant','Haché','Hache','Haché-Gallant'],
+  leblanc:['LeBlanc','Le Blanc','Leblanc'],
+  boudreau:['Boudreau','Boudrot','Boudreaux','Boudro'],
+  comeau:['Comeau','Comeaux','Commeau'],
+  cormier:['Cormier','Cormie'],
+  chiasson:['Chiasson','Giasson'],
+  doucet:['Doucet','Doucette'],
+  bourgeois:['Bourgeois','Bourgois'],
+  landry:['Landry','Landrie'],
+  melanson:['Melanson','Melançon','Mellanson'],
+  poirier:['Poirier','Poirié','Poirie'],
+  gaudet:['Gaudet','Gaudette','Gauday'],
+  hebert:['Hébert','Hebert'],
+  bernard:['Bernard','Barnard'],
+  dugas:['Dugas','Dugast'],
+  robichaud:['Robichaud','Robicheau','Robichau','Robicheaux'],
+  leger:['Léger','Leger','Legere'],
+  maillet:['Maillet','Mallet','Mailly'],
+  savoie:['Savoie','Savoy'],
+  deveau:['Deveau','Devau','Daveau'],
+  belliveau:['Belliveau','Bellefontaine'],
+  surette:['Surette','Suret','Sirette'],
+  muise:['Muise','Mius','Muis'],
+  breau:['Breau','Brault','Bro'],
+  daigle:['Daigle','Daigre','D’Aigle'],
+  gautreau:['Gautreau','Gautreaux','Gotreau'],
+  thibodeau:['Thibodeau','Thibodeaux','Tibodo'],
+  saulnier:['Saulnier','Sonnier'],
+  amirault:['Amirault','Amiro','Amero'],
+  bourque:['Bourque','Bourg'],
+  richard:['Richard','Richards'],
+  vienneau:['Vienneau','Vienot'],
+  babin:['Babin','Baban'],
+  trahan:['Trahan','Trahant'],
+  granger:['Granger','Grangé'],
+  dupuis:['Dupuis','Dupuy','Depuis'],
+  godin:['Godin','Gaudin','Godain'],
+  pitre:['Pitre','Pitres'],
+  doiron:['Doiron','Doirion'],
+  lejeune:['LeJeune','Le Jeune','Lejeune'],
+  aucoin:['Aucoin','Haucoin'],
+  cyr:['Cyr','Sire','Syr'],
+  blanchard:['Blanchard','Blanchar'],
+  petitpas:['Petitpas','Petit-Pas'],
+  entremont:['d’Entremont','Entremont','Dentremont']
+};
+
+/* Names English-speaking clerks translated rather than transcribed. Miss these
+   and the family simply vanishes from English censuses and land records. */
+const ANGLICIZED = {
+  leblanc:['White'], roy:['King'], aucoin:['Wedge'], bourque:['Burke'], bourg:['Burke'],
+  poirier:['Perry'], pitre:['Peters'], lejeune:['Young'], doiron:['Gold','Golden'],
+  boudreau:['Buddro'], levron:['Lawrence'], gaudet:['Goodie'], blanchard:['Blanchard'],
+  lange:['Long'], loiseau:['Bird'], meunier:['Miller'], charpentier:['Carpenter'],
+  boulanger:['Baker'], leblond:['Blond','White'], petitpas:['Littlestep']
+};
+
+const stripAccents = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'');
+const nameKey = s => stripAccents(s).toLowerCase().replace(/[^a-z]/g,'');
+
+/* Spelling drift that is mechanical rather than name-specific. */
+function phoneticVariants(surname){
+  const out = new Set();
+  const s = String(surname||'').trim();
+  if(!s) return [];
+  const plain = stripAccents(s);
+  if(plain !== s) out.add(plain);                                   // Thériault → Theriault
+  if(/^(Le|La|De|Du|D’|D')\s+/i.test(s)) out.add(s.replace(/\s+/,'')); // Le Blanc → LeBlanc
+  const m = /^(Le|La|De|Du)([A-Z].*)$/.exec(plain);
+  if(m) out.add(m[1] + ' ' + m[2]);                                 // LeBlanc → Le Blanc
+  if(/eaux$/i.test(plain)) out.add(plain.replace(/eaux$/i,'eau'));
+  if(/eau$/i.test(plain))  { out.add(plain.replace(/eau$/i,'eaux')); out.add(plain.replace(/eau$/i,'au')); }
+  if(/au$/i.test(plain) && !/eau$/i.test(plain)) out.add(plain.replace(/au$/i,'eau'));
+  if(/ault$/i.test(plain)) { out.add(plain.replace(/ault$/i,'eault')); out.add(plain.replace(/ault$/i,'ault')); }
+  if(/[td]$/i.test(plain)) out.add(plain.replace(/[td]$/i,''));     // silent final consonant
+  if(/y$/i.test(plain))    out.add(plain.replace(/y$/i,'ie'));
+  if(/ie$/i.test(plain))   out.add(plain.replace(/ie$/i,'y'));
+  if(/^h/i.test(plain))    out.add(plain.slice(1));                 // silent initial H
+  out.delete(s);
+  return [...out].filter(Boolean);
+}
+
+/* Every spelling worth searching, each labelled with where it came from. */
+function nameVariants(person){
+  const surname = (person.surname||'').trim();
+  const seen = new Map();
+  /* Deduplicate on case alone. Thériault and Theriault, Le Blanc and LeBlanc are
+     distinct search strings — plenty of indexes neither fold accents nor ignore
+     spacing, so collapsing them here would silently drop a search worth running. */
+  const push = (name, kind) => {
+    const k = String(name||'').toLowerCase().trim();
+    if(!k || seen.has(k)) return;
+    seen.set(k, { name, kind });
+  };
+  if(surname) push(surname, 'entered');
+  String(person.surnameVariants||'').split(/[·,;|]/).map(s=>s.trim()).filter(Boolean)
+    .forEach(v=> push(v, 'yours'));
+
+  // curated table — match on the head form or on any listed variant
+  const key = nameKey(surname);
+  let table = SURNAME_VARIANTS[key];
+  let headKey = key;
+  if(!table){
+    for(const [k, list] of Object.entries(SURNAME_VARIANTS)){
+      if(list.some(v=> nameKey(v)===key)){ table = list; headKey = k; break; }
+    }
+  }
+  (table||[]).forEach(v=> push(v, 'documented'));
+  phoneticVariants(surname).forEach(v=> push(v, 'spelling'));
+  (ANGLICIZED[headKey] || ANGLICIZED[key] || []).forEach(v=> push(v, 'anglicised'));
+
+  return [...seen.values()];
+}
+const VARIANT_KIND = {
+  entered    : { label:'as entered',  cls:'bg-brand-navy text-white' },
+  yours      : { label:'yours',       cls:'bg-brand-teal/15 text-brand-darkteal' },
+  documented : { label:'documented',  cls:'bg-brand-gold/25 text-brand-navy' },
+  spelling   : { label:'spelling',    cls:'bg-gray-100 text-gray-600' },
+  anglicised : { label:'anglicised',  cls:'bg-brand-coral/15 text-brand-coral' }
+};
+
+/* ---------- search targets ---------- */
+const enc = s => encodeURIComponent(String(s||'').trim());
+
+/* deep:true  — query format is documented, so the link arrives pre-filled.
+   deep:false — the archive uses a session-driven form, so the link opens its
+                search page and the terms are copied for pasting.           */
+const SEARCH_TARGETS = [
+  { id:'familysearch', name:'FamilySearch', cost:'free', deep:true,
+    build:q => `https://www.familysearch.org/search/record/results?q.givenName=${enc(q.given)}&q.surname=${enc(q.surname)}`
+      + (q.from ? `&q.birthLikeDate.from=${q.from}&q.birthLikeDate.to=${q.to}` : '')
+      + (q.place ? `&q.birthLikePlace=${enc(q.place)}` : ''),
+    note:'Largest free collection. Search each spelling separately — its matching is stricter than it looks.' },
+
+  { id:'wikitree', name:'WikiTree surname index', cost:'free', deep:true,
+    build:q => `https://www.wikitree.com/genealogy/${enc(q.surname.replace(/\s+/g,'-'))}`,
+    note:'Its Acadian project enforces real sourcing, so profiles here are worth more than most tree sites.' },
+
+  { id:'ancestry', name:'Ancestry', cost:'subscription', deep:true,
+    build:q => `https://www.ancestry.ca/search/?name=${enc((q.given+' '+q.surname).trim().replace(/\s+/g,'_'))}`
+      + (q.birthYear ? `&birth=${q.birthYear}` : ''),
+    note:'Often free inside a public library. Follow the record image; member trees are leads, not evidence.' },
+
+  { id:'findagrave', name:'Find a Grave', cost:'free', deep:false,
+    url:'https://www.findagrave.com/memorial/search',
+    note:'Headstone photographs. A stone is a derivative source — corroborate its dates against a register.' },
+
+  { id:'paro', name:'PARO Collections Database (PEI)', cost:'free', deep:false,
+    url:'https://www.gov.pe.ca/parosearch/',
+    note:'Baptisms before 1886, burials before 1906, marriages 1832–1923, censuses, wills 1807–1920.' },
+
+  { id:'nsarchives', name:'Nova Scotia Archives — Vital Statistics', cost:'free', deep:false,
+    url:'https://archives.novascotia.ca/vital-statistics/',
+    note:'Free digitised images. Births 1864–77 & 1908–21, marriages 1763–1946, deaths 1864–77.' },
+
+  { id:'panb', name:'Provincial Archives of New Brunswick', cost:'free', deep:false,
+    url:'https://archives.gnb.ca/',
+    note:'Vital statistics, land petitions, county records — for branches that crossed the Strait.' },
+
+  { id:'lac', name:'Library and Archives Canada', cost:'free', deep:false,
+    url:'https://library-archives.canada.ca/eng/collection/research-help/genealogy-family-history/Pages/genealogy-family-history.aspx',
+    note:'Censuses 1666–1931, immigration, military service. A census puts the whole household in one line.' },
+
+  { id:'prdh', name:'PRDH', cost:'subscription', deep:false,
+    url:'https://www.prdh-igd.com/',
+    note:'Every Catholic baptism, marriage and burial in Québec 1621–1861, grouped into reconstructed families.' },
+
+  { id:'fichierorigine', name:'Fichier Origine', cost:'free', deep:false,
+    url:'https://www.fichierorigine.com/',
+    note:'Names the French parish an immigrant ancestor left. Use once the line reaches the immigrant.' },
+
+  { id:'banq', name:'BAnQ', cost:'free', deep:false,
+    url:'https://www.banq.qc.ca/',
+    note:'Notarial records — marriage contracts and estate inventories name relatives registers omit.' },
+
+  { id:'genealogiequebec', name:'Généalogie Québec (Drouin)', cost:'subscription', deep:false,
+    url:'https://www.genealogiequebec.com/',
+    note:'15M+ Drouin images covering Québec, Ontario and Acadian French-language registers.' },
+
+  { id:'canadiana', name:'Canadiana (published histories)', cost:'free', deep:true,
+    build:q => `https://www.canadiana.ca/search?q1.0=${enc((q.surname+' '+(q.placeShort||'')).trim())}`,
+    note:'County histories and directories. A 19th-century paragraph can hand you three generations — then verify each.' },
+
+  { id:'google', name:'Web &amp; Google Books', cost:'free', deep:true,
+    build:q => `https://www.google.com/search?q=${enc(`"${q.given} ${q.surname}" ${q.placeShort||''} ${q.birthYear||''} genealogy`.replace(/\s+/g,' ').trim())}`,
+    note:'Transcribed cemetery lists and society newsletters surface here and nowhere else.' }
+];
+
+/* ---------- the search plan, derived from what the person actually has ---------- */
+function searchPlan(p){
+  const out = [];
+  const add = (priority, text, repo, why) => out.push({ priority, text, repo, why });
+  const b = birthOf(p), d = deathOf(p);
+  const by = yearOf(b?.date), dy = yearOf(d?.date);
+  const places = (p.events||[]).map(e=>e.place).filter(Boolean).join(' ');
+  const inPEI = /prince edward|p\.?e\.?i|île[- ]saint[- ]jean|ile[- ]saint[- ]jean|miscouche|tignish|rustico|summerside|charlottetown|malpeque|egmont|kinkora/i.test(places);
+  const inNS  = /nova scotia|n\.?s\.?|halifax|clare|argyle|pubnico|chéticamp|cheticamp|yarmouth/i.test(places);
+  const inNB  = /new brunswick|n\.?b\.?|moncton|memramcook|bouctouche|caraquet|shediac/i.test(places);
+  const inQC  = /q(ué|ue)bec|montr(é|e)al|trois-rivi(è|e)res|acadie/i.test(places);
+  const hasSource = (p.sources||[]).length > 0;
+
+  if(!b || !b.date) add(1, `Establish a birth or baptism date for ${displayName(p)}`, 'FamilySearch',
+    'Everything else keys off it — without a date you cannot tell two same-named cousins apart.');
+  if(!hasSource && (b || d)) add(1, `Find a record behind the dates already entered for ${displayName(p)}`, 'FamilySearch',
+    'These dates are currently unevidenced, so anything built on them is provisional.');
+
+  if(inPEI && by && by < 1886) add(1, `Search PARO baptisms before 1886 for ${displayName(p)}`, 'PARO Collections Database',
+    'Island civil registration only begins in 1906, so the parish register is the vital record here.');
+  if(inPEI && dy && dy < 1906) add(2, `Search PARO burials before 1906 for ${displayName(p)}`, 'PARO Collections Database',
+    'Burials before 1906 are indexed at PARO.');
+  if(inPEI && by) {
+    const censuses = [1841,1861,1881,1891,1901].filter(y=> y >= by && (!dy || y <= dy));
+    if(censuses.length) add(2, `Find ${displayName(p)} in the ${censuses.join(', ')} census${censuses.length>1?'es':''}`, 'PARO / Library and Archives Canada',
+      'A census fixes the whole household at once — the cheapest way to confirm parents and siblings.');
+  }
+  if(inPEI) add(3, `Check PEI Genealogical Society cemetery transcriptions for ${p.surname||'this surname'}`, 'PEI Genealogical Society',
+    'Transcriptions preserve dates from stones now weathered illegible.');
+  if(inPEI || inNB || inNS) add(2, `Check the Acadian family files for ${p.surname||'this surname'}`, 'Acadian Museum of PEI — Research Centre, Miscouche',
+    '4,000 family records and 160 family files — compiled work that can save months.');
+  if(inNS) add(2, `Search Nova Scotia Archives vital statistics for ${displayName(p)}`, 'Nova Scotia Archives',
+    'Free digitised images, one million names, every entry linked to the original.');
+  if(inNB) add(2, `Search PANB vital statistics and land petitions for ${displayName(p)}`, 'Provincial Archives of New Brunswick',
+    'Land petitions place a family on the ground and often name relatives.');
+  if(inQC || (by && by < 1800)) add(2, `Search PRDH for ${displayName(p)}`, 'PRDH',
+    'Complete Catholic baptisms, marriages and burials 1621–1861, already reconstructed into families.');
+  if(by && by < 1714) add(1, `Check White’s Dictionnaire généalogique des familles acadiennes`, 'Centre d’études acadiennes Anselme-Chiasson',
+    'The authority for Acadian families 1636–1714. Verify any pre-deportation claim here before accepting it.');
+  if(by && by < 1760 && (inPEI || inNS || inNB)) add(2, `Trace ${displayName(p)} across the 1758 deportation`, 'Centre d’études acadiennes Anselme-Chiasson',
+    'The deportation is a hard documentary break. Expect the record trail to move, restart, or stop entirely.');
+  if(dy || (by && by < 1930)) add(3, `Look for a headstone for ${displayName(p)}`, 'Find a Grave',
+    'Often the only surviving date for someone who died between registration eras.');
+  if(spousesOf(p.id).length && !famsOf(p.id).some(f=>(f.events||[]).some(e=>e.type==='MARR' && e.date)))
+    add(2, `Find the marriage record for ${displayName(p)}`, inPEI ? 'PARO Collections Database' : 'FamilySearch',
+      'PEI marriages are indexed 1832–1923. A marriage entry usually names both sets of parents.');
+  if(!parentsOf(p.id).length) add(2, `Identify the parents of ${displayName(p)}`, 'FamilySearch',
+    'The baptism entry names them, and it is what opens the next generation.');
+
+  add(4, `Search every spelling variant of ${p.surname||'the surname'}, not just the modern one`, 'FamilySearch',
+    'Clerks spelled by ear, and English clerks sometimes translated the name outright.');
+
+  return out.sort((a,b)=>a.priority-b.priority);
+}
+
+/* ---------- rendering ---------- */
+let searchState = { personId:null, tolerance:5, variants:{} };
+
+function renderSearch(){
+  const sel = document.getElementById('searchPerson');
+  const people = allPeople().sort((a,b)=>displayName(a).localeCompare(displayName(b)));
+  if(!people.length){
+    sel.innerHTML = '';
+    document.getElementById('searchBody').innerHTML =
+      `<div class="card p-8 text-center">
+        <div class="text-4xl mb-2">🔎</div>
+        <h3 class="text-lg font-bold text-brand-navy mb-1">Nothing to search for yet</h3>
+        <p class="text-sm text-gray-600 mb-4">Enter a person — a name alone is enough to start — and this page turns
+          what you typed into searches across every repository.</p>
+        <button onclick="quickAddPerson()" class="btn btn-primary">+ Add a person</button></div>`;
+    return;
+  }
+  const current = (searchState.personId && P(searchState.personId)) ? searchState.personId
+                : (UI.selected && P(UI.selected)) ? UI.selected : people[0].id;
+  searchState.personId = current;
+  sel.innerHTML = people.map(p=>`<option value="${p.id}" ${p.id===current?'selected':''}>${esc(displayName(p))}</option>`).join('');
+
+  const p = P(current);
+  const variants = nameVariants(p);
+  if(!searchState.variants[current]){
+    searchState.variants[current] = {};
+    variants.forEach(v=> searchState.variants[current][v.name] = (v.kind!=='spelling'));
+  }
+  const chosen = variants.filter(v=> searchState.variants[current][v.name]);
+  const tol = searchState.tolerance;
+  const by = yearOf(birthOf(p)?.date), dy = yearOf(deathOf(p)?.date);
+  const place = birthOf(p)?.place || deathOf(p)?.place || '';
+  const placeShort = place.split(',')[0] || '';
+
+  const q = name => ({
+    given: p.given || '', surname: name, birthYear: by || '',
+    from: by ? by - tol : '', to: by ? by + tol : '',
+    place, placeShort
+  });
+  const terms = name => [ [p.given, name].filter(Boolean).join(' '),
+                          by ? `b. ${by}±${tol}` : '', dy ? `d. ${dy}` : '', place ].filter(Boolean).join(' · ');
+
+  const plan = searchPlan(p);
+  const PRIORITY = { 1:{label:'Do first', cls:'bg-brand-coral/15 text-brand-coral'},
+                     2:{label:'Next',     cls:'bg-brand-gold/25 text-brand-navy'},
+                     3:{label:'Then',     cls:'bg-brand-teal/15 text-brand-darkteal'},
+                     4:{label:'Habit',    cls:'bg-gray-100 text-gray-600'} };
+
+  document.getElementById('searchBody').innerHTML = `
+    <div class="grid gap-4 xl:grid-cols-3">
+      <div class="xl:col-span-2 space-y-4">
+
+        <div class="card p-4">
+          <h3 class="font-bold text-brand-navy mb-1">What will be searched</h3>
+          <p class="text-[11px] text-gray-500 mb-3">Taken straight from the record you entered. Fill in more on the
+            person page and these searches sharpen.</p>
+          <div class="grid sm:grid-cols-2 gap-3 text-sm">
+            <div><span class="lbl">Name</span>${esc(displayName(p))}</div>
+            <div><span class="lbl">Years</span>${by?`b. ${by}`:'<span class="text-brand-coral">no birth year</span>'}${dy?` · d. ${dy}`:''}</div>
+            <div class="sm:col-span-2"><span class="lbl">Place</span>${place?esc(place):'<span class="text-brand-coral">no place recorded — add one, it narrows results more than any other field</span>'}</div>
+          </div>
+          <div class="mt-3 pt-3 border-t border-brand-beige">
+            <label class="lbl">Year tolerance — ±${tol} years</label>
+            <input type="range" min="0" max="15" value="${tol}" class="w-full accent-brand-teal"
+                   oninput="searchState.tolerance=+this.value; renderSearch()">
+            <p class="text-[11px] text-gray-500">Ages in censuses and on stones are frequently wrong by several years.
+              Widen this before concluding a record does not exist.</p>
+          </div>
+        </div>
+
+        <div class="card p-4">
+          <div class="flex items-center justify-between mb-1">
+            <h3 class="font-bold text-brand-navy">Spellings to search — ${chosen.length} selected</h3>
+            <button onclick="toggleAllVariants(${chosen.length < variants.length})" class="btn btn-ghost btn-sm">
+              ${chosen.length < variants.length ? 'Select all' : 'Select none'}</button>
+          </div>
+          <p class="text-[11px] text-gray-500 mb-3">Searching only the modern spelling is the most common reason a
+            record “isn’t there”. Anything marked <strong>anglicised</strong> is the translated form English clerks used —
+            miss it and the family disappears from English censuses entirely.</p>
+          <div class="flex flex-wrap gap-1.5">
+            ${variants.map(v=>{
+              const on = searchState.variants[current][v.name];
+              const k = VARIANT_KIND[v.kind];
+              return `<button onclick="toggleVariant('${attr(v.name)}')"
+                class="chip ${on?k.cls:'bg-white text-gray-400 border border-brand-beige'} cursor-pointer">
+                ${on?'✓ ':''}${esc(v.name)}<span class="opacity-60 font-normal ml-1">${k.label}</span></button>`;
+            }).join('')}
+          </div>
+          ${variants.length===1 ? `<p class="text-[11px] text-gray-500 mt-2">No variants known for this surname.
+            Add any spellings you have met in the <em>surname variants</em> field on the person page.</p>` : ''}
+        </div>
+
+        <div class="card p-4">
+          <h3 class="font-bold text-brand-navy mb-1">Search the repositories</h3>
+          <p class="text-[11px] text-gray-500 mb-3">Links marked <em>pre-filled</em> carry the name and dates with them.
+            The rest use session-driven forms that cannot take a link, so those open the search page and copy the terms
+            for pasting — which also means nothing breaks here if a site changes its form.</p>
+          <div class="space-y-2">
+            ${SEARCH_TARGETS.map(t=>`
+              <div class="border border-brand-beige rounded-md p-3">
+                <div class="flex flex-wrap items-center gap-2 mb-1">
+                  <strong class="text-sm text-brand-navy">${t.name}</strong>
+                  <span class="chip ${t.cost==='free'?'bg-brand-teal/15 text-brand-darkteal':'bg-brand-gold/25 text-brand-navy'}">${t.cost}</span>
+                  ${t.deep?'<span class="chip bg-gray-100 text-gray-600">pre-filled</span>':''}
+                </div>
+                <p class="text-[12px] text-gray-600 mb-2">${t.note}</p>
+                <div class="flex flex-wrap gap-1.5">
+                  ${chosen.length ? chosen.slice(0,6).map(v=>`
+                    <a href="${attr(t.deep ? t.build(q(v.name)) : t.url)}" target="_blank" rel="noopener"
+                       onclick="noteSearch('${t.id}')" class="btn btn-ghost btn-sm">${esc(v.name)} ↗</a>`).join('')
+                    : '<span class="text-[12px] text-gray-400">Select at least one spelling above.</span>'}
+                  <button onclick="copyTerms('${attr(terms(chosen[0]?.name || p.surname))}')" class="btn btn-ghost btn-sm">⧉ Copy terms</button>
+                  <button onclick="logSearch('${current}','${attr(t.name)}')" class="btn btn-ghost btn-sm">+ Log</button>
+                </div>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <div class="card p-4">
+          <h3 class="font-bold text-brand-navy mb-1">What to search next</h3>
+          <p class="text-[11px] text-gray-500 mb-3">Worked out from this person’s own dates and places — and from what
+            is still missing.</p>
+          <div class="space-y-2">
+            ${plan.map((s,i)=>{
+              const pr = PRIORITY[s.priority];
+              return `<div class="border border-brand-beige rounded-md p-2.5">
+                <div class="flex items-start gap-2">
+                  <div class="min-w-0 flex-1">
+                    <span class="chip ${pr.cls} mb-1">${pr.label}</span>
+                    <p class="text-[13px] text-brand-navy font-medium">${esc(s.text)}</p>
+                    <p class="text-[11px] text-gray-500 mt-.5">${esc(s.why)}</p>
+                    <p class="text-[11px] text-brand-teal mt-.5">${esc(s.repo)}</p>
+                  </div>
+                  <button onclick="addPlanTask('${current}',${i})" class="btn btn-ghost btn-sm shrink-0">+</button>
+                </div></div>`;
+            }).join('')}
+          </div>
+          <button onclick="addAllPlanTasks('${current}')" class="btn btn-primary btn-sm w-full justify-center mt-3">
+            Add all to research log</button>
+        </div>
+
+        <div class="card p-4 bg-brand-sand/40">
+          <h3 class="font-bold text-brand-navy mb-2">Before you conclude a record is missing</h3>
+          <ul class="text-[12px] text-gray-700 space-y-1.5 list-disc pl-4">
+            <li>Search the surname alone in the right parish and year range — given names were recorded in Latin,
+                in French, and in English, sometimes for the same person.</li>
+            <li>Widen the year tolerance. Stated ages are estimates far more often than they are facts.</li>
+            <li>Try the wife's maiden name; Acadian and Québécois records keep it throughout her life.</li>
+            <li>Record the negative result in the research log, with what you searched. An unrecorded search
+                gets repeated.</li>
+          </ul>
+        </div>
+      </div>
+    </div>`;
+}
+function toggleVariant(name){
+  const id = searchState.personId;
+  searchState.variants[id][name] = !searchState.variants[id][name];
+  renderSearch();
+}
+function toggleAllVariants(on){
+  const id = searchState.personId;
+  nameVariants(P(id)).forEach(v=> searchState.variants[id][v.name] = on);
+  renderSearch();
+}
+function setSearchPerson(id){ searchState.personId = id; UI.selected = id; renderSearch(); }
+function openSearchFor(id){ searchState.personId = id; switchTab('search'); }
+function noteSearch(){ /* opening a link is not evidence of a search having been done */ }
+function copyTerms(text){
+  const done = () => toast('Search terms copied — paste them into the archive’s form.');
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(()=>fallbackCopy(text, done));
+  } else fallbackCopy(text, done);
+}
+function fallbackCopy(text, done){
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); done(); }
+  catch(e){ toast('Copy these terms: ' + text, 'warn'); }
+  document.body.removeChild(ta);
+}
+function logSearch(personId, repo){
+  const p = P(personId); if(!p) return;
+  const today = new Date().toISOString().slice(0,10);
+  p.tasks.push({ id:uid(), text:`Search ${repo} for ${displayName(p)}`, repo, status:'active',
+                 created:today, updated:today, result:'' });
+  save(); renderAll();
+  toast(`Logged — record what you find, including finding nothing.`);
+}
+function addPlanTask(personId, idx){
+  const p = P(personId); if(!p) return;
+  const s = searchPlan(p)[idx]; if(!s) return;
+  const today = new Date().toISOString().slice(0,10);
+  if((p.tasks||[]).some(t=>t.text===s.text)){ toast('Already in the research log.', 'warn'); return; }
+  p.tasks.push({ id:uid(), text:s.text, repo:s.repo, status:'todo', created:today, updated:today, result:'' });
+  save(); renderAll();
+  toast('Added to the research log.');
+}
+function addAllPlanTasks(personId){
+  const p = P(personId); if(!p) return;
+  const today = new Date().toISOString().slice(0,10);
+  let n = 0;
+  searchPlan(p).forEach(s=>{
+    if((p.tasks||[]).some(t=>t.text===s.text)) return;
+    p.tasks.push({ id:uid(), text:s.text, repo:s.repo, status:'todo', created:today, updated:today, result:'' });
+    n++;
+  });
+  save(); renderAll();
+  toast(n ? `${n} search${n===1?'':'es'} added to the research log.` : 'All of these are already logged.');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    TABS, RENDER ORCHESTRATION, INIT
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -2673,6 +3160,7 @@ function switchTab(tab){
   document.querySelectorAll('.tab-btn').forEach(b=> b.classList.toggle('active', b.dataset.tab===tab));
   if(tab==='tree')      { renderTree(); renderBranchPanel(); renderPeopleList(); }
   if(tab==='person')    renderPersonEditor();
+  if(tab==='search')    renderSearch();
   if(tab==='research')  renderResearchLog();
   if(tab==='directory') renderDirectory();
   if(tab==='timeline')  renderTimeline();
@@ -2696,6 +3184,7 @@ function renderAll(){
   renderTree();
   renderBranchPanel();
   if(UI.tab==='person')    renderPersonEditor();
+  if(UI.tab==='search')    renderSearch();
   if(UI.tab==='research')  renderResearchLog();
   if(UI.tab==='timeline')  renderTimeline();
   if(UI.tab==='checks')    renderChecks();
