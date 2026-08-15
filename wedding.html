@@ -96,8 +96,34 @@
     #saveFlash { opacity:0; transition:opacity .3s; }
     #saveFlash.show { opacity:1; }
 
+    /* Print pack: a document built on demand into #print-area. */
+    #print-area { display:none; }
+    .pp-head { border-bottom:2px solid #264653; padding-bottom:6pt; margin-bottom:12pt; }
+    .pp-doc { font-family:'Playfair Display',serif; font-size:16pt; font-weight:700; }
+    .pp-couple { font-size:9pt; color:#555; }
+    #print-area h2 { font-family:'Playfair Display',serif; font-size:12pt; margin:14pt 0 5pt; }
+    .pp-block { break-inside:avoid; margin-bottom:10pt; }
+    .pp-list { margin:0; padding-left:14pt; }
+    .pp-list li { font-size:10pt; line-height:1.5; }
+    .pp-small { font-size:8.5pt; color:#666; }
+    .pp-table { width:100%; border-collapse:collapse; font-size:10pt; }
+    .pp-table th { text-align:left; border-bottom:1px solid #264653; padding:4pt 3pt; font-size:8.5pt; text-transform:uppercase; letter-spacing:.04em; }
+    .pp-table td { border-bottom:1px solid #E5E5E5; padding:4pt 3pt; }
+    .pp-right { text-align:right; }
+    .pp-total td { font-weight:700; border-top:1px solid #264653; }
+    .pp-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8mm; }
+    .pp-card { border:1px dashed #999; padding:10mm 6mm; text-align:center; break-inside:avoid; }
+    .pp-name { font-family:'Playfair Display',serif; font-size:15pt; font-weight:700; }
+    .pp-sub { font-size:10pt; color:#444; margin-top:3pt; }
+    .pp-big { text-align:center; padding-top:45mm; }
+    .pp-bignum { font-family:'Playfair Display',serif; font-size:70pt; font-weight:700; line-height:1; }
+    .pp-page { break-after:page; }
+    .pp-plan svg { width:100%; height:auto; }
+
     @media print {
         .no-print { display:none !important; }
+        body.printing > *:not(#print-area) { display:none !important; }
+        body.printing #print-area { display:block !important; }
         body { background:#fff; }
         .card { box-shadow:none; border-color:#DDD; break-inside:avoid; }
         .view { display:block !important; }
@@ -139,14 +165,20 @@
         <nav class="flex overflow-x-auto -mb-px">
             <button class="tab-btn active" data-view="dashboard" onclick="switchView('dashboard')">Dashboard</button>
             <button class="tab-btn" data-view="budget" onclick="switchView('budget')">Budget</button>
+            <button class="tab-btn" data-view="payments" onclick="switchView('payments')">Payments</button>
             <button class="tab-btn" data-view="guests" onclick="switchView('guests')">Guest List</button>
+            <button class="tab-btn" data-view="travel" onclick="switchView('travel')">Travel</button>
             <button class="tab-btn" data-view="seating" onclick="switchView('seating')">Seating</button>
+            <button class="tab-btn" data-view="events" onclick="switchView('events')">Events</button>
             <button class="tab-btn" data-view="gifts" onclick="switchView('gifts')">Gifts</button>
             <button class="tab-btn" data-view="inventory" onclick="switchView('inventory')">Inventory</button>
             <button class="tab-btn" data-view="places" onclick="switchView('places')">Places</button>
             <button class="tab-btn" data-view="checklist" onclick="switchView('checklist')">Checklist</button>
             <button class="tab-btn" data-view="vendors" onclick="switchView('vendors')">Vendors</button>
+            <button class="tab-btn" data-view="photos" onclick="switchView('photos')">Photos</button>
+            <button class="tab-btn" data-view="music" onclick="switchView('music')">Music</button>
             <button class="tab-btn" data-view="dayof" onclick="switchView('dayof')">Day-Of</button>
+            <button class="tab-btn" data-view="print" onclick="switchView('print')">Print &amp; Export</button>
             <button class="tab-btn" data-view="setup" onclick="switchView('setup')">Setup &amp; Data</button>
             <div class="flex-1"></div>
             <div class="flex items-center pr-1">
@@ -315,6 +347,8 @@
                             <th style="min-width:130px">RSVP</th>
                             <th style="min-width:140px">Meal</th>
                             <th style="min-width:160px">Table</th>
+                            <th style="min-width:150px">Dietary</th>
+                            <th style="min-width:140px">Access</th>
                             <th style="min-width:130px">Contact</th>
                             <th style="min-width:130px">Notes</th>
                             <th class="no-print"></th>
@@ -329,6 +363,14 @@
         <div class="card p-6">
             <h4 class="font-bold mb-4">Meal counts (attending only)</h4>
             <div id="meal-counts" class="flex flex-wrap gap-3"></div>
+        </div>
+
+        <div class="card p-6">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <h4 class="font-bold">Dietary and access needs</h4>
+                <button class="btn btn-ghost no-print" onclick="printPack('meals')">Print the caterer sheet</button>
+            </div>
+            <div id="diet-list"></div>
         </div>
     </section>
 
@@ -357,6 +399,21 @@
         <div class="card p-6">
             <h4 class="font-bold mb-4">Unseated (attending)</h4>
             <div id="unseated" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <div class="card p-6">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div>
+                    <h4 class="font-bold">Floor plan</h4>
+                    <p class="text-sm text-gray-500 mt-1">Drag the tables where they really go. Colour shows how full each one is.</p>
+                </div>
+                <div class="flex flex-wrap gap-2 no-print">
+                    <button class="btn btn-ghost" onclick="tidyFloorPlan()">Tidy into rows</button>
+                    <button class="btn btn-ghost" onclick="exportFloorPlan()">Save as SVG</button>
+                    <button class="btn btn-ghost" onclick="printPack('floorplan')">Print</button>
+                </div>
+            </div>
+            <div id="floorplan-wrap"></div>
         </div>
 
         <div id="tables-wrap" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
@@ -560,6 +617,211 @@
         <p id="places-empty" class="text-sm text-gray-400 py-6 text-center hidden">No places yet — the venue, the reception, hotels, parking, wherever people need directions to.</p>
     </section>
 
+
+    <!-- ============ PAYMENTS ============ -->
+    <section id="view-payments" class="view hidden space-y-6">
+        <div id="pay-stats" class="grid grid-cols-2 sm:grid-cols-4 gap-4"></div>
+
+        <div class="card p-6 no-print">
+            <h3 class="text-lg font-bold mb-4">Schedule a payment</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <div class="lg:col-span-2">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">What it is for</label>
+                    <input id="npay-label" class="inp mt-1" placeholder="e.g. Caterer balance" onkeydown="if(event.key==='Enter')addPayment()">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Who to</label>
+                    <input id="npay-who" class="inp mt-1" list="vendor-names" placeholder="Vendor">
+                    <datalist id="vendor-names"></datalist>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Amount</label>
+                    <input id="npay-amount" type="number" min="0" step="50" class="inp inp-num mt-1" placeholder="0">
+                </div>
+                <div class="flex gap-2">
+                    <div class="flex-1">
+                        <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Due</label>
+                        <input id="npay-due" type="date" class="inp mt-1">
+                    </div>
+                    <div class="flex items-end"><button class="btn btn-primary" onclick="addPayment()">+ Add</button></div>
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-2 mt-4">
+                <button class="btn btn-ghost" onclick="paymentsFromVendors()">Build from vendor deposits</button>
+                <button class="btn btn-ghost" onclick="exportIcs('payments')">Add to calendar (.ics)</button>
+            </div>
+        </div>
+
+        <div id="pay-groups" class="space-y-5"></div>
+    </section>
+
+    <!-- ============ TRAVEL ============ -->
+    <section id="view-travel" class="view hidden space-y-6">
+        <div id="travel-stats" class="grid grid-cols-2 sm:grid-cols-4 gap-4"></div>
+
+        <div class="card p-6">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div>
+                    <h3 class="text-lg font-bold">Who is travelling</h3>
+                    <p class="text-sm text-gray-500 mt-1">Tick "from away" on a party and their arrival, stay and lift details open up.</p>
+                </div>
+                <div class="flex flex-wrap gap-2 no-print">
+                    <select id="tv-filter" class="inp" style="width:auto" onchange="renderTravel()">
+                        <option value="away">From away only</option>
+                        <option value="">Everyone</option>
+                        <option value="lift">Needs a lift</option>
+                    </select>
+                    <button class="btn btn-ghost" onclick="exportTravelCsv()">Export CSV</button>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="grid">
+                    <thead>
+                        <tr>
+                            <th style="min-width:170px">Party</th>
+                            <th class="text-right" style="width:70px">Seats</th>
+                            <th style="width:90px">From away</th>
+                            <th style="min-width:150px">Arrives</th>
+                            <th style="min-width:150px">Leaves</th>
+                            <th style="min-width:160px">Staying at</th>
+                            <th style="width:80px">Lift</th>
+                            <th style="min-width:160px">Travel notes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="travel-body"></tbody>
+                </table>
+            </div>
+            <p id="travel-empty" class="text-sm text-gray-400 py-6 text-center hidden">Nobody matches this filter.</p>
+        </div>
+
+        <div class="card p-6">
+            <h4 class="font-bold mb-4">Beds needed, by place</h4>
+            <div id="travel-stays" class="flex flex-wrap gap-3"></div>
+        </div>
+    </section>
+
+    <!-- ============ EVENTS ============ -->
+    <section id="view-events" class="view hidden space-y-6">
+        <div class="card p-6 no-print">
+            <h3 class="text-lg font-bold mb-4">Add an event around the wedding</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Name</label>
+                    <input id="nev-name" class="inp mt-1" placeholder="e.g. Rehearsal dinner" onkeydown="if(event.key==='Enter')addEvent()">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Date</label>
+                    <input id="nev-date" type="date" class="inp mt-1">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Time</label>
+                    <input id="nev-time" type="time" class="inp mt-1">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Where</label>
+                    <input id="nev-place" class="inp mt-1" list="place-names" placeholder="Venue">
+                    <datalist id="place-names"></datalist>
+                </div>
+                <div class="flex items-end">
+                    <button class="btn btn-primary w-full" onclick="addEvent()">+ Add event</button>
+                </div>
+            </div>
+            <div class="mt-4"><button class="btn btn-ghost" onclick="exportIcs('events')">Add events to calendar (.ics)</button></div>
+        </div>
+
+        <div id="events-wrap" class="space-y-5"></div>
+        <p id="events-empty" class="text-sm text-gray-400 py-6 text-center hidden">No extra events — rehearsal dinner, welcome drinks, next-day brunch all live here.</p>
+    </section>
+
+    <!-- ============ PHOTOS ============ -->
+    <section id="view-photos" class="view hidden space-y-6">
+        <div class="card p-6">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h3 class="text-lg font-bold">Shot list</h3>
+                    <p id="shot-progress" class="text-sm text-gray-500 mt-1">—</p>
+                </div>
+                <div class="flex flex-wrap gap-2 no-print">
+                    <button class="btn btn-ghost" onclick="printPack('shots')">Print for the photographer</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-6 no-print">
+            <h4 class="font-bold mb-4">Build a family or group shot</h4>
+            <p class="text-sm text-gray-600 mb-4">Pick the parties who should be in it and it becomes a named shot — the photographer can call the list out loud.</p>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div class="lg:col-span-2">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Who is in the shot</label>
+                    <select id="shot-people" class="inp mt-1" multiple size="6"></select>
+                </div>
+                <div class="flex flex-col gap-3">
+                    <div>
+                        <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Label</label>
+                        <input id="shot-label" class="inp mt-1" placeholder="e.g. Couple + Gallants">
+                    </div>
+                    <button class="btn btn-primary" onclick="addGroupShot()">+ Add group shot</button>
+                    <p class="text-[11px] text-gray-500">Leave the label empty and the names are used.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="shots-wrap" class="space-y-5"></div>
+    </section>
+
+    <!-- ============ MUSIC ============ -->
+    <section id="view-music" class="view hidden space-y-6">
+        <div class="card p-6 no-print">
+            <h3 class="text-lg font-bold mb-4">Add a track</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">List</label>
+                    <select id="nm-kind" class="inp mt-1" onchange="renderMusic()"></select>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Moment</label>
+                    <select id="nm-moment" class="inp mt-1"></select>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Title</label>
+                    <input id="nm-title" class="inp mt-1" placeholder="Song" onkeydown="if(event.key==='Enter')addMusic()">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Artist</label>
+                    <input id="nm-artist" class="inp mt-1" placeholder="optional" onkeydown="if(event.key==='Enter')addMusic()">
+                </div>
+                <div class="flex items-end">
+                    <button class="btn btn-primary w-full" onclick="addMusic()">+ Add</button>
+                </div>
+            </div>
+            <div class="mt-4"><button class="btn btn-ghost" onclick="printPack('music')">Print for the DJ or band</button></div>
+        </div>
+
+        <div id="music-wrap" class="space-y-5"></div>
+    </section>
+
+    <!-- ============ PRINT & EXPORT ============ -->
+    <section id="view-print" class="view hidden space-y-6">
+        <div class="card p-6">
+            <h3 class="text-lg font-bold mb-2">Print pack</h3>
+            <p class="text-sm text-gray-600 mb-5">Each one opens your print dialogue with just that document laid out — print it, or save it as a PDF from there.</p>
+            <div id="print-buttons" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+        </div>
+
+        <div class="card p-6">
+            <h3 class="text-lg font-bold mb-2">Calendar export</h3>
+            <p class="text-sm text-gray-600 mb-5">Downloads an .ics file you can import into Google Calendar, Apple Calendar or Outlook. Dated tasks and payments come through as all-day entries; the run sheet and events come through at their real times.</p>
+            <div class="flex flex-wrap gap-2">
+                <button class="btn btn-primary" onclick="exportIcs('all')">Everything</button>
+                <button class="btn btn-ghost" onclick="exportIcs('tasks')">Task due dates</button>
+                <button class="btn btn-ghost" onclick="exportIcs('payments')">Payment dates</button>
+                <button class="btn btn-ghost" onclick="exportIcs('schedule')">Day-of run sheet</button>
+                <button class="btn btn-ghost" onclick="exportIcs('events')">Extra events</button>
+            </div>
+            <p id="ics-note" class="text-xs text-gray-500 mt-4"></p>
+        </div>
+    </section>
+
     <!-- ============ VENDORS ============ -->
     <section id="view-vendors" class="view hidden space-y-6">
         <div class="card p-6 no-print">
@@ -631,6 +893,45 @@
                     <input id="ns-who" class="inp mt-1" placeholder="optional" onkeydown="if(event.key==='Enter')addSchedule()">
                 </div>
                 <button class="btn btn-primary" onclick="addSchedule()">+ Add</button>
+            </div>
+        </div>
+
+        <div class="card p-6 no-print">
+            <h3 class="text-lg font-bold mb-2">Build the day from the ceremony time</h3>
+            <p class="text-sm text-gray-600 mb-5">Give it the anchor points and it works outwards — hair and makeup backwards from the ceremony, everything else forwards. You can edit every line afterwards.</p>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Ceremony</label>
+                    <input id="tl-ceremony" type="time" class="inp mt-1">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Getting ready (h)</label>
+                    <input id="tl-ready" type="number" min="1" max="12" step="0.5" class="inp inp-num mt-1">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Ceremony (min)</label>
+                    <input id="tl-ceremony-mins" type="number" min="5" step="5" class="inp inp-num mt-1">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Travel (min)</label>
+                    <input id="tl-travel" type="number" min="0" step="5" class="inp inp-num mt-1">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Drinks (min)</label>
+                    <input id="tl-cocktail" type="number" min="0" step="15" class="inp inp-num mt-1">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Dinner (min)</label>
+                    <input id="tl-dinner" type="number" min="0" step="15" class="inp inp-num mt-1">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Carriages</label>
+                    <input id="tl-end" type="time" class="inp mt-1">
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-2 mt-4">
+                <button class="btn btn-primary" onclick="buildTimeline(false)">Add these to the run sheet</button>
+                <button class="btn btn-ghost" onclick="buildTimeline(true)">Replace the run sheet</button>
             </div>
         </div>
 
@@ -736,6 +1037,8 @@
     </section>
 </main>
 
+<div id="print-area"></div>
+
 <footer class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">
     <p class="text-[11px] text-gray-400 text-center">
         Saved locally in your browser. Clearing site data will erase the plan — keep a backup export.
@@ -781,6 +1084,40 @@ const GIFT_TYPES = ['Gift', 'Cash', 'Cheque', 'Gift card', 'Registry item', 'Don
 const INV_CATEGORIES = ['Decor', 'Rentals', 'Signage', 'Stationery', 'Favours', 'Attire', 'Flowers', 'Food & drink', 'Equipment', 'Ceremony', 'Other'];
 const INV_STATUS = ['To buy', 'Ordered', 'Have it', 'Rented', 'Borrowed', 'Made'];
 const PLACE_TYPES = ['Ceremony', 'Reception', 'Getting ready', 'Photos', 'Accommodation', 'Parking', 'Rehearsal dinner', 'Transport pickup', 'Airport / station', 'Other'];
+
+const MUSIC_KINDS = ['Must play', 'Do not play', 'Key moment'];
+const MUSIC_MOMENTS = ['Ceremony entrance','Ceremony exit','Signing','Cocktails','Dinner','Grand entrance','First dance','Parent dance','Cake','Last song','Send-off'];
+const SHOT_GROUPS = ['Getting ready','Details','Ceremony','Family & groups','Couple','Reception'];
+const BASE_SHOTS = [
+    ['Getting ready','Dress or suit hanging'],
+    ['Getting ready','Hair and makeup in progress'],
+    ['Getting ready','Helping each other dress'],
+    ['Getting ready','With parents before leaving'],
+    ['Details','Rings'],
+    ['Details','Invitation and stationery flat-lay'],
+    ['Details','Shoes, jewellery, cufflinks'],
+    ['Details','Bouquet and buttonholes'],
+    ['Details','Table setting before guests arrive'],
+    ['Ceremony','Guests arriving'],
+    ['Ceremony','Walking in'],
+    ['Ceremony','Vows and rings'],
+    ['Ceremony','First kiss'],
+    ['Ceremony','Walking out together'],
+    ['Family & groups','Couple with both sets of parents'],
+    ['Family & groups','Whole wedding party'],
+    ['Family & groups','Everyone, one big group shot'],
+    ['Couple','Portraits in good light'],
+    ['Couple','Quiet moment away from the crowd'],
+    ['Couple','Golden hour'],
+    ['Reception','Room before anyone is in it'],
+    ['Reception','Grand entrance'],
+    ['Reception','Speeches and reactions'],
+    ['Reception','First dance'],
+    ['Reception','Cake'],
+    ['Reception','Dance floor'],
+    ['Reception','Send-off']
+];
+const TABLE_SHAPES = ['round','long','head'];
 
 const VENDOR_TYPES = ['Venue','Caterer','Bar','Photographer','Videographer','Florist','Band / DJ','Officiant','Cake','Hair & Makeup','Rentals','Planner','Transport','Stationery','Other'];
 /* The standard split plus anything the couple has added themselves. */
@@ -889,9 +1226,13 @@ function defaultState() {
         settings: { currency: 'USD', budget: 40000, destination: false, estimatesTouched: false,
                     meals: ['Beef','Fish','Vegetarian','Kids'], sides: ['Partner 1','Partner 2','Both'],
                     extraCategories: [],
-                    modules: { seating: true, gifts: true, inventory: true, places: true, vendors: true, dayof: true } },
+                    timeline: { ceremony: '16:00', ready: 5, ceremonyMins: 30, travelMins: 15,
+                                cocktailMins: 60, dinnerMins: 90, endTime: '00:00' },
+                    modules: { seating: true, gifts: true, inventory: true, places: true, vendors: true,
+                               dayof: true, travel: true, events: true, payments: true, photos: true, music: true } },
         budget: [], guests: [], tables: [], tasks: [], vendors: [], schedule: [],
-        gifts: [], registries: [], inventory: [], places: []
+        gifts: [], registries: [], inventory: [], places: [],
+        payments: [], events: [], shots: [], music: []
     };
     s.budget = CATEGORIES.map(c => ({
         id: uid(), category: c.name, item: c.name, vendor: '',
@@ -899,6 +1240,7 @@ function defaultState() {
     }));
     s.tasks = BASE_TASKS.map(t => ({ id: uid(), phase: t[0], title: t[1], due: '', done: false, origin: 'base' }));
     s.schedule = DAYOF_SEED.map(r => ({ id: uid(), time: r[0], title: r[1], who: r[2] }));
+    s.shots = BASE_SHOTS.map(r => ({ id: uid(), group: r[0], title: r[1], done: false }));
     return s;
 }
 
@@ -937,10 +1279,17 @@ function migrate(obj) {
     const out = Object.assign({}, base, obj || {});
     out.couple   = Object.assign({}, base.couple,   obj.couple   || {});
     out.settings = Object.assign({}, base.settings, obj.settings || {});
-    ['budget','guests','tables','tasks','vendors','schedule','gifts','registries','inventory','places'].forEach(k => {
+    ['budget','guests','tables','tasks','vendors','schedule','gifts','registries','inventory','places',
+     'payments','events','shots','music'].forEach(k => {
         if (!Array.isArray(out[k])) out[k] = base[k];
     });
     out.settings.modules = Object.assign({}, base.settings.modules, out.settings.modules || {});
+    out.settings.timeline = Object.assign({}, base.settings.timeline, out.settings.timeline || {});
+    out.guests.forEach(g => { if (!Array.isArray(g.events)) g.events = []; });
+    out.tables.forEach((t, i) => {
+        if (!t.shape) t.shape = 'round';
+        if (typeof t.x !== 'number' || typeof t.y !== 'number') { t.x = 18 + (i % 4) * 22; t.y = 20 + Math.floor(i / 4) * 26; }
+    });
     if (!Array.isArray(out.settings.extraCategories)) out.settings.extraCategories = [];
     if (!Array.isArray(out.settings.meals) || !out.settings.meals.length) out.settings.meals = base.settings.meals;
     if (!Array.isArray(out.settings.sides) || !out.settings.sides.length) out.settings.sides = base.settings.sides;
@@ -1021,11 +1370,11 @@ function guestCounts() {
 /* =========================================================
    NAVIGATION
    ========================================================= */
+const GATED = ['seating','gifts','inventory','places','vendors','dayof','travel','events','payments','photos','music'];
 function moduleOn(key) { return S.settings.modules[key] !== false; }
 
 function switchView(view) {
-    const gated = { seating: 'seating', gifts: 'gifts', inventory: 'inventory', places: 'places', vendors: 'vendors', dayof: 'dayof' };
-    if (gated[view] && !moduleOn(gated[view])) view = 'dashboard';
+    if (GATED.indexOf(view) > -1 && !moduleOn(view)) view = 'dashboard';
     activeView = view;
     document.querySelectorAll('.view').forEach(el => el.classList.add('hidden'));
     const target = document.getElementById('view-' + view);
@@ -1070,6 +1419,12 @@ function renderActive() {
         case 'budget':    renderBudget(); break;
         case 'guests':    renderGuests(); break;
         case 'seating':   renderSeating(); break;
+        case 'payments':  renderPayments(); break;
+        case 'travel':    renderTravel(); break;
+        case 'events':    renderEvents(); break;
+        case 'photos':    renderPhotos(); break;
+        case 'music':     renderMusic(); break;
+        case 'print':     renderPrintTab(); break;
         case 'gifts':     renderGifts(); break;
         case 'inventory': renderInventory(); break;
         case 'places':    renderPlaces(); break;
@@ -1130,6 +1485,13 @@ function renderDashboard() {
         const owed = S.gifts.filter(x => !x.thanked).length;
         tiles += stat('Thank-yous', (S.gifts.length - owed) + '/' + S.gifts.length,
             owed ? owed + ' still to write' : 'all written', owed ? 'text-brand-coral' : 'text-brand-teal');
+    }
+    if (moduleOn('payments') && S.payments.length) {
+        const pb = paymentBuckets();
+        const owed = S.payments.filter(p => !p.paid).reduce((n, p) => n + num(p.amount), 0);
+        tiles += stat('Still to pay', money(owed),
+            pb.overdue.length ? pb.overdue.length + ' overdue' : pb.soon.length + ' due within 30 days',
+            pb.overdue.length ? 'text-brand-coral' : '');
     }
     if (moduleOn('inventory') && S.inventory.length) {
         const packed = S.inventory.filter(x => x.packed).length;
@@ -1460,7 +1822,8 @@ function addGuest() {
         id: uid(), name: name,
         side: document.getElementById('ng-side').value,
         party: Math.max(1, parseInt(document.getElementById('ng-party').value) || 1),
-        rsvp: 'pending', meal: '', table: '',
+        rsvp: 'pending', meal: '', table: '', diet: '', access: '',
+        away: false, arrive: '', depart: '', staying: '', lift: false, travelNotes: '', events: [],
         contact: document.getElementById('ng-contact').value.trim(), notes: ''
     });
     document.getElementById('ng-name').value = '';
@@ -1519,6 +1882,8 @@ function renderGuests() {
         '<td><select class="inp" data-k="g-' + g.id + '-rsvp" onchange="guestSet(\'' + g.id + '\',\'rsvp\',this.value)">' + rsvpOpts(g.rsvp) + '</select></td>' +
         '<td><select class="inp" data-k="g-' + g.id + '-meal" onchange="guestSet(\'' + g.id + '\',\'meal\',this.value)">' + mealOpts(g.meal) + '</select></td>' +
         '<td><select class="inp" data-k="g-' + g.id + '-table" onchange="guestSet(\'' + g.id + '\',\'table\',this.value)">' + tableOpts(g.table) + '</select></td>' +
+        '<td><input class="inp" data-k="g-' + g.id + '-diet" value="' + esc(g.diet || '') + '" placeholder="allergy / veg" onchange="guestSet(\'' + g.id + '\',\'diet\',this.value)"></td>' +
+        '<td><input class="inp" data-k="g-' + g.id + '-access" value="' + esc(g.access || '') + '" placeholder="step-free…" onchange="guestSet(\'' + g.id + '\',\'access\',this.value)"></td>' +
         '<td><input class="inp" data-k="g-' + g.id + '-contact" value="' + esc(g.contact) + '" placeholder="—" onchange="guestSet(\'' + g.id + '\',\'contact\',this.value)"></td>' +
         '<td><input class="inp" data-k="g-' + g.id + '-notes" value="' + esc(g.notes) + '" placeholder="—" onchange="guestSet(\'' + g.id + '\',\'notes\',this.value)"></td>' +
         '<td class="no-print text-right"><span class="row-x" onclick="delGuest(\'' + g.id + '\')">&times;</span></td>' +
@@ -1533,6 +1898,16 @@ function renderGuests() {
         meals[key] = (meals[key] || 0) + Math.max(1, parseInt(g.party) || 1);
     });
     const keys = Object.keys(meals);
+    const needs = S.guests.filter(g => (g.diet || '').trim() || (g.access || '').trim());
+    document.getElementById('diet-list').innerHTML = needs.length
+        ? '<ul class="space-y-2">' + needs.map(g =>
+            '<li class="flex flex-wrap items-baseline gap-x-3 text-sm border-b border-gray-50 pb-2">' +
+            '<span class="font-medium">' + esc(g.name) + '</span>' +
+            '<span class="text-gray-600">' + esc([g.diet, g.access].filter(Boolean).join(' · ')) + '</span>' +
+            (g.rsvp === 'yes' ? '' : '<span class="chip bg-gray-100 text-gray-400">' + esc(g.rsvp || 'pending') + '</span>') +
+            '</li>').join('') + '</ul>'
+        : '<p class="text-sm text-gray-400">Nothing recorded — add allergies or access needs on a guest row and they gather here.</p>';
+
     document.getElementById('meal-counts').innerHTML = keys.length
         ? keys.map(k =>
             '<div class="bg-brand-sand/70 rounded-lg px-4 py-3 min-w-[110px]">' +
@@ -1556,10 +1931,11 @@ function csvCell(v) {
     return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 }
 function exportGuestsCsv() {
-    const header = ['Name','Side','Seats','RSVP','Meal','Table','Contact','Notes'];
+    const header = ['Name','Side','Seats','RSVP','Meal','Table','Dietary','Access','Contact','Notes'];
     const rows = S.guests.map(g => [
         g.name, g.side, Math.max(1, parseInt(g.party) || 1), g.rsvp || 'pending',
-        g.meal, (S.tables.find(t => t.id === g.table) || {}).name || '', g.contact, g.notes
+        g.meal, (S.tables.find(t => t.id === g.table) || {}).name || '',
+        g.diet || '', g.access || '', g.contact, g.notes
     ]);
     const csv = [header].concat(rows).map(r => r.map(csvCell).join(',')).join('\r\n');
     download(new Blob([csv], { type: 'text/csv;charset=utf-8' }), 'guest-list.csv');
@@ -1579,7 +1955,9 @@ function addTable() {
     const nameEl = document.getElementById('nt-name');
     const name = nameEl.value.trim() || 'Table ' + (S.tables.length + 1);
     const seats = Math.max(1, parseInt(document.getElementById('nt-seats').value) || 8);
-    S.tables.push({ id: uid(), name: name, seats: seats });
+    const i = S.tables.length;
+    S.tables.push({ id: uid(), name: name, seats: seats, shape: 'round',
+                    x: 18 + (i % 4) * 22, y: 20 + Math.floor(i / 4) * 26 });
     nameEl.value = '';
     save(); renderSeating();
 }
@@ -1674,6 +2052,8 @@ function renderSeating() {
             '</div>';
           }).join('')
         : '<div class="card p-8 text-center text-sm text-gray-400 sm:col-span-2 lg:col-span-3">No tables yet — add one above.</div>';
+
+    renderFloorPlan();
 }
 
 /* =========================================================
@@ -1783,6 +2163,193 @@ function renderLegalPanel() {
                 'or civil authority for your destination before you book flights around a licence appointment.' +
             '</p>' +
         '</div>';
+}
+
+
+/* =========================================================
+   PAYMENTS
+   ========================================================= */
+function addPayment() {
+    const label = document.getElementById('npay-label').value.trim();
+    if (!label) { document.getElementById('npay-label').focus(); return; }
+    S.payments.push({
+        id: uid(), label: label,
+        who: document.getElementById('npay-who').value.trim(),
+        amount: Math.max(0, num(document.getElementById('npay-amount').value)),
+        due: document.getElementById('npay-due').value || '',
+        paid: false, notes: ''
+    });
+    ['npay-label','npay-who','npay-amount'].forEach(id => { document.getElementById(id).value = ''; });
+    document.getElementById('npay-label').focus();
+    save(); renderPayments();
+}
+function delPayment(id) { S.payments = S.payments.filter(x => x.id !== id); save(); scheduleRender(); }
+function paySet(id, field, v) {
+    const x = S.payments.find(y => y.id === id);
+    if (!x) return;
+    x[field] = (field === 'amount') ? Math.max(0, num(v)) : (field === 'paid' ? !!v : v);
+    save(); scheduleRender();
+}
+/* Turns each vendor with money outstanding into a dated payment, without duplicating. */
+function paymentsFromVendors() {
+    const existing = new Set(S.payments.map(p => p.label + '|' + p.who));
+    let added = 0;
+    S.vendors.forEach(v => {
+        const bal = Math.max(0, num(v.cost) - num(v.deposit));
+        if (num(v.deposit) > 0) {
+            const k = 'Deposit|' + v.name;
+            if (!existing.has(k)) { S.payments.push({ id: uid(), label: 'Deposit', who: v.name, amount: num(v.deposit), due: '', paid: true, notes: '' }); added++; }
+        }
+        if (bal > 0) {
+            const k = 'Balance|' + v.name;
+            if (!existing.has(k)) { S.payments.push({ id: uid(), label: 'Balance', who: v.name, amount: bal, due: '', paid: false, notes: '' }); added++; }
+        }
+    });
+    save(); renderPayments();
+    if (!added) alert('Every vendor is already represented in the schedule.');
+}
+
+function paymentBuckets() {
+    const out = { overdue: [], soon: [], later: [], undated: [], paid: [] };
+    S.payments.forEach(p => {
+        if (p.paid) { out.paid.push(p); return; }
+        if (!p.due) { out.undated.push(p); return; }
+        const d = daysUntil(p.due);
+        if (d < 0) out.overdue.push(p);
+        else if (d <= 30) out.soon.push(p);
+        else out.later.push(p);
+    });
+    ['overdue','soon','later','paid'].forEach(k => out[k].sort((a, b) => (a.due || '').localeCompare(b.due || '')));
+    return out;
+}
+
+function renderPayments() {
+    document.getElementById('vendor-names').innerHTML =
+        S.vendors.map(v => '<option value="' + esc(v.name) + '"></option>').join('');
+
+    const outstanding = S.payments.filter(p => !p.paid).reduce((n, p) => n + num(p.amount), 0);
+    const paid = S.payments.filter(p => p.paid).reduce((n, p) => n + num(p.amount), 0);
+    const b = paymentBuckets();
+    const stat = (label, val, sub, color) =>
+        '<div class="card p-4"><div class="text-[10px] font-bold uppercase tracking-wider text-gray-500">' + label +
+        '</div><div class="text-2xl font-bold mt-1 ' + (color || '') + '">' + val + '</div>' +
+        '<div class="text-[11px] text-gray-500 mt-1">' + sub + '</div></div>';
+    document.getElementById('pay-stats').innerHTML =
+        stat('Outstanding', money(outstanding), S.payments.filter(x => !x.paid).length + ' payments') +
+        stat('Paid', money(paid), S.payments.filter(x => x.paid).length + ' settled', 'text-brand-teal') +
+        stat('Due within 30 days', money(b.soon.reduce((n, p) => n + num(p.amount), 0)), b.soon.length + ' payments', 'text-brand-gold') +
+        stat('Overdue', money(b.overdue.reduce((n, p) => n + num(p.amount), 0)), b.overdue.length + ' payments', b.overdue.length ? 'text-brand-coral' : '');
+
+    const row = (p) => {
+        const d = p.due ? daysUntil(p.due) : null;
+        const when = p.paid ? '<span class="chip bg-brand-teal/15 text-brand-darkteal">Paid</span>'
+            : d === null ? '<span class="chip bg-gray-50 text-gray-300">No date</span>'
+            : d < 0 ? '<span class="chip bg-brand-coral/15 text-brand-coral">' + Math.abs(d) + 'd late</span>'
+            : d === 0 ? '<span class="chip bg-brand-gold/25 text-brand-navy">Today</span>'
+            : '<span class="chip bg-gray-100 text-gray-500">in ' + d + 'd</span>';
+        return '<tr>' +
+            '<td><input class="inp" data-k="pm-' + p.id + '-label" value="' + esc(p.label) + '" onchange="paySet(\'' + p.id + '\',\'label\',this.value)"></td>' +
+            '<td><input class="inp" data-k="pm-' + p.id + '-who" list="vendor-names" value="' + esc(p.who) + '" placeholder="—" onchange="paySet(\'' + p.id + '\',\'who\',this.value)"></td>' +
+            '<td><input type="number" min="0" step="50" class="inp inp-num" data-k="pm-' + p.id + '-amount" value="' + num(p.amount) + '" onchange="paySet(\'' + p.id + '\',\'amount\',this.value)"></td>' +
+            '<td><input type="date" class="inp" data-k="pm-' + p.id + '-due" value="' + esc(p.due) + '" onchange="paySet(\'' + p.id + '\',\'due\',this.value)"></td>' +
+            '<td>' + when + '</td>' +
+            '<td class="text-center"><input type="checkbox" class="cb" data-k="pm-' + p.id + '-paid" ' + (p.paid ? 'checked' : '') + ' onchange="paySet(\'' + p.id + '\',\'paid\',this.checked)"></td>' +
+            '<td><input class="inp" data-k="pm-' + p.id + '-notes" value="' + esc(p.notes) + '" placeholder="—" onchange="paySet(\'' + p.id + '\',\'notes\',this.value)"></td>' +
+            '<td class="no-print text-right"><span class="row-x" onclick="delPayment(\'' + p.id + '\')">&times;</span></td>' +
+        '</tr>';
+    };
+
+    const group = (title, list, tone) => !list.length ? '' :
+        '<div class="card p-6">' +
+            '<div class="flex items-center justify-between mb-4">' +
+                '<h4 class="font-bold ' + (tone || '') + '">' + title + '</h4>' +
+                '<span class="chip bg-gray-100 text-gray-500">' + money(list.reduce((n, p) => n + num(p.amount), 0)) + '</span>' +
+            '</div>' +
+            '<div class="overflow-x-auto"><table class="grid"><thead><tr>' +
+                '<th style="min-width:170px">For</th><th style="min-width:150px">Who to</th>' +
+                '<th class="text-right" style="width:110px">Amount</th><th style="min-width:150px">Due</th>' +
+                '<th style="width:110px">When</th><th style="width:70px">Paid</th>' +
+                '<th style="min-width:150px">Notes</th><th class="no-print"></th>' +
+            '</tr></thead><tbody>' + list.map(row).join('') + '</tbody></table></div>' +
+        '</div>';
+
+    const html =
+        group('Overdue', b.overdue, 'text-brand-coral') +
+        group('Due in the next 30 days', b.soon) +
+        group('Later', b.later) +
+        group('No date yet', b.undated) +
+        group('Paid', b.paid, 'text-brand-teal');
+    document.getElementById('pay-groups').innerHTML = html ||
+        '<div class="card p-8 text-center text-sm text-gray-400">Nothing scheduled yet — add a payment above, or build the schedule from your vendors.</div>';
+}
+
+/* =========================================================
+   TRAVEL & ACCOMMODATION
+   ========================================================= */
+function travelSet(id, field, v) {
+    const g = S.guests.find(x => x.id === id);
+    if (!g) return;
+    g[field] = (field === 'away' || field === 'lift') ? !!v : v;
+    save(); scheduleRender();
+}
+
+function renderTravel() {
+    const away = S.guests.filter(g => g.away);
+    const heads = (list) => list.reduce((n, g) => n + Math.max(1, parseInt(g.party) || 1), 0);
+    const lifts = S.guests.filter(g => g.lift);
+    const stat = (label, val, sub, color) =>
+        '<div class="card p-4"><div class="text-[10px] font-bold uppercase tracking-wider text-gray-500">' + label +
+        '</div><div class="text-2xl font-bold mt-1 ' + (color || '') + '">' + val + '</div>' +
+        '<div class="text-[11px] text-gray-500 mt-1">' + sub + '</div></div>';
+    document.getElementById('travel-stats').innerHTML =
+        stat('Travelling', heads(away), away.length + ' parties from away') +
+        stat('Need a bed', heads(away.filter(g => g.staying)), 'with a stay noted') +
+        stat('Need a lift', heads(lifts), lifts.length + ' parties', lifts.length ? 'text-brand-gold' : '') +
+        stat('Arrivals dated', away.filter(g => g.arrive).length, 'of ' + away.length + ' parties');
+
+    const f = document.getElementById('tv-filter').value;
+    const list = S.guests.filter(g => {
+        if (f === 'away') return !!g.away;
+        if (f === 'lift') return !!g.lift;
+        return true;
+    });
+
+    document.getElementById('travel-body').innerHTML = list.map(g =>
+        '<tr>' +
+        '<td class="font-medium">' + esc(g.name) + '</td>' +
+        '<td class="text-right">' + Math.max(1, parseInt(g.party) || 1) + '</td>' +
+        '<td class="text-center"><input type="checkbox" class="cb" data-k="tv-' + g.id + '-away" ' + (g.away ? 'checked' : '') + ' onchange="travelSet(\'' + g.id + '\',\'away\',this.checked)"></td>' +
+        '<td><input type="date" class="inp" data-k="tv-' + g.id + '-arrive" value="' + esc(g.arrive || '') + '" onchange="travelSet(\'' + g.id + '\',\'arrive\',this.value)"></td>' +
+        '<td><input type="date" class="inp" data-k="tv-' + g.id + '-depart" value="' + esc(g.depart || '') + '" onchange="travelSet(\'' + g.id + '\',\'depart\',this.value)"></td>' +
+        '<td><input class="inp" data-k="tv-' + g.id + '-staying" list="place-names" value="' + esc(g.staying || '') + '" placeholder="—" onchange="travelSet(\'' + g.id + '\',\'staying\',this.value)"></td>' +
+        '<td class="text-center"><input type="checkbox" class="cb" data-k="tv-' + g.id + '-lift" ' + (g.lift ? 'checked' : '') + ' onchange="travelSet(\'' + g.id + '\',\'lift\',this.checked)"></td>' +
+        '<td><input class="inp" data-k="tv-' + g.id + '-travelNotes" value="' + esc(g.travelNotes || '') + '" placeholder="—" onchange="travelSet(\'' + g.id + '\',\'travelNotes\',this.value)"></td>' +
+        '</tr>').join('');
+    document.getElementById('travel-empty').classList.toggle('hidden', list.length > 0);
+
+    const stays = {};
+    S.guests.filter(g => g.staying).forEach(g => {
+        stays[g.staying] = (stays[g.staying] || 0) + Math.max(1, parseInt(g.party) || 1);
+    });
+    const keys = Object.keys(stays).sort();
+    document.getElementById('travel-stays').innerHTML = keys.length
+        ? keys.map(k => '<div class="bg-brand-sand/70 rounded-lg px-4 py-3 min-w-[130px]">' +
+            '<div class="text-xl font-bold">' + stays[k] + '</div>' +
+            '<div class="text-[11px] text-gray-500">' + esc(k) + '</div></div>').join('')
+        : '<p class="text-sm text-gray-400">No stays noted yet.</p>';
+
+    document.getElementById('place-names').innerHTML =
+        S.places.map(p => '<option value="' + esc(p.name) + '"></option>').join('');
+}
+
+function exportTravelCsv() {
+    const header = ['Party','Seats','From away','Arrives','Leaves','Staying at','Needs a lift','Travel notes'];
+    const rows = S.guests.filter(g => g.away || g.arrive || g.staying || g.lift).map(g => [
+        g.name, Math.max(1, parseInt(g.party) || 1), g.away ? 'yes' : 'no',
+        g.arrive || '', g.depart || '', g.staying || '', g.lift ? 'yes' : 'no', g.travelNotes || ''
+    ]);
+    download(new Blob([[header].concat(rows).map(r => r.map(csvCell).join(',')).join('\r\n')],
+        { type: 'text/csv;charset=utf-8' }), 'guest-travel.csv');
 }
 
 /* =========================================================
@@ -2093,6 +2660,323 @@ function renderPlaces() {
     document.getElementById('places-empty').classList.toggle('hidden', S.places.length > 0);
 }
 
+
+/* =========================================================
+   EXTRA EVENTS  (rehearsal dinner, welcome drinks, brunch…)
+   ========================================================= */
+function addEvent() {
+    const name = document.getElementById('nev-name').value.trim();
+    if (!name) { document.getElementById('nev-name').focus(); return; }
+    S.events.push({
+        id: uid(), name: name,
+        date: document.getElementById('nev-date').value || '',
+        time: document.getElementById('nev-time').value || '',
+        place: document.getElementById('nev-place').value.trim(),
+        dress: '', notes: '', open: true
+    });
+    ['nev-name','nev-place'].forEach(id => { document.getElementById(id).value = ''; });
+    document.getElementById('nev-name').focus();
+    save(); renderEvents();
+}
+function delEvent(id) {
+    S.events = S.events.filter(e => e.id !== id);
+    S.guests.forEach(g => { g.events = (g.events || []).filter(x => x !== id); });
+    save(); scheduleRender();
+}
+function eventSet(id, field, v) {
+    const e = S.events.find(x => x.id === id);
+    if (!e) return;
+    e[field] = v;
+    save(); scheduleRender();
+}
+function toggleEventGuests(id) {
+    const e = S.events.find(x => x.id === id);
+    if (!e) return;
+    e.open = !e.open;
+    save(); renderEvents();
+}
+function inviteToEvent(eventId, guestId, on) {
+    const g = S.guests.find(x => x.id === guestId);
+    if (!g) return;
+    if (!Array.isArray(g.events)) g.events = [];
+    const i = g.events.indexOf(eventId);
+    if (on && i === -1) g.events.push(eventId);
+    if (!on && i > -1) g.events.splice(i, 1);
+    save(); renderEvents();
+}
+function inviteAllToEvent(eventId, on) {
+    S.guests.forEach(g => {
+        if (!Array.isArray(g.events)) g.events = [];
+        const i = g.events.indexOf(eventId);
+        if (on && i === -1) g.events.push(eventId);
+        if (!on && i > -1) g.events.splice(i, 1);
+    });
+    save(); renderEvents();
+}
+function eventHeads(eventId) {
+    return S.guests.filter(g => (g.events || []).indexOf(eventId) > -1)
+        .reduce((n, g) => n + Math.max(1, parseInt(g.party) || 1), 0);
+}
+
+function renderEvents() {
+    document.getElementById('place-names').innerHTML =
+        S.places.map(p => '<option value="' + esc(p.name) + '"></option>').join('');
+
+    const rows = S.events.slice().sort((a, b) =>
+        ((a.date || '9999') + (a.time || '')).localeCompare((b.date || '9999') + (b.time || '')));
+
+    document.getElementById('events-wrap').innerHTML = rows.map(e => {
+        const invited = S.guests.filter(g => (g.events || []).indexOf(e.id) > -1).length;
+        return '<div class="card p-6">' +
+            '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-4">' +
+                '<div><label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Event</label>' +
+                    '<input class="inp mt-1 font-semibold" data-k="ev-' + e.id + '-name" value="' + esc(e.name) + '" onchange="eventSet(\'' + e.id + '\',\'name\',this.value)"></div>' +
+                '<div><label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Date</label>' +
+                    '<input type="date" class="inp mt-1" data-k="ev-' + e.id + '-date" value="' + esc(e.date) + '" onchange="eventSet(\'' + e.id + '\',\'date\',this.value)"></div>' +
+                '<div><label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Time</label>' +
+                    '<input type="time" class="inp mt-1" data-k="ev-' + e.id + '-time" value="' + esc(e.time) + '" onchange="eventSet(\'' + e.id + '\',\'time\',this.value)"></div>' +
+                '<div><label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Where</label>' +
+                    '<input class="inp mt-1" data-k="ev-' + e.id + '-place" list="place-names" value="' + esc(e.place) + '" onchange="eventSet(\'' + e.id + '\',\'place\',this.value)"></div>' +
+                '<div><label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Dress code</label>' +
+                    '<input class="inp mt-1" data-k="ev-' + e.id + '-dress" value="' + esc(e.dress) + '" placeholder="optional" onchange="eventSet(\'' + e.id + '\',\'dress\',this.value)"></div>' +
+            '</div>' +
+            '<input class="inp mb-4" data-k="ev-' + e.id + '-notes" placeholder="Notes" value="' + esc(e.notes) + '" onchange="eventSet(\'' + e.id + '\',\'notes\',this.value)">' +
+            '<div class="flex flex-wrap items-center gap-3">' +
+                '<span class="chip bg-brand-teal/15 text-brand-darkteal">' + eventHeads(e.id) + ' coming · ' + invited + ' parties</span>' +
+                '<button class="btn btn-ghost no-print" onclick="toggleEventGuests(\'' + e.id + '\')">' + (e.open ? 'Hide guest list' : 'Choose guests') + '</button>' +
+                '<button class="btn btn-ghost no-print" onclick="inviteAllToEvent(\'' + e.id + '\',true)">Invite everyone</button>' +
+                '<button class="btn btn-ghost no-print" onclick="inviteAllToEvent(\'' + e.id + '\',false)">Clear</button>' +
+                '<div class="flex-1"></div>' +
+                '<span class="row-x no-print" onclick="delEvent(\'' + e.id + '\')">&times;</span>' +
+            '</div>' +
+            (e.open
+                ? '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-4 pt-4 border-t border-gray-100">' +
+                    (S.guests.length ? S.guests.map(g =>
+                        '<label class="flex items-center gap-2 text-sm cursor-pointer">' +
+                        '<input type="checkbox" class="cb" ' + ((g.events || []).indexOf(e.id) > -1 ? 'checked' : '') +
+                        ' onchange="inviteToEvent(\'' + e.id + '\',\'' + g.id + '\',this.checked)">' +
+                        '<span>' + esc(g.name) + (Math.max(1, parseInt(g.party) || 1) > 1 ? ' <span class="text-gray-400">×' + g.party + '</span>' : '') + '</span></label>').join('')
+                     : '<p class="text-sm text-gray-400">Add guests first and they will appear here.</p>') +
+                  '</div>'
+                : '') +
+        '</div>';
+    }).join('');
+    document.getElementById('events-empty').classList.toggle('hidden', S.events.length > 0);
+}
+
+/* =========================================================
+   PHOTO SHOT LIST
+   ========================================================= */
+function toggleShot(id) {
+    const x = S.shots.find(y => y.id === id);
+    if (!x) return;
+    x.done = !x.done;
+    save(); scheduleRender();
+}
+function shotSet(id, field, v) {
+    const x = S.shots.find(y => y.id === id);
+    if (!x) return;
+    x[field] = v;
+    save(); scheduleRender();
+}
+function delShot(id) { S.shots = S.shots.filter(x => x.id !== id); save(); scheduleRender(); }
+function addShotInline(group) {
+    const el = document.getElementById('newshot-' + group.replace(/\W/g, ''));
+    if (!el) return;
+    const v = el.value.trim();
+    if (!v) return;
+    el.value = '';
+    S.shots.push({ id: uid(), group: group, title: v, done: false });
+    save(); renderPhotos();
+    const again = document.getElementById('newshot-' + group.replace(/\W/g, ''));
+    if (again) again.focus();
+}
+/* Builds one named group shot out of the parties you select. */
+function addGroupShot() {
+    const sel = document.getElementById('shot-people');
+    const names = Array.prototype.slice.call(sel.selectedOptions).map(o => o.text);
+    if (!names.length) { alert('Pick at least one party for the shot.'); return; }
+    const label = document.getElementById('shot-label').value.trim();
+    S.shots.push({
+        id: uid(), group: 'Family & groups',
+        title: (label || names.join(' + ')) + (label ? ' — ' + names.join(', ') : ''),
+        done: false
+    });
+    document.getElementById('shot-label').value = '';
+    sel.selectedIndex = -1;
+    save(); renderPhotos();
+}
+
+function renderPhotos() {
+    const sel = document.getElementById('shot-people');
+    const keep = Array.prototype.slice.call(sel.selectedOptions).map(o => o.value);
+    sel.innerHTML = S.guests.map(g => '<option value="' + g.id + '">' + esc(g.name) + '</option>').join('');
+    Array.prototype.forEach.call(sel.options, o => { o.selected = keep.indexOf(o.value) > -1; });
+
+    const done = S.shots.filter(x => x.done).length;
+    document.getElementById('shot-progress').innerText =
+        done + ' of ' + S.shots.length + ' ticked off · ' + pct(done, S.shots.length) + '%';
+
+    const groups = SHOT_GROUPS.concat(
+        S.shots.map(x => x.group).filter(g => SHOT_GROUPS.indexOf(g) === -1));
+    const seen = [];
+    document.getElementById('shots-wrap').innerHTML = groups.filter(g => {
+        if (seen.indexOf(g) > -1) return false;
+        seen.push(g); return true;
+    }).map(group => {
+        const list = S.shots.filter(x => x.group === group);
+        const key = group.replace(/\W/g, '');
+        return '<div class="card p-6">' +
+            '<div class="flex items-center justify-between mb-4">' +
+                '<h4 class="font-bold">' + esc(group) + '</h4>' +
+                '<span class="chip bg-gray-100 text-gray-500">' + list.filter(x => x.done).length + '/' + list.length + '</span>' +
+            '</div>' +
+            (list.length ? '<div class="space-y-1">' + list.map(x =>
+                '<div class="flex items-center gap-3 py-1.5 border-b border-gray-50 ' + (x.done ? 'task-done' : '') + '">' +
+                    '<input type="checkbox" class="cb" data-k="sh-' + x.id + '-done" ' + (x.done ? 'checked' : '') + ' onchange="toggleShot(\'' + x.id + '\')">' +
+                    '<input class="inp task-title flex-1" data-k="sh-' + x.id + '-title" style="border-color:transparent;background:transparent" value="' + esc(x.title) + '" onchange="shotSet(\'' + x.id + '\',\'title\',this.value)">' +
+                    '<span class="row-x no-print" onclick="delShot(\'' + x.id + '\')">&times;</span>' +
+                '</div>').join('') + '</div>'
+             : '<p class="text-xs text-gray-300 py-2">Nothing here yet.</p>') +
+            '<div class="flex gap-2 mt-4 no-print">' +
+                '<input id="newshot-' + key + '" data-k="newshot-' + key + '" class="inp" placeholder="Add a shot…" onkeydown="if(event.key===\'Enter\')addShotInline(\'' + group.replace(/'/g, "\\'") + '\')">' +
+                '<button class="btn btn-ghost shrink-0" onclick="addShotInline(\'' + group.replace(/'/g, "\\'") + '\')">Add</button>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+}
+
+/* =========================================================
+   MUSIC
+   ========================================================= */
+function addMusic() {
+    const title = document.getElementById('nm-title').value.trim();
+    if (!title) { document.getElementById('nm-title').focus(); return; }
+    S.music.push({
+        id: uid(),
+        kind: document.getElementById('nm-kind').value || MUSIC_KINDS[0],
+        moment: document.getElementById('nm-moment').value || '',
+        title: title,
+        artist: document.getElementById('nm-artist').value.trim(),
+        notes: ''
+    });
+    document.getElementById('nm-title').value = '';
+    document.getElementById('nm-artist').value = '';
+    document.getElementById('nm-title').focus();
+    save(); renderMusic();
+}
+function delMusic(id) { S.music = S.music.filter(m => m.id !== id); save(); scheduleRender(); }
+function musicSet(id, field, v) {
+    const m = S.music.find(x => x.id === id);
+    if (!m) return;
+    m[field] = v;
+    save(); scheduleRender();
+}
+
+function renderMusic() {
+    fillSelect('nm-kind', MUSIC_KINDS, document.getElementById('nm-kind').value);
+    const kind = document.getElementById('nm-kind').value || MUSIC_KINDS[0];
+    const momentEl = document.getElementById('nm-moment');
+    const keepMoment = momentEl.value;
+    momentEl.innerHTML = '<option value="">—</option>' +
+        MUSIC_MOMENTS.map(m => '<option value="' + esc(m) + '">' + esc(m) + '</option>').join('');
+    if (keepMoment) momentEl.value = keepMoment;
+    momentEl.disabled = (kind === 'Do not play');
+
+    const kindOpts = (sel) => MUSIC_KINDS.map(k =>
+        '<option value="' + esc(k) + '"' + (sel === k ? ' selected' : '') + '>' + esc(k) + '</option>').join('');
+    const momentOpts = (sel) => '<option value="">—</option>' + MUSIC_MOMENTS.map(m =>
+        '<option value="' + esc(m) + '"' + (sel === m ? ' selected' : '') + '>' + esc(m) + '</option>').join('');
+
+    document.getElementById('music-wrap').innerHTML = MUSIC_KINDS.map(k => {
+        const list = S.music.filter(m => m.kind === k);
+        const tone = k === 'Do not play' ? 'text-brand-coral' : k === 'Key moment' ? 'text-brand-gold' : '';
+        return '<div class="card p-6">' +
+            '<div class="flex items-center justify-between mb-4">' +
+                '<h4 class="font-bold ' + tone + '">' + esc(k) + '</h4>' +
+                '<span class="chip bg-gray-100 text-gray-500">' + list.length + '</span>' +
+            '</div>' +
+            (list.length
+                ? '<div class="overflow-x-auto"><table class="grid"><thead><tr>' +
+                    '<th style="min-width:190px">Title</th><th style="min-width:160px">Artist</th>' +
+                    '<th style="min-width:160px">Moment</th><th style="min-width:150px">Notes</th>' +
+                    '<th style="min-width:130px">List</th><th class="no-print"></th></tr></thead><tbody>' +
+                    list.map(m =>
+                        '<tr>' +
+                        '<td><input class="inp font-medium" data-k="mu-' + m.id + '-title" value="' + esc(m.title) + '" onchange="musicSet(\'' + m.id + '\',\'title\',this.value)"></td>' +
+                        '<td><input class="inp" data-k="mu-' + m.id + '-artist" value="' + esc(m.artist) + '" placeholder="—" onchange="musicSet(\'' + m.id + '\',\'artist\',this.value)"></td>' +
+                        '<td><select class="inp" data-k="mu-' + m.id + '-moment" onchange="musicSet(\'' + m.id + '\',\'moment\',this.value)">' + momentOpts(m.moment) + '</select></td>' +
+                        '<td><input class="inp" data-k="mu-' + m.id + '-notes" value="' + esc(m.notes) + '" placeholder="—" onchange="musicSet(\'' + m.id + '\',\'notes\',this.value)"></td>' +
+                        '<td><select class="inp" data-k="mu-' + m.id + '-kind" onchange="musicSet(\'' + m.id + '\',\'kind\',this.value)">' + kindOpts(m.kind) + '</select></td>' +
+                        '<td class="no-print text-right"><span class="row-x" onclick="delMusic(\'' + m.id + '\')">&times;</span></td>' +
+                        '</tr>').join('') +
+                  '</tbody></table></div>'
+                : '<p class="text-xs text-gray-300 py-2">Nothing on this list yet.</p>') +
+        '</div>';
+    }).join('');
+}
+
+/* =========================================================
+   TIMELINE BUILDER
+   ========================================================= */
+function minutesOf(hhmm) {
+    const p = String(hhmm || '').split(':');
+    return (parseInt(p[0]) || 0) * 60 + (parseInt(p[1]) || 0);
+}
+function hhmm(mins) {
+    let m = Math.round(mins) % 1440;
+    if (m < 0) m += 1440;
+    return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+}
+
+function buildTimeline(replace) {
+    const t = S.settings.timeline;
+    t.ceremony = document.getElementById('tl-ceremony').value || '16:00';
+    t.ready = Math.max(0, num(document.getElementById('tl-ready').value) || 5);
+    t.ceremonyMins = Math.max(5, parseInt(document.getElementById('tl-ceremony-mins').value) || 30);
+    t.travelMins = Math.max(0, parseInt(document.getElementById('tl-travel').value) || 0);
+    t.cocktailMins = Math.max(0, parseInt(document.getElementById('tl-cocktail').value) || 60);
+    t.dinnerMins = Math.max(0, parseInt(document.getElementById('tl-dinner').value) || 90);
+    t.endTime = document.getElementById('tl-end').value || '00:00';
+
+    if (replace && !confirm('Replace the whole run sheet with a fresh one built from these times?')) return;
+
+    const c = minutesOf(t.ceremony);
+    const readyMins = Math.round(t.ready * 60);
+    const rows = [];
+    rows.push([c - readyMins, 'Hair and makeup start', '']);
+    rows.push([c - readyMins + 30, 'Photographer arrives — detail shots', '']);
+    rows.push([c - 120, 'Get dressed', '']);
+    rows.push([c - 90, 'First look and couple portraits', '']);
+    rows.push([c - 45, 'Leave for the ceremony', t.travelMins ? t.travelMins + ' min journey' : '']);
+    rows.push([c - 30, 'Guests arrive', '']);
+    rows.push([c, 'Ceremony', '']);
+    const afterCeremony = c + t.ceremonyMins;
+    rows.push([afterCeremony, 'Ceremony ends — congratulations', '']);
+    const drinksStart = afterCeremony + t.travelMins;
+    rows.push([drinksStart, 'Drinks reception', '']);
+    rows.push([drinksStart + 10, 'Group and family photos', '']);
+    const dinnerStart = drinksStart + t.cocktailMins;
+    rows.push([dinnerStart - 15, 'Guests seated, entrances', '']);
+    rows.push([dinnerStart, 'Dinner served', '']);
+    rows.push([dinnerStart + Math.round(t.dinnerMins * 0.75), 'Speeches and toasts', '']);
+    const danceStart = dinnerStart + t.dinnerMins;
+    rows.push([danceStart, 'First dance', '']);
+    rows.push([danceStart + 15, 'Dancing', '']);
+    rows.push([danceStart + 90, 'Cake', '']);
+    rows.push([minutesOf(t.endTime) - 30, 'Last song', '']);
+    rows.push([minutesOf(t.endTime), 'Carriages', '']);
+
+    const built = rows.map(r => ({ id: uid(), time: hhmm(r[0]), title: r[1], who: r[2] }));
+    if (replace) {
+        S.schedule = built;
+    } else {
+        const existing = new Set(S.schedule.map(r => r.title));
+        built.forEach(r => { if (!existing.has(r.title)) S.schedule.push(r); });
+    }
+    save(); renderSchedule();
+}
+
 /* =========================================================
    VENDORS
    ========================================================= */
@@ -2193,6 +3077,12 @@ function scheduleSet(id, field, v) {
 }
 
 function renderSchedule() {
+    const t = S.settings.timeline;
+    const set = (id, v) => { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = v; };
+    set('tl-ceremony', t.ceremony); set('tl-ready', t.ready); set('tl-ceremony-mins', t.ceremonyMins);
+    set('tl-travel', t.travelMins); set('tl-cocktail', t.cocktailMins); set('tl-dinner', t.dinnerMins);
+    set('tl-end', t.endTime);
+
     document.getElementById('dayof-date').innerText = S.couple.date ? longDate(S.couple.date) : '';
     const rows = S.schedule.slice().sort((a, b) => (a.time || '').localeCompare(b.time || ''));
     document.getElementById('schedule-wrap').innerHTML = rows.map(s =>
@@ -2204,6 +3094,402 @@ function renderSchedule() {
             '<span class="row-x no-print shrink-0" onclick="delSchedule(\'' + s.id + '\')">&times;</span>' +
         '</div>').join('');
     document.getElementById('schedule-empty').classList.toggle('hidden', rows.length > 0);
+}
+
+
+/* =========================================================
+   FLOOR PLAN
+   ========================================================= */
+const PLAN_W = 1000, PLAN_H = 620;
+
+function planPos(t, i) {
+    if (typeof t.x !== 'number' || typeof t.y !== 'number') {
+        const col = i % 4, row = Math.floor(i / 4);
+        t.x = 18 + col * 22;
+        t.y = 20 + row * 26;
+    }
+    return t;
+}
+function tidyFloorPlan() {
+    S.tables.forEach((t, i) => {
+        const col = i % 4, row = Math.floor(i / 4);
+        t.x = 18 + col * 22;
+        t.y = 20 + row * 26;
+    });
+    save(); renderSeating();
+}
+function cycleShape(id) {
+    const t = S.tables.find(x => x.id === id);
+    if (!t) return;
+    t.shape = TABLE_SHAPES[(TABLE_SHAPES.indexOf(t.shape || 'round') + 1) % TABLE_SHAPES.length];
+    save(); renderSeating();
+}
+
+function floorPlanSvg(forExport) {
+    const body = S.tables.map((t, i) => {
+        planPos(t, i);
+        const used = seatsUsed(t.id);
+        const full = t.seats > 0 ? used / t.seats : 0;
+        const fill = used > t.seats ? '#E76F51' : full >= 1 ? '#2A9D8F' : full > 0 ? '#8AB3AD' : '#E6E2D6';
+        const cx = t.x / 100 * PLAN_W, cy = t.y / 100 * PLAN_H;
+        const shape = t.shape || 'round';
+        let node;
+        if (shape === 'round') {
+            node = '<circle cx="0" cy="0" r="52" fill="' + fill + '" stroke="#264653" stroke-width="2"/>';
+        } else if (shape === 'head') {
+            node = '<rect x="-110" y="-26" width="220" height="52" rx="6" fill="' + fill + '" stroke="#264653" stroke-width="2"/>';
+        } else {
+            node = '<rect x="-70" y="-40" width="140" height="80" rx="6" fill="' + fill + '" stroke="#264653" stroke-width="2"/>';
+        }
+        return '<g class="plan-table" data-id="' + t.id + '" transform="translate(' + cx.toFixed(1) + ',' + cy.toFixed(1) + ')"' +
+               (forExport ? '' : ' style="cursor:grab"') + '>' + node +
+               '<text x="0" y="-4" text-anchor="middle" font-family="Inter,sans-serif" font-size="15" font-weight="700" fill="#264653">' +
+                    esc(t.name.length > 18 ? t.name.slice(0, 17) + '…' : t.name) + '</text>' +
+               '<text x="0" y="16" text-anchor="middle" font-family="Inter,sans-serif" font-size="13" fill="#264653">' +
+                    used + '/' + t.seats + '</text></g>';
+    }).join('');
+
+    return '<svg id="floorplan" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + PLAN_W + ' ' + PLAN_H + '" ' +
+        'width="100%" style="background:#FCFBF8;border:1px solid #EEECE5;border-radius:.5rem;touch-action:none">' +
+        '<rect x="0" y="0" width="' + PLAN_W + '" height="' + PLAN_H + '" fill="#FCFBF8"/>' +
+        '<text x="' + (PLAN_W / 2) + '" y="' + (PLAN_H - 14) + '" text-anchor="middle" font-family="Inter,sans-serif" font-size="13" fill="#9CA3AF">Top of the room</text>' +
+        body + '</svg>';
+}
+
+function renderFloorPlan() {
+    const wrap = document.getElementById('floorplan-wrap');
+    if (!wrap) return;
+    if (!S.tables.length) {
+        wrap.innerHTML = '<p class="text-sm text-gray-400 py-6 text-center">Add a table and it appears here to drag around.</p>';
+        return;
+    }
+    wrap.innerHTML = floorPlanSvg(false) +
+        '<p class="text-[11px] text-gray-500 mt-2 no-print">Drag to move a table. Double-click one to switch between round, long and head table.</p>';
+    attachPlanDrag();
+}
+
+/* Pointer drag in SVG user units, saved back as percentages. */
+function attachPlanDrag() {
+    const svg = document.getElementById('floorplan');
+    if (!svg) return;
+    let dragId = null, offset = null;
+
+    const toPlan = (evt) => {
+        const r = svg.getBoundingClientRect();
+        return { x: (evt.clientX - r.left) / r.width * PLAN_W, y: (evt.clientY - r.top) / r.height * PLAN_H };
+    };
+
+    svg.querySelectorAll('.plan-table').forEach(g => {
+        g.addEventListener('pointerdown', evt => {
+            dragId = g.dataset.id;
+            const t = S.tables.find(x => x.id === dragId);
+            const pt = toPlan(evt);
+            offset = { dx: pt.x - t.x / 100 * PLAN_W, dy: pt.y - t.y / 100 * PLAN_H };
+            g.setPointerCapture(evt.pointerId);
+            g.style.cursor = 'grabbing';
+            evt.preventDefault();
+        });
+        g.addEventListener('pointermove', evt => {
+            if (dragId !== g.dataset.id) return;
+            const t = S.tables.find(x => x.id === dragId);
+            if (!t) return;
+            const pt = toPlan(evt);
+            t.x = Math.min(94, Math.max(6, (pt.x - offset.dx) / PLAN_W * 100));
+            t.y = Math.min(92, Math.max(6, (pt.y - offset.dy) / PLAN_H * 100));
+            g.setAttribute('transform', 'translate(' + (t.x / 100 * PLAN_W).toFixed(1) + ',' + (t.y / 100 * PLAN_H).toFixed(1) + ')');
+        });
+        const end = () => {
+            if (dragId !== g.dataset.id) return;
+            dragId = null;
+            g.style.cursor = 'grab';
+            save();
+        };
+        g.addEventListener('pointerup', end);
+        g.addEventListener('pointercancel', end);
+        g.addEventListener('dblclick', () => cycleShape(g.dataset.id));
+    });
+}
+
+function exportFloorPlan() {
+    if (!S.tables.length) { alert('Add a table first.'); return; }
+    const svg = '<?xml version="1.0" encoding="UTF-8"?>\n' + floorPlanSvg(true);
+    download(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }), 'floor-plan.svg');
+}
+
+/* =========================================================
+   PRINT PACK
+   ========================================================= */
+const PRINT_DOCS = [
+    ['placecards',  'Place cards',        'One card per seat, with table and meal.'],
+    ['escortcards', 'Escort cards',       'Name and table, alphabetical, for the entrance table.'],
+    ['tablenumbers','Table numbers',      'One per page, big enough to read across the room.'],
+    ['meals',       'Caterer sheet',      'Meal counts, dietary needs and per-table numbers.'],
+    ['runsheet',    'Vendor run sheet',   'The day-of timings, on one page.'],
+    ['seating',     'Seating list',       'Every table and who is on it.'],
+    ['floorplan',   'Floor plan',         'The room layout as you arranged it.'],
+    ['shots',       'Photo shot list',    'Grouped, ticked or not.'],
+    ['music',       'Music sheet',        'Must play, do not play and the key moments.'],
+    ['checklist',   'Checklist',          'Every stage with dates and what is done.'],
+    ['payments',    'Payment schedule',   'What is owed, to whom and when.'],
+    ['guests',      'Guest list',         'Parties, RSVP, meal and table.']
+];
+
+function renderPrintTab() {
+    document.getElementById('print-buttons').innerHTML = PRINT_DOCS.map(d =>
+        '<button class="card p-4 text-left hover:border-brand-teal transition" onclick="printPack(\'' + d[0] + '\')">' +
+            '<div class="font-bold text-sm">' + esc(d[1]) + '</div>' +
+            '<div class="text-[11px] text-gray-500 mt-1">' + esc(d[2]) + '</div>' +
+        '</button>').join('') +
+        '<button class="card p-4 text-left hover:border-brand-teal transition" onclick="window.print()">' +
+            '<div class="font-bold text-sm">The whole plan</div>' +
+            '<div class="text-[11px] text-gray-500 mt-1">Every tab, as it appears on screen.</div>' +
+        '</button>';
+
+    const bits = [];
+    if (S.tasks.filter(t => t.due).length) bits.push(S.tasks.filter(t => t.due).length + ' dated tasks');
+    if (S.payments.filter(p => p.due).length) bits.push(S.payments.filter(p => p.due).length + ' payment dates');
+    if (S.couple.date && S.schedule.length) bits.push(S.schedule.length + ' run-sheet entries');
+    if (S.events.filter(e => e.date).length) bits.push(S.events.filter(e => e.date).length + ' events');
+    document.getElementById('ics-note').innerText = bits.length
+        ? 'Ready to export: ' + bits.join(', ') + '.'
+        : 'Nothing dated yet — add due dates, payment dates or a wedding date and they will export.';
+}
+
+function attendingList() {
+    return S.guests.filter(g => g.rsvp === 'yes');
+}
+function tableName(id) {
+    const t = S.tables.find(x => x.id === id);
+    return t ? t.name : '';
+}
+
+function printPack(kind) {
+    const title = (PRINT_DOCS.find(d => d[0] === kind) || [, kind])[1];
+    const couple = [S.couple.partner1, S.couple.partner2].filter(Boolean).join(' & ');
+    let html = '';
+
+    if (kind === 'placecards' || kind === 'escortcards') {
+        const cards = [];
+        attendingList().forEach(g => {
+            const seats = Math.max(1, parseInt(g.party) || 1);
+            const tbl = tableName(g.table);
+            if (kind === 'escortcards' || seats === 1) {
+                cards.push({ name: g.name, table: tbl, meal: g.meal, diet: g.diet });
+            } else {
+                for (let i = 0; i < seats; i++) {
+                    cards.push({ name: g.name + (seats > 1 ? ' (' + (i + 1) + ' of ' + seats + ')' : ''), table: tbl, meal: g.meal, diet: g.diet });
+                }
+            }
+        });
+        if (kind === 'escortcards') cards.sort((a, b) => a.name.localeCompare(b.name));
+        html = '<div class="pp-grid">' + cards.map(c =>
+            '<div class="pp-card"><div class="pp-name">' + esc(c.name) + '</div>' +
+            (c.table ? '<div class="pp-sub">' + esc(c.table) + '</div>' : '') +
+            (kind === 'placecards' && (c.meal || c.diet)
+                ? '<div class="pp-small">' + esc([c.meal, c.diet].filter(Boolean).join(' · ')) + '</div>' : '') +
+            '</div>').join('') + '</div>';
+
+    } else if (kind === 'tablenumbers') {
+        html = S.tables.map(t =>
+            '<div class="pp-page pp-big"><div class="pp-bignum">' + esc(t.name) + '</div>' +
+            '<div class="pp-sub">' + couple + '</div></div>').join('');
+
+    } else if (kind === 'meals') {
+        const meals = {};
+        attendingList().forEach(g => {
+            const k = g.meal || 'Not chosen';
+            meals[k] = (meals[k] || 0) + Math.max(1, parseInt(g.party) || 1);
+        });
+        const diet = attendingList().filter(g => (g.diet || '').trim() || (g.access || '').trim());
+        html =
+            '<h2>Meal counts</h2><table class="pp-table"><tbody>' +
+            Object.keys(meals).map(k => '<tr><td>' + esc(k) + '</td><td class="pp-right">' + meals[k] + '</td></tr>').join('') +
+            '<tr class="pp-total"><td>Total covers</td><td class="pp-right">' +
+                attendingList().reduce((n, g) => n + Math.max(1, parseInt(g.party) || 1), 0) + '</td></tr></tbody></table>' +
+            '<h2>Dietary and access needs</h2>' +
+            (diet.length
+                ? '<table class="pp-table"><thead><tr><th>Party</th><th>Table</th><th>Needs</th></tr></thead><tbody>' +
+                  diet.map(g => '<tr><td>' + esc(g.name) + '</td><td>' + esc(tableName(g.table)) + '</td><td>' +
+                      esc([g.diet, g.access].filter(Boolean).join(' · ')) + '</td></tr>').join('') + '</tbody></table>'
+                : '<p>None recorded.</p>') +
+            '<h2>Covers by table</h2><table class="pp-table"><thead><tr><th>Table</th><th class="pp-right">Covers</th></tr></thead><tbody>' +
+            S.tables.map(t => '<tr><td>' + esc(t.name) + '</td><td class="pp-right">' + seatsUsed(t.id) + '</td></tr>').join('') +
+            '</tbody></table>';
+
+    } else if (kind === 'runsheet') {
+        const rows = S.schedule.slice().sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+        html = '<table class="pp-table"><thead><tr><th style="width:90px">Time</th><th>What</th><th style="width:200px">Who / where</th></tr></thead><tbody>' +
+            rows.map(r => '<tr><td>' + esc(r.time) + '</td><td>' + esc(r.title) + '</td><td>' + esc(r.who) + '</td></tr>').join('') +
+            '</tbody></table>';
+
+    } else if (kind === 'seating') {
+        html = S.tables.map(t => {
+            const at = attendingList().filter(g => g.table === t.id);
+            return '<div class="pp-block"><h2>' + esc(t.name) + ' <span class="pp-small">' + seatsUsed(t.id) + '/' + t.seats + '</span></h2>' +
+                (at.length ? '<ul class="pp-list">' + at.map(g => '<li>' + esc(g.name) +
+                    (Math.max(1, parseInt(g.party) || 1) > 1 ? ' ×' + g.party : '') + '</li>').join('') + '</ul>'
+                 : '<p class="pp-small">Empty</p>') + '</div>';
+        }).join('');
+
+    } else if (kind === 'floorplan') {
+        html = '<div class="pp-plan">' + floorPlanSvg(true) + '</div>';
+
+    } else if (kind === 'shots') {
+        const groups = [];
+        S.shots.forEach(x => { if (groups.indexOf(x.group) === -1) groups.push(x.group); });
+        html = groups.map(g =>
+            '<div class="pp-block"><h2>' + esc(g) + '</h2><ul class="pp-list">' +
+            S.shots.filter(x => x.group === g).map(x =>
+                '<li>' + (x.done ? '☑ ' : '☐ ') + esc(x.title) + '</li>').join('') + '</ul></div>').join('');
+
+    } else if (kind === 'music') {
+        html = MUSIC_KINDS.map(k => {
+            const list = S.music.filter(m => m.kind === k);
+            return '<div class="pp-block"><h2>' + esc(k) + '</h2>' +
+                (list.length ? '<ul class="pp-list">' + list.map(m =>
+                    '<li>' + esc(m.title) + (m.artist ? ' — ' + esc(m.artist) : '') +
+                    (m.moment ? ' <span class="pp-small">(' + esc(m.moment) + ')</span>' : '') +
+                    (m.notes ? ' <span class="pp-small">' + esc(m.notes) + '</span>' : '') + '</li>').join('') + '</ul>'
+                 : '<p class="pp-small">Nothing listed.</p>') + '</div>';
+        }).join('');
+
+    } else if (kind === 'checklist') {
+        html = PHASES.map(ph => {
+            const list = S.tasks.filter(t => t.phase === ph.key);
+            if (!list.length) return '';
+            return '<div class="pp-block"><h2>' + esc(ph.label) + '</h2><ul class="pp-list">' +
+                list.map(t => '<li>' + (t.done ? '☑ ' : '☐ ') + esc(t.title) +
+                    (t.due ? ' <span class="pp-small">' + esc(t.due) + '</span>' : '') + '</li>').join('') +
+                '</ul></div>';
+        }).join('');
+
+    } else if (kind === 'payments') {
+        const rows = S.payments.slice().sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999'));
+        html = '<table class="pp-table"><thead><tr><th>For</th><th>Who to</th><th class="pp-right">Amount</th><th>Due</th><th>Paid</th></tr></thead><tbody>' +
+            rows.map(p => '<tr><td>' + esc(p.label) + '</td><td>' + esc(p.who) + '</td><td class="pp-right">' +
+                money(p.amount) + '</td><td>' + esc(p.due) + '</td><td>' + (p.paid ? 'yes' : '') + '</td></tr>').join('') +
+            '<tr class="pp-total"><td colspan="2">Outstanding</td><td class="pp-right">' +
+                money(S.payments.filter(p => !p.paid).reduce((n, p) => n + num(p.amount), 0)) + '</td><td colspan="2"></td></tr>' +
+            '</tbody></table>';
+
+    } else if (kind === 'guests') {
+        html = '<table class="pp-table"><thead><tr><th>Party</th><th class="pp-right">Seats</th><th>RSVP</th><th>Meal</th><th>Table</th></tr></thead><tbody>' +
+            S.guests.map(g => '<tr><td>' + esc(g.name) + '</td><td class="pp-right">' + Math.max(1, parseInt(g.party) || 1) +
+                '</td><td>' + esc(g.rsvp || 'pending') + '</td><td>' + esc(g.meal) + '</td><td>' + esc(tableName(g.table)) + '</td></tr>').join('') +
+            '</tbody></table>';
+    }
+
+    if (!html) { alert('There is nothing to print here yet.'); return; }
+
+    const area = document.getElementById('print-area');
+    area.innerHTML =
+        '<div class="pp-head"><div class="pp-doc">' + esc(title) + '</div>' +
+        '<div class="pp-couple">' + esc(couple || 'Wedding') + (S.couple.date ? ' · ' + esc(longDate(S.couple.date)) : '') + '</div></div>' +
+        html;
+    document.body.classList.add('printing');
+    window.print();
+    setTimeout(() => { document.body.classList.remove('printing'); area.innerHTML = ''; }, 800);
+}
+
+/* =========================================================
+   CALENDAR EXPORT (.ics)
+   ========================================================= */
+function icsEscape(t) {
+    return String(t == null ? '' : t)
+        .replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+}
+function icsFold(line) {
+    if (line.length <= 74) return line;
+    const out = [line.slice(0, 74)];
+    let rest = line.slice(74);
+    while (rest.length > 73) { out.push(' ' + rest.slice(0, 73)); rest = rest.slice(73); }
+    if (rest) out.push(' ' + rest);
+    return out.join('\r\n');
+}
+function icsStamp() {
+    const d = new Date();
+    const p = n => String(n).padStart(2, '0');
+    return d.getUTCFullYear() + p(d.getUTCMonth() + 1) + p(d.getUTCDate()) + 'T' +
+           p(d.getUTCHours()) + p(d.getUTCMinutes()) + p(d.getUTCSeconds()) + 'Z';
+}
+function icsDay(iso) { return String(iso || '').replace(/-/g, ''); }
+function icsLocal(iso, time) {
+    return icsDay(iso) + 'T' + String(time || '00:00').replace(':', '') + '00';
+}
+/* Adds a day, so an all-day DTEND lands on the day after (per the spec). */
+function icsNextDay(iso) {
+    const d = parseDate(iso);
+    if (!d) return icsDay(iso);
+    d.setDate(d.getDate() + 1);
+    const p = n => String(n).padStart(2, '0');
+    return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate());
+}
+
+function exportIcs(scope) {
+    const couple = [S.couple.partner1, S.couple.partner2].filter(Boolean).join(' & ') || 'Wedding';
+    const events = [];
+    const want = k => scope === 'all' || scope === k;
+
+    if (want('tasks')) {
+        S.tasks.filter(t => t.due).forEach(t => {
+            events.push({ allDay: true, date: t.due, summary: (t.done ? '✓ ' : '') + t.title,
+                desc: 'Wedding task · ' + phaseLabel(t.phase) });
+        });
+    }
+    if (want('payments')) {
+        S.payments.filter(p => p.due && !p.paid).forEach(p => {
+            events.push({ allDay: true, date: p.due,
+                summary: 'Pay ' + money(p.amount) + (p.who ? ' — ' + p.who : '') + ' (' + p.label + ')',
+                desc: p.notes || '' });
+        });
+    }
+    if (want('schedule') && S.couple.date) {
+        S.schedule.slice().sort((a, b) => (a.time || '').localeCompare(b.time || '')).forEach((r, i, arr) => {
+            const next = arr[i + 1];
+            events.push({ date: S.couple.date, time: r.time || '12:00',
+                endTime: next ? next.time : hhmm(minutesOf(r.time) + 30),
+                summary: r.title, desc: r.who || '', location: S.couple.venue || '' });
+        });
+    }
+    if (want('events')) {
+        S.events.filter(e => e.date).forEach(e => {
+            if (e.time) {
+                events.push({ date: e.date, time: e.time, endTime: hhmm(minutesOf(e.time) + 120),
+                    summary: e.name, desc: [e.dress, e.notes].filter(Boolean).join(' · '), location: e.place || '' });
+            } else {
+                events.push({ allDay: true, date: e.date, summary: e.name,
+                    desc: [e.dress, e.notes].filter(Boolean).join(' · '), location: e.place || '' });
+            }
+        });
+    }
+    if (want('all') && S.couple.date && !S.schedule.length) {
+        events.push({ allDay: true, date: S.couple.date, summary: couple + ' — wedding day', desc: '', location: S.couple.venue || '' });
+    }
+
+    if (!events.length) { alert('Nothing dated to export yet.'); return; }
+
+    const stamp = icsStamp();
+    const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Wedding Planner//EN', 'CALSCALE:GREGORIAN'];
+    events.forEach(e => {
+        lines.push('BEGIN:VEVENT');
+        lines.push('UID:' + uid() + '@wedding-planner');
+        lines.push('DTSTAMP:' + stamp);
+        if (e.allDay) {
+            lines.push('DTSTART;VALUE=DATE:' + icsDay(e.date));
+            lines.push('DTEND;VALUE=DATE:' + icsNextDay(e.date));
+        } else {
+            lines.push('DTSTART:' + icsLocal(e.date, e.time));
+            lines.push('DTEND:' + icsLocal(e.date, e.endTime || e.time));
+        }
+        lines.push(icsFold('SUMMARY:' + icsEscape(e.summary)));
+        if (e.desc) lines.push(icsFold('DESCRIPTION:' + icsEscape(e.desc)));
+        if (e.location) lines.push(icsFold('LOCATION:' + icsEscape(e.location)));
+        lines.push('END:VEVENT');
+    });
+    lines.push('END:VCALENDAR');
+
+    download(new Blob([lines.join('\r\n') + '\r\n'], { type: 'text/calendar;charset=utf-8' }),
+        'wedding-' + scope + '.ics');
 }
 
 /* =========================================================
@@ -2249,12 +3535,9 @@ function toggleModule(key, on) {
 function renderNav() {
     document.querySelectorAll('.tab-btn').forEach(b => {
         const v = b.dataset.view;
-        const gated = ['seating','gifts','inventory','places','vendors','dayof'];
-        b.classList.toggle('hidden', gated.indexOf(v) > -1 && !moduleOn(v));
+        b.classList.toggle('hidden', GATED.indexOf(v) > -1 && !moduleOn(v));
     });
-    if (['seating','gifts','inventory','places','vendors','dayof'].indexOf(activeView) > -1 && !moduleOn(activeView)) {
-        switchView('dashboard');
-    }
+    if (GATED.indexOf(activeView) > -1 && !moduleOn(activeView)) switchView('dashboard');
 }
 
 function renderSetup() {
@@ -2275,7 +3558,12 @@ function renderSetup() {
         ['inventory', 'Inventory'],
         ['places',    'Places & maps'],
         ['vendors',   'Vendors'],
-        ['dayof',     'Day-of run sheet']
+        ['dayof',     'Day-of run sheet'],
+        ['travel',    'Guest travel'],
+        ['events',    'Extra events'],
+        ['payments',  'Payment schedule'],
+        ['photos',    'Photo shot list'],
+        ['music',     'Music planner']
     ];
     document.getElementById('module-switches').innerHTML = MODULES.map(m =>
         '<label class="flex items-center gap-3 bg-brand-sand/60 rounded-lg px-4 py-3 cursor-pointer">' +
@@ -2363,10 +3651,10 @@ function loadSample() {
     }));
 
     S.tables = [
-        { id: uid(), name: 'Head Table', seats: 8 },
-        { id: uid(), name: 'Table 1', seats: 8 },
-        { id: uid(), name: 'Table 2', seats: 8 },
-        { id: uid(), name: 'Table 3', seats: 8 }
+        { id: uid(), name: 'Head Table', seats: 8, shape: 'head', x: 50, y: 16 },
+        { id: uid(), name: 'Table 1', seats: 8, shape: 'round', x: 25, y: 48 },
+        { id: uid(), name: 'Table 2', seats: 8, shape: 'round', x: 50, y: 48 },
+        { id: uid(), name: 'Table 3', seats: 8, shape: 'round', x: 75, y: 48 }
     ];
 
     S.vendors = [
@@ -2397,6 +3685,40 @@ function loadSample() {
         { id: uid(), name: 'Riverside Inn', type: 'Accommodation', address: '', notes: 'Room block held until 6 weeks out', showMap: false }
     ];
 
+    const dISO = S.couple.date;
+    const dayBefore = (iso, back) => {
+        const d = parseDate(iso);
+        if (!d) return '';
+        d.setDate(d.getDate() - back);
+        const q = n => String(n).padStart(2, '0');
+        return d.getFullYear() + '-' + q(d.getMonth() + 1) + '-' + q(d.getDate());
+    };
+    S.payments = [
+        { id: uid(), label: 'Deposit', who: 'Long Table Catering', amount: 5000, due: dayBefore(dISO, 240), paid: true, notes: '' },
+        { id: uid(), label: 'Balance', who: 'Long Table Catering', amount: 9500, due: dayBefore(dISO, 14), paid: false, notes: 'Due with final numbers' },
+        { id: uid(), label: 'Balance', who: 'Fieldstone Photography', amount: 4200, due: dayBefore(dISO, 30), paid: false, notes: '' },
+        { id: uid(), label: 'Venue balance', who: '', amount: 6000, due: dayBefore(dISO, 60), paid: false, notes: '' }
+    ];
+    S.events = [
+        { id: uid(), name: 'Welcome drinks', date: dayBefore(dISO, 1), time: '19:00', place: 'Riverside Inn', dress: 'Smart casual', notes: 'Everyone who is in town', open: false },
+        { id: uid(), name: 'Rehearsal dinner', date: dayBefore(dISO, 1), time: '17:00', place: 'The Old Barn', dress: '', notes: 'Wedding party and family', open: false },
+        { id: uid(), name: 'Next-day brunch', date: dayBefore(dISO, -1), time: '10:30', place: 'Riverside Inn', dress: 'Come as you are', notes: '', open: false }
+    ];
+    S.music = [
+        { id: uid(), kind: 'Key moment', moment: 'First dance', title: 'Pick one together', artist: '', notes: 'Under 3 minutes' },
+        { id: uid(), kind: 'Key moment', moment: 'Last song', title: 'Something everyone knows', artist: '', notes: '' },
+        { id: uid(), kind: 'Must play', moment: 'Dinner', title: 'Quiet jazz set', artist: '', notes: 'Low volume' },
+        { id: uid(), kind: 'Do not play', moment: '', title: 'Chicken Dance', artist: '', notes: 'Absolutely not' }
+    ];
+    // A couple of parties travelling, so the travel tab has something in it.
+    if (S.guests[3]) { S.guests[3].away = true; S.guests[3].staying = 'Riverside Inn'; S.guests[3].arrive = dayBefore(dISO, 2); S.guests[3].depart = dayBefore(dISO, -1); }
+    if (S.guests[9]) { S.guests[9].away = true; S.guests[9].staying = 'Riverside Inn'; S.guests[9].lift = true; }
+    if (S.guests[1]) { S.guests[1].diet = 'One nut allergy'; }
+    if (S.guests[2]) { S.guests[2].access = 'Step-free access'; }
+    if (S.events.length) {
+        S.guests.forEach((g, i) => { if (i % 3 === 0) g.events = [S.events[0].id]; });
+    }
+
     // Tick off the earliest stage so the progress bar isn't empty.
     S.tasks.filter(t => t.phase === 'p12').forEach(t => { t.done = true; });
     autoSeat();
@@ -2417,6 +3739,8 @@ function loadSample() {
     fillSelect('ni-cat', INV_CATEGORIES);
     fillSelect('ni-status', INV_STATUS);
     fillSelect('np-type', PLACE_TYPES);
+    fillSelect('nm-kind', MUSIC_KINDS);
+    fillSelect('nm-moment', MUSIC_MOMENTS, '', '—');
     renderNav();
     renderSetup();
     switchView('dashboard');
