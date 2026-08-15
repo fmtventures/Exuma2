@@ -7,6 +7,7 @@
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 
 <script>
@@ -277,6 +278,10 @@
     .pp-big { text-align:center; padding-top:45mm; }
     .pp-bignum { font-family:'Fraunces',Georgia,serif; font-size:70pt; font-weight:700; line-height:1; }
     .pp-page { break-after:page; }
+    .pp-labels { display:grid; grid-template-columns:repeat(2,1fr); gap:4mm; }
+    .pp-label { border:1px dotted #bbb; padding:6mm; font-size:10pt; line-height:1.5; break-inside:avoid; min-height:26mm; }
+    .pp-swatches { display:flex; flex-wrap:wrap; gap:5mm; }
+    .pp-swatch { width:26mm; height:18mm; border:1px solid #333; border-radius:2mm; }
     .pp-plan svg { width:100%; height:auto; }
 
     /* Run-sheet rows: these must come after .inp, whose width:100% would
@@ -316,11 +321,13 @@
         <div class="nav-group" data-group="Overview">
             <p class="nav-group-label">Overview</p>
             <button class="tab-btn active" data-view="dashboard" onclick="switchView('dashboard')">Dashboard</button>
+            <button class="tab-btn" data-view="memories" onclick="switchView('memories')">Memories</button>
         </div>
         <div class="nav-group" data-group="Money">
             <p class="nav-group-label">Money</p>
             <button class="tab-btn" data-view="budget" onclick="switchView('budget')">Budget</button>
             <button class="tab-btn" data-view="payments" onclick="switchView('payments')">Payments</button>
+            <button class="tab-btn" data-view="scenarios" onclick="switchView('scenarios')">What-ifs</button>
             <button class="tab-btn" data-view="vendors" onclick="switchView('vendors')">Vendors</button>
         </div>
         <div class="nav-group" data-group="People">
@@ -337,14 +344,18 @@
             <button class="tab-btn" data-view="events" onclick="switchView('events')">Events</button>
             <button class="tab-btn" data-view="photos" onclick="switchView('photos')">Photos</button>
             <button class="tab-btn" data-view="music" onclick="switchView('music')">Music</button>
+            <button class="tab-btn" data-view="vows" onclick="switchView('vows')">Vows &amp; Speeches</button>
         </div>
         <div class="nav-group" data-group="Things">
             <p class="nav-group-label">Things</p>
             <button class="tab-btn" data-view="inventory" onclick="switchView('inventory')">Inventory</button>
             <button class="tab-btn" data-view="places" onclick="switchView('places')">Places</button>
+            <button class="tab-btn" data-view="board" onclick="switchView('board')">Mood Board</button>
+            <button class="tab-btn" data-view="attire" onclick="switchView('attire')">Attire</button>
         </div>
         <div class="nav-group" data-group="System">
             <p class="nav-group-label">System</p>
+            <button class="tab-btn" data-view="guestpage" onclick="switchView('guestpage')">Guest Page &amp; QR</button>
             <button class="tab-btn" data-view="print" onclick="switchView('print')">Print &amp; Export</button>
             <button class="tab-btn" data-view="setup" onclick="switchView('setup')">Setup &amp; Data</button>
         </div>
@@ -364,7 +375,7 @@
                 <h1 id="hdr-couple" class="text-3xl sm:text-4xl text-white leading-[1.05]">Your Wedding</h1>
                 <p id="hdr-meta" class="text-white/65 text-sm mt-3">Set your details in Setup &amp; Data</p>
             </div>
-            <div class="flex flex-wrap items-stretch gap-3 sm:gap-4">
+            <div class="flex flex-wrap sm:flex-nowrap items-stretch gap-3 sm:gap-4 shrink-0">
                 <button type="button" class="sticker stat-link sticker-tilt flex-1 min-w-[96px] sm:flex-none sm:min-w-[104px]" style="background:var(--lime)" onclick="jump('dayof')">
                     <div id="hdr-days" class="text-3xl sm:text-4xl font-serif font-bold leading-none num">—</div>
                     <div class="eyebrow mt-1.5" style="color:var(--ink)">Days to go</div>
@@ -591,6 +602,25 @@
 
         <div id="seating-summary" class="grid grid-cols-2 sm:grid-cols-4 gap-4"></div>
 
+        <div class="card p-6 no-print">
+            <h4 class="font-bold mb-2">Who must sit together, who must not</h4>
+            <p class="text-sm text-gray-600 mb-4">Auto-seat obeys these, and anything you break by hand gets flagged.</p>
+            <div class="flex flex-wrap items-end gap-3">
+                <div class="flex-1 min-w-[180px]">
+                    <label class="eyebrow" style="color:var(--ink-soft)">This party</label>
+                    <select id="nr-a" class="inp mt-1"></select>
+                </div>
+                <div class="flex-1 min-w-[180px]">
+                    <label class="eyebrow" style="color:var(--ink-soft)">and this one</label>
+                    <select id="nr-b" class="inp mt-1"></select>
+                </div>
+                <button class="btn btn-ghost" onclick="addRule('together')">Seat together</button>
+                <button class="btn btn-danger" onclick="addRule('apart')">Keep apart</button>
+            </div>
+            <div id="rules-wrap" class="flex flex-wrap gap-2 mt-4"></div>
+            <div id="rules-broken" class="mt-4"></div>
+        </div>
+
         <div class="card p-6">
             <h4 class="font-bold mb-4">Unseated (attending)</h4>
             <div id="unseated" class="flex flex-wrap gap-2"></div>
@@ -699,6 +729,22 @@
                 </table>
             </div>
             <p id="gift-empty" class="text-sm text-gray-400 py-6 text-center hidden">No gifts logged yet.</p>
+        </div>
+
+        <div class="card p-6">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div>
+                    <h3 class="text-lg font-bold">Thank-you notes</h3>
+                    <p id="thanks-progress" class="text-sm text-gray-500 mt-1">—</p>
+                </div>
+                <div class="flex flex-wrap gap-2 no-print">
+                    <button class="btn btn-ghost" onclick="printPack('thanks')">Print the notes</button>
+                    <button class="btn btn-ghost" onclick="printPack('labels')">Print address labels</button>
+                </div>
+            </div>
+            <label class="eyebrow" style="color:var(--ink-soft)">The words, with {name}, {gift} and {couple} filled in for each one</label>
+            <textarea id="thanks-template" rows="5" class="inp mt-1 no-print" onchange="setThanksTemplate(this.value)"></textarea>
+            <div id="thanks-wrap" class="mt-5 space-y-3"></div>
         </div>
 
         <div class="card p-6">
@@ -1007,13 +1053,211 @@
             <h3 class="text-lg font-bold mb-2">Calendar export</h3>
             <p class="text-sm text-gray-600 mb-5">Downloads an .ics file you can import into Google Calendar, Apple Calendar or Outlook. Dated tasks and payments come through as all-day entries; the run sheet and events come through at their real times.</p>
             <div class="flex flex-wrap gap-2">
-                <button class="btn btn-primary" onclick="exportIcs('all')">Everything</button>
+                <button class="btn btn-primary" onclick="exportIcs('all')">Everything dated</button>
                 <button class="btn btn-ghost" onclick="exportIcs('tasks')">Task due dates</button>
                 <button class="btn btn-ghost" onclick="exportIcs('payments')">Payment dates</button>
                 <button class="btn btn-ghost" onclick="exportIcs('schedule')">Day-of run sheet</button>
                 <button class="btn btn-ghost" onclick="exportIcs('events')">Extra events</button>
             </div>
             <p id="ics-note" class="text-xs text-gray-500 mt-4"></p>
+        </div>
+    </section>
+
+
+    <!-- ============ MEMORIES ============ -->
+    <section id="view-memories" class="view hidden space-y-6">
+        <div class="card p-6 no-print">
+            <h3 class="text-lg font-bold mb-2">Write it down while it is happening</h3>
+            <p class="text-sm text-gray-600 mb-5">The proposal, the first venue you walked into, the tasting, the dress. At the end it prints as a small book.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <div>
+                    <label class="eyebrow" style="color:var(--ink-soft)">When</label>
+                    <input id="nj-date" type="date" class="inp mt-1">
+                </div>
+                <div class="lg:col-span-2">
+                    <label class="eyebrow" style="color:var(--ink-soft)">What happened</label>
+                    <input id="nj-title" class="inp mt-1" placeholder="e.g. We found the dress" onkeydown="if(event.key==='Enter')addJournal()">
+                </div>
+                <div class="lg:col-span-2 flex items-end gap-2">
+                    <button class="btn btn-primary" onclick="addJournal()">+ Add entry</button>
+                    <button class="btn btn-ghost" onclick="printPack('journal')">Print the book</button>
+                </div>
+            </div>
+        </div>
+        <div id="journal-wrap" class="space-y-5"></div>
+        <p id="journal-empty" class="text-sm text-gray-400 py-6 text-center hidden">Nothing written yet.</p>
+    </section>
+
+    <!-- ============ WHAT-IFS ============ -->
+    <section id="view-scenarios" class="view hidden space-y-6">
+        <div class="card p-6 no-print">
+            <h3 class="text-lg font-bold mb-2">What if we did it differently?</h3>
+            <p class="text-sm text-gray-600 mb-5">Save the plan as it stands, change your mind freely, and compare. Nothing here touches your live budget until you load it back.</p>
+            <div class="flex flex-wrap items-end gap-3">
+                <div class="flex-1 min-w-[220px]">
+                    <label class="eyebrow" style="color:var(--ink-soft)">Name this version</label>
+                    <input id="nsc-name" class="inp mt-1" placeholder="e.g. 60 guests, DJ instead of band" onkeydown="if(event.key==='Enter')saveScenario()">
+                </div>
+                <button class="btn btn-primary" onclick="saveScenario()">Save what I have now</button>
+            </div>
+        </div>
+        <div class="card p-6">
+            <h4 class="font-bold mb-4">Side by side</h4>
+            <div class="overflow-x-auto"><table class="grid" id="scenario-table"><tbody id="scenario-body"></tbody></table></div>
+            <p id="scenario-empty" class="text-sm text-gray-400 py-6 text-center hidden">Save a version above and it appears here next to the live plan.</p>
+        </div>
+    </section>
+
+    <!-- ============ VOWS & SPEECHES ============ -->
+    <section id="view-vows" class="view hidden space-y-6">
+        <div class="card p-6 no-print">
+            <div class="flex flex-wrap items-end gap-3">
+                <div>
+                    <label class="eyebrow" style="color:var(--ink-soft)">Who is speaking</label>
+                    <input id="nsp-who" class="inp mt-1" style="width:180px" placeholder="e.g. Alex" onkeydown="if(event.key==='Enter')addSpeech()">
+                </div>
+                <div class="flex-1 min-w-[200px]">
+                    <label class="eyebrow" style="color:var(--ink-soft)">What is it</label>
+                    <input id="nsp-title" class="inp mt-1" placeholder="Vows / speech / toast" onkeydown="if(event.key==='Enter')addSpeech()">
+                </div>
+                <div>
+                    <label class="eyebrow" style="color:var(--ink-soft)">Target (min)</label>
+                    <input id="nsp-mins" type="number" min="1" max="30" value="3" class="inp inp-num mt-1" style="width:110px">
+                </div>
+                <button class="btn btn-primary" onclick="addSpeech()">+ Start one</button>
+                <button class="btn btn-ghost" onclick="printPack('speeches')">Print reading cards</button>
+            </div>
+            <p class="text-[11px] text-gray-500 mt-3">Speaking time is counted at 130 words a minute — the pace people actually manage in front of a room.</p>
+        </div>
+        <div id="speech-wrap" class="space-y-5"></div>
+        <p id="speech-empty" class="text-sm text-gray-400 py-6 text-center hidden">Nothing drafted yet.</p>
+    </section>
+
+    <!-- ============ MOOD BOARD ============ -->
+    <section id="view-board" class="view hidden space-y-6">
+        <div class="card p-6 no-print">
+            <h3 class="text-lg font-bold mb-2">Mood board</h3>
+            <p class="text-sm text-gray-600 mb-5">Drop in what you like. Each picture gives up its colours, and the palette prints as a one-page style sheet for the florist and the stationer.</p>
+            <div class="flex flex-wrap items-center gap-3">
+                <input id="board-file" type="file" accept="image/*" multiple class="hidden" onchange="addBoardImages(this)">
+                <button class="btn btn-primary" onclick="document.getElementById('board-file').click()">Add pictures</button>
+                <button class="btn btn-ghost" onclick="printPack('board')">Print the style sheet</button>
+                <span id="board-note" class="text-[11px] text-gray-500"></span>
+            </div>
+        </div>
+        <div class="card p-6">
+            <h4 class="font-bold mb-4">Your palette</h4>
+            <div id="board-palette" class="flex flex-wrap gap-3"></div>
+        </div>
+        <div id="board-wrap" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+    </section>
+
+    <!-- ============ ATTIRE ============ -->
+    <section id="view-attire" class="view hidden space-y-6">
+        <div id="attire-stats" class="grid grid-cols-2 sm:grid-cols-4 gap-4"></div>
+        <div class="card p-6 no-print">
+            <h3 class="text-lg font-bold mb-4">Add an outfit</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+                <div>
+                    <label class="eyebrow" style="color:var(--ink-soft)">Who</label>
+                    <input id="nat-who" class="inp mt-1" placeholder="Name" onkeydown="if(event.key==='Enter')addAttire()">
+                </div>
+                <div>
+                    <label class="eyebrow" style="color:var(--ink-soft)">What</label>
+                    <input id="nat-item" class="inp mt-1" placeholder="Dress, suit, shoes" onkeydown="if(event.key==='Enter')addAttire()">
+                </div>
+                <div>
+                    <label class="eyebrow" style="color:var(--ink-soft)">Shop</label>
+                    <input id="nat-shop" class="inp mt-1" placeholder="optional">
+                </div>
+                <div>
+                    <label class="eyebrow" style="color:var(--ink-soft)">Cost</label>
+                    <input id="nat-cost" type="number" min="0" step="25" class="inp inp-num mt-1" placeholder="0">
+                </div>
+                <div>
+                    <label class="eyebrow" style="color:var(--ink-soft)">Next fitting</label>
+                    <input id="nat-fitting" type="date" class="inp mt-1">
+                </div>
+                <div class="flex items-end"><button class="btn btn-primary w-full" onclick="addAttire()">+ Add</button></div>
+            </div>
+        </div>
+        <div class="card p-6">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <h3 class="text-lg font-bold">Who is wearing what</h3>
+                <button class="btn btn-ghost no-print" onclick="printPack('attire')">Print the fitting list</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="grid">
+                    <thead><tr>
+                        <th style="min-width:140px">Who</th><th style="min-width:150px">Item</th>
+                        <th style="min-width:140px">Shop</th><th style="min-width:110px">Size</th>
+                        <th class="text-right" style="width:100px">Cost</th>
+                        <th style="min-width:150px">Next fitting</th><th style="min-width:130px">Status</th>
+                        <th style="min-width:150px">Notes</th><th class="no-print"></th>
+                    </tr></thead>
+                    <tbody id="attire-body"></tbody>
+                </table>
+            </div>
+            <p id="attire-empty" class="text-sm text-gray-400 py-6 text-center hidden">Nothing listed yet.</p>
+        </div>
+    </section>
+
+    <!-- ============ GUEST PAGE & QR ============ -->
+    <section id="view-guestpage" class="view hidden space-y-6">
+        <div class="card p-6">
+            <h3 class="text-lg font-bold mb-2">The page your guests see</h3>
+            <p class="text-sm text-gray-600 mb-5">Exports one self-contained file with the day's timings, the places with map links, where to stay, the dress code and anything you want to tell people. Put it on a web address and the QR code below points at it.</p>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div>
+                    <label class="eyebrow" style="color:var(--ink-soft)">Dress code</label>
+                    <input id="gp-dress" class="inp mt-1" placeholder="e.g. Garden party — no black tie" onchange="setGuestPage('dressCode',this.value)">
+                </div>
+                <div>
+                    <label class="eyebrow" style="color:var(--ink-soft)">Where the page will live</label>
+                    <input id="gp-url" class="inp mt-1" placeholder="https://…" onchange="setGuestPage('pageUrl',this.value)">
+                </div>
+                <div class="lg:col-span-2">
+                    <label class="eyebrow" style="color:var(--ink-soft)">A word from you</label>
+                    <textarea id="gp-message" rows="3" class="inp mt-1" placeholder="We cannot wait to see you…" onchange="setGuestPage('message',this.value)"></textarea>
+                </div>
+                <div class="lg:col-span-2">
+                    <label class="eyebrow" style="color:var(--ink-soft)">Anything else they ask (one per line)</label>
+                    <textarea id="gp-faq" rows="3" class="inp mt-1" placeholder="Parking is behind the barn&#10;Children are very welcome" onchange="setGuestPage('faq',this.value)"></textarea>
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-2 mt-5 no-print">
+                <button class="btn btn-primary" onclick="exportGuestPage()">Export the guest page</button>
+                <button class="btn btn-ghost" onclick="previewGuestPage()">Preview it</button>
+            </div>
+        </div>
+
+        <div class="card p-6">
+            <h3 class="text-lg font-bold mb-2">Photos from your guests</h3>
+            <p class="text-sm text-gray-600 mb-5">
+                Point this at your PEI Fotoshop upload address. The QR goes on the table cards and the guest page;
+                guests scan it and send their pictures and short videos straight to your album. Prints are ordered from Sidelio.
+            </p>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div>
+                    <label class="eyebrow" style="color:var(--ink-soft)">Upload address (guests)</label>
+                    <input id="gp-upload" class="inp mt-1" placeholder="https://…/upload/your-wedding" onchange="setGuestPage('uploadUrl',this.value)">
+                </div>
+                <div>
+                    <label class="eyebrow" style="color:var(--ink-soft)">Album address (viewing)</label>
+                    <input id="gp-album" class="inp mt-1" placeholder="https://…/album/your-wedding" onchange="setGuestPage('albumUrl',this.value)">
+                </div>
+                <div>
+                    <label class="eyebrow" style="color:var(--ink-soft)">Ordering prints</label>
+                    <input id="gp-prints" class="inp mt-1" onchange="setGuestPage('printsUrl',this.value)">
+                </div>
+            </div>
+            <div id="qr-wrap" class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-5"></div>
+            <div class="flex flex-wrap gap-2 mt-5 no-print">
+                <button class="btn btn-ghost" onclick="printPack('qrcards')">Print QR table cards</button>
+            </div>
+            <p class="text-[11px] text-gray-500 mt-4">
+                Uploads are received by whatever service you point at — this planner makes the codes and the links, it does not store the pictures.
+            </p>
         </div>
     </section>
 
@@ -1128,6 +1372,19 @@
                 <button class="btn btn-primary" onclick="buildTimeline(false)">Add these to the run sheet</button>
                 <button class="btn btn-ghost" onclick="buildTimeline(true)">Replace the run sheet</button>
             </div>
+        </div>
+
+        <div class="card p-6">
+            <h3 class="text-lg font-bold mb-2">Light on the day</h3>
+            <p class="text-sm text-gray-600 mb-4">Paste the venue's Google Maps link — the coordinates are in it — and you get sunrise, golden hour and sunset for your exact date, worked out on this page.</p>
+            <div class="flex flex-wrap items-end gap-3 no-print">
+                <div class="flex-1 min-w-[260px]">
+                    <label class="eyebrow" style="color:var(--ink-soft)">Venue map link, or "latitude, longitude"</label>
+                    <input id="sun-paste" class="inp mt-1" placeholder="https://www.google.com/maps/@46.2382,-63.1311,15z" onchange="setSun('paste',this.value)">
+                </div>
+                <button class="btn btn-ghost" onclick="printPack('rainplan')">Print the wet-weather plan</button>
+            </div>
+            <div id="sun-wrap" class="mt-5"></div>
         </div>
 
         <div class="card p-6">
@@ -1427,11 +1684,17 @@ function defaultState() {
                     extraCategories: [],
                     timeline: { ceremony: '16:00', ready: 5, ceremonyMins: 30, travelMins: 15,
                                 cocktailMins: 60, dinnerMins: 90, endTime: '00:00' },
+                    guestPage: { dressCode: '', message: '', uploadUrl: '', albumUrl: '',
+                                 printsUrl: 'https://sidelio.ca/photographers', faq: '' },
+                    sun: { lat: null, lng: null, place: '' },
+                    thanksTemplate: 'Dear {name},\n\nThank you so much for the {gift} — it was so thoughtful of you, and we love it.\n\nIt meant the world to have you with us on our wedding day.\n\nWith love,\n{couple}',
                     modules: { seating: true, gifts: true, inventory: true, places: true, vendors: true,
-                               dayof: true, travel: true, events: true, payments: true, photos: true, music: true } },
+                               dayof: true, travel: true, events: true, payments: true, photos: true, music: true,
+                               scenarios: true, vows: true, guestpage: true, board: true, attire: true, memories: true } },
         budget: [], guests: [], tables: [], tasks: [], vendors: [], schedule: [],
         gifts: [], registries: [], inventory: [], places: [],
-        payments: [], events: [], shots: [], music: []
+        payments: [], events: [], shots: [], music: [],
+        rules: [], speeches: [], journal: [], attire: [], scenarios: [], board: []
     };
     s.budget = CATEGORIES.map(c => ({
         id: uid(), category: c.name, item: c.name, vendor: '',
@@ -1479,11 +1742,14 @@ function migrate(obj) {
     out.couple   = Object.assign({}, base.couple,   obj.couple   || {});
     out.settings = Object.assign({}, base.settings, obj.settings || {});
     ['budget','guests','tables','tasks','vendors','schedule','gifts','registries','inventory','places',
-     'payments','events','shots','music'].forEach(k => {
+     'payments','events','shots','music','rules','speeches','journal','attire','scenarios','board'].forEach(k => {
         if (!Array.isArray(out[k])) out[k] = base[k];
     });
     out.settings.modules = Object.assign({}, base.settings.modules, out.settings.modules || {});
     out.settings.timeline = Object.assign({}, base.settings.timeline, out.settings.timeline || {});
+    out.settings.guestPage = Object.assign({}, base.settings.guestPage, out.settings.guestPage || {});
+    out.settings.sun = Object.assign({}, base.settings.sun, out.settings.sun || {});
+    if (!out.settings.thanksTemplate) out.settings.thanksTemplate = base.settings.thanksTemplate;
     out.guests.forEach(g => { if (!Array.isArray(g.events)) g.events = []; });
     out.tables.forEach((t, i) => {
         if (!t.shape) t.shape = 'round';
@@ -1647,7 +1913,8 @@ function celebrate() {
 /* =========================================================
    NAVIGATION
    ========================================================= */
-const GATED = ['seating','gifts','inventory','places','vendors','dayof','travel','events','payments','photos','music'];
+const GATED = ['seating','gifts','inventory','places','vendors','dayof','travel','events','payments','photos','music',
+               'scenarios','vows','guestpage','board','attire','memories'];
 function moduleOn(key) { return S.settings.modules[key] !== false; }
 
 function switchView(view) {
@@ -1697,6 +1964,12 @@ function renderActive() {
         case 'guests':    renderGuests(); break;
         case 'seating':   renderSeating(); break;
         case 'payments':  renderPayments(); break;
+        case 'scenarios': renderScenarios(); break;
+        case 'vows':      renderSpeeches(); break;
+        case 'guestpage': renderGuestPage(); break;
+        case 'board':     renderBoard(); break;
+        case 'attire':    renderAttire(); break;
+        case 'memories':  renderJournal(); break;
         case 'travel':    renderTravel(); break;
         case 'events':    renderEvents(); break;
         case 'photos':    renderPhotos(); break;
@@ -2264,11 +2537,42 @@ function autoSeat() {
     let placed = 0, skipped = 0;
     pending.forEach(g => {
         const size = Math.max(1, parseInt(g.party) || 1);
-        const t = S.tables.find(t2 => t2.seats - seatsUsed(t2.id) >= size);
+        const t = S.tables.find(t2 => t2.seats - seatsUsed(t2.id) >= size && canSeat(g, t2.id));
         if (t) { g.table = t.id; placed++; } else { skipped++; }
     });
     save(); renderSeating();
-    if (skipped) alert(placed + ' seated. ' + skipped + ' could not fit — add tables or seats.');
+    if (skipped) alert(placed + ' seated. ' + skipped + ' could not be placed — add tables or seats, or relax a rule.');
+}
+
+function renderRules() {
+    const opts = S.guests.map(g => '<option value="' + g.id + '">' + esc(g.name) + '</option>').join('');
+    ['nr-a', 'nr-b'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const keep = el.value;
+        el.innerHTML = '<option value="">—</option>' + opts;
+        if (keep) el.value = keep;
+    });
+
+    const wrap = document.getElementById('rules-wrap');
+    if (!wrap) return;
+    wrap.innerHTML = S.rules.length
+        ? S.rules.map(r => {
+            const apart = r.kind === 'apart';
+            return '<span class="chip" style="color:' + (apart ? 'var(--tang)' : 'var(--go)') + ';display:inline-flex;gap:.4rem;align-items:center;padding:.35rem .6rem">' +
+                esc(guestName(r.a)) + (apart ? ' ✕ ' : ' + ') + esc(guestName(r.b)) +
+                '<span class="row-x" onclick="delRule(\'' + r.id + '\')">&times;</span></span>';
+          }).join('')
+        : '<p class="text-sm text-gray-400">No rules yet.</p>';
+
+    const broken = ruleBreaks();
+    document.getElementById('rules-broken').innerHTML = broken.length
+        ? '<div class="p-4 rounded-lg" style="border:2px solid var(--tang);background:var(--card)">' +
+          '<p class="text-sm font-semibold mb-2" style="color:var(--tang)">' + broken.length + ' rule' + (broken.length > 1 ? 's are' : ' is') + ' broken right now</p>' +
+          '<ul class="text-sm space-y-1">' + broken.map(r =>
+              '<li>' + esc(guestName(r.a)) + (r.kind === 'apart' ? ' and ' : ' should be with ') + esc(guestName(r.b)) +
+              (r.kind === 'apart' ? ' are at the same table.' : ' but they are apart.') + '</li>').join('') + '</ul></div>'
+        : '';
 }
 
 function renderSeating() {
@@ -2327,6 +2631,7 @@ function renderSeating() {
         : '<div class="card p-8 text-center text-sm text-gray-400 sm:col-span-2 lg:col-span-3">No tables yet — add one above.</div>';
 
     renderFloorPlan();
+    renderRules();
 }
 
 /* =========================================================
@@ -2710,6 +3015,28 @@ function renderGifts() {
         '</tr>').join('');
     document.getElementById('gift-empty').classList.toggle('hidden', list.length > 0);
 
+    const tpl = document.getElementById('thanks-template');
+    if (tpl && document.activeElement !== tpl) tpl.value = S.settings.thanksTemplate;
+    const owed = S.gifts.filter(g => !g.thanked);
+    document.getElementById('thanks-progress').innerText = S.gifts.length
+        ? (S.gifts.length - owed.length) + ' of ' + S.gifts.length + ' written'
+        : 'Log a gift and its note is drafted here.';
+    document.getElementById('thanks-wrap').innerHTML = owed.length
+        ? owed.map(g =>
+            '<div class="p-4 rounded-lg" style="border:2px solid var(--hair)">' +
+                '<div class="flex flex-wrap items-center gap-3 mb-2">' +
+                    '<span class="font-semibold">' + esc(g.from || 'Someone') + '</span>' +
+                    '<span class="chip" style="color:var(--ink-soft)">' + esc(g.desc || g.type) + '</span>' +
+                    '<div class="flex-1"></div>' +
+                    '<button class="btn btn-ghost no-print" onclick="copyThanks(\'' + g.id + '\')">Copy</button>' +
+                    '<label class="flex items-center gap-2 text-xs font-semibold no-print">' +
+                        '<input type="checkbox" class="cb" onchange="giftSet(\'' + g.id + '\',\'thanked\',this.checked)"> Written' +
+                    '</label>' +
+                '</div>' +
+                '<pre class="text-sm" style="white-space:pre-wrap;font-family:inherit;color:var(--ink-soft)">' + esc(thanksFor(g)) + '</pre>' +
+            '</div>').join('')
+        : '<p class="text-sm text-gray-400">' + (S.gifts.length ? 'Every note is written. 🎉' : 'Nothing to write yet.') + '</p>';
+
     document.getElementById('registry-wrap').innerHTML = S.registries.length
         ? S.registries.map(r => {
             const url = safeUrl(r.url);
@@ -2720,6 +3047,21 @@ function renderGifts() {
                 '<span class="row-x no-print" onclick="delRegistry(\'' + r.id + '\')">&times;</span></span>';
           }).join('')
         : '<p class="text-sm text-gray-400">No registries or wish lists added.</p>';
+}
+
+function setThanksTemplate(v) { S.settings.thanksTemplate = v; save(); scheduleRender(); }
+function thanksFor(g) {
+    const couple = [S.couple.partner1, S.couple.partner2].filter(Boolean).join(' and ') || 'Us';
+    const gift = (g.desc || '').trim() || (g.type === 'Cash' || g.type === 'Cheque' ? 'your generous gift' : 'your lovely gift');
+    return String(S.settings.thanksTemplate || '')
+        .replace(/\{name\}/g, (g.from || '').trim() || 'friend')
+        .replace(/\{gift\}/g, gift)
+        .replace(/\{couple\}/g, couple);
+}
+function copyThanks(id) {
+    const g = S.gifts.find(x => x.id === id);
+    if (!g || !navigator.clipboard) return;
+    navigator.clipboard.writeText(thanksFor(g)).catch(() => {});
 }
 
 function exportGiftsCsv() {
@@ -3247,6 +3589,649 @@ function buildTimeline(replace) {
     save(); renderSchedule();
 }
 
+
+/* =========================================================
+   MEMORIES JOURNAL
+   ========================================================= */
+function addJournal() {
+    const title = document.getElementById('nj-title').value.trim();
+    if (!title) { document.getElementById('nj-title').focus(); return; }
+    S.journal.push({ id: uid(), date: document.getElementById('nj-date').value || todayIso(), title: title, text: '' });
+    document.getElementById('nj-title').value = '';
+    document.getElementById('nj-title').focus();
+    save(); renderJournal();
+}
+function delJournal(id) { S.journal = S.journal.filter(j => j.id !== id); save(); scheduleRender(); }
+function journalSet(id, field, v) {
+    const j = S.journal.find(x => x.id === id);
+    if (!j) return;
+    j[field] = v;
+    save(); scheduleRender();
+}
+function renderJournal() {
+    const rows = S.journal.slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    document.getElementById('journal-wrap').innerHTML = rows.map(j =>
+        '<div class="card p-6">' +
+            '<div class="flex flex-wrap items-center gap-3 mb-3">' +
+                '<input type="date" class="inp" data-k="jn-' + j.id + '-date" style="width:160px" value="' + esc(j.date) + '" onchange="journalSet(\'' + j.id + '\',\'date\',this.value)">' +
+                '<input class="inp font-serif text-lg flex-1 min-w-[200px]" data-k="jn-' + j.id + '-title" value="' + esc(j.title) + '" onchange="journalSet(\'' + j.id + '\',\'title\',this.value)">' +
+                '<span class="row-x no-print" onclick="delJournal(\'' + j.id + '\')">&times;</span>' +
+            '</div>' +
+            '<textarea rows="4" class="inp" data-k="jn-' + j.id + '-text" placeholder="How it went, who was there, what she said…" onchange="journalSet(\'' + j.id + '\',\'text\',this.value)">' + esc(j.text) + '</textarea>' +
+        '</div>').join('');
+    document.getElementById('journal-empty').classList.toggle('hidden', rows.length > 0);
+}
+
+/* =========================================================
+   BUDGET WHAT-IFS
+   ========================================================= */
+function saveScenario() {
+    const name = document.getElementById('nsc-name').value.trim();
+    if (!name) { document.getElementById('nsc-name').focus(); return; }
+    const t = totals();
+    S.scenarios.push({
+        id: uid(), name: name, saved: todayIso(),
+        budget: num(S.settings.budget), projected: t.projected, actual: t.act, paid: t.paid,
+        guests: guestCounts().yes || num(S.couple.guestTarget),
+        lines: S.budget.map(r => ({ category: r.category, item: r.item, estimate: num(r.estimate), actual: num(r.actual), paid: num(r.paid) }))
+    });
+    document.getElementById('nsc-name').value = '';
+    save(); renderScenarios();
+}
+function delScenario(id) { S.scenarios = S.scenarios.filter(x => x.id !== id); save(); scheduleRender(); }
+/* Puts a saved version back into the live budget — the only thing here that writes. */
+function loadScenario(id) {
+    const sc = S.scenarios.find(x => x.id === id);
+    if (!sc) return;
+    if (!confirm('Replace your live budget with "' + sc.name + '"? Save the current one first if you want to keep it.')) return;
+    S.settings.budget = sc.budget;
+    S.settings.estimatesTouched = true;
+    S.budget = sc.lines.map(l => ({ id: uid(), category: l.category, item: l.item, vendor: '',
+                                    estimate: l.estimate, actual: l.actual, paid: l.paid }));
+    save(); switchView('budget');
+}
+
+function renderScenarios() {
+    const live = {
+        id: '', name: 'As it stands now', budget: num(S.settings.budget),
+        projected: totals().projected, guests: guestCounts().yes || num(S.couple.guestTarget),
+        lines: S.budget.map(r => ({ category: r.category, estimate: num(r.estimate), actual: num(r.actual) }))
+    };
+    const all = [live].concat(S.scenarios);
+    const perHead = v => v.guests > 0 ? money(v.projected / v.guests) : '—';
+    const cats = [];
+    all.forEach(v => v.lines.forEach(l => { if (cats.indexOf(l.category) === -1) cats.push(l.category); }));
+
+    const head = '<tr><th>Version</th>' + all.map(v =>
+        '<th class="text-right">' + esc(v.name) + '</th>').join('') + '<th class="no-print"></th></tr>';
+    const row = (label, fn, bold) =>
+        '<tr' + (bold ? ' class="font-bold"' : '') + '><td>' + esc(label) + '</td>' +
+        all.map(v => '<td class="text-right num">' + fn(v) + '</td>').join('') + '<td class="no-print"></td></tr>';
+
+    let body =
+        '<thead>' + head + '</thead><tbody>' +
+        row('Budget', v => money(v.budget)) +
+        row('Projected spend', v => money(v.projected), true) +
+        row('Against budget', v => {
+            const d = v.budget - v.projected;
+            return '<span style="color:' + (d < 0 ? 'var(--tang)' : 'var(--go)') + '">' +
+                   (d < 0 ? '−' : '+') + money(Math.abs(d)) + '</span>';
+        }) +
+        row('Guests', v => v.guests || '—') +
+        row('Per head', perHead);
+
+    cats.forEach(c => {
+        body += '<tr><td class="pl-4" style="color:var(--ink-soft)">' + esc(c) + '</td>' +
+            all.map(v => {
+                const ls = v.lines.filter(l => l.category === c);
+                const val = ls.reduce((n, l) => n + Math.max(l.actual || 0, l.estimate || 0), 0);
+                return '<td class="text-right num" style="color:var(--ink-soft)">' + (val ? money(val) : '—') + '</td>';
+            }).join('') + '<td class="no-print"></td></tr>';
+    });
+
+    body += '<tr><td></td>' + all.map(v => '<td class="text-right no-print">' + (v.id
+        ? '<button class="btn btn-ghost" style="padding:.3rem .6rem" onclick="loadScenario(\'' + v.id + '\')">Use this</button> ' +
+          '<span class="row-x" onclick="delScenario(\'' + v.id + '\')">&times;</span>'
+        : '<span class="chip" style="color:var(--go)">Live</span>') + '</td>').join('') + '<td class="no-print"></td></tr>';
+
+    document.getElementById('scenario-table').innerHTML = body + '</tbody>';
+    document.getElementById('scenario-empty').classList.toggle('hidden', S.scenarios.length > 0);
+}
+
+/* =========================================================
+   VOWS & SPEECHES
+   ========================================================= */
+const WPM = 130;
+function speakingMinutes(text) {
+    const words = String(text || '').trim().split(/\s+/).filter(Boolean).length;
+    return { words: words, mins: words / WPM };
+}
+function addSpeech() {
+    const title = document.getElementById('nsp-title').value.trim() || 'Vows';
+    S.speeches.push({
+        id: uid(), who: document.getElementById('nsp-who').value.trim(),
+        title: title, target: Math.max(1, parseInt(document.getElementById('nsp-mins').value) || 3),
+        text: ''
+    });
+    document.getElementById('nsp-title').value = '';
+    save(); renderSpeeches();
+}
+function delSpeech(id) { S.speeches = S.speeches.filter(x => x.id !== id); save(); scheduleRender(); }
+function speechSet(id, field, v) {
+    const x = S.speeches.find(y => y.id === id);
+    if (!x) return;
+    x[field] = (field === 'target') ? Math.max(1, parseInt(v) || 1) : v;
+    save();
+    if (field === 'text') { updateSpeechMeter(id); return; }   // keep typing uninterrupted
+    scheduleRender();
+}
+/* Live count while typing — the whole point is watching the minutes tick up. */
+function updateSpeechMeter(id) {
+    const x = S.speeches.find(y => y.id === id);
+    const el = document.getElementById('meter-' + id);
+    if (!x || !el) return;
+    const box = document.querySelector('[data-k="sp-' + id + '-text"]');
+    const m = speakingMinutes(box ? box.value : x.text);
+    const over = m.mins > x.target;
+    el.innerHTML = '<span class="num">' + m.words + '</span> words · about <span class="num">' +
+        (m.mins < 1 ? Math.round(m.mins * 60) + ' seconds' : m.mins.toFixed(1) + ' minutes') + '</span>' +
+        ' <span class="chip" style="color:' + (over ? 'var(--tang)' : 'var(--go)') + '">' +
+        (over ? 'over ' + x.target + ' min' : 'within ' + x.target + ' min') + '</span>';
+}
+let rehearseTimer = null;
+function rehearse(id) {
+    const el = document.getElementById('clock-' + id);
+    if (!el) return;
+    if (rehearseTimer) { clearInterval(rehearseTimer); rehearseTimer = null; el.dataset.running = ''; return; }
+    let secs = 0;
+    el.dataset.running = '1';
+    rehearseTimer = setInterval(() => {
+        secs++;
+        el.textContent = Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
+    }, 1000);
+}
+
+function renderSpeeches() {
+    document.getElementById('speech-wrap').innerHTML = S.speeches.map(x => {
+        const m = speakingMinutes(x.text);
+        return '<div class="card p-6">' +
+            '<div class="flex flex-wrap items-center gap-3 mb-3">' +
+                '<input class="inp" data-k="sp-' + x.id + '-who" style="width:150px" placeholder="Who" value="' + esc(x.who) + '" onchange="speechSet(\'' + x.id + '\',\'who\',this.value)">' +
+                '<input class="inp font-serif text-lg flex-1 min-w-[180px]" data-k="sp-' + x.id + '-title" value="' + esc(x.title) + '" onchange="speechSet(\'' + x.id + '\',\'title\',this.value)">' +
+                '<label class="eyebrow" style="color:var(--ink-soft)">Target</label>' +
+                '<input type="number" min="1" max="30" class="inp inp-num" data-k="sp-' + x.id + '-target" style="width:70px" value="' + x.target + '" onchange="speechSet(\'' + x.id + '\',\'target\',this.value)">' +
+                '<button class="btn btn-ghost no-print" onclick="rehearse(\'' + x.id + '\')">Rehearse</button>' +
+                '<span id="clock-' + x.id + '" class="font-serif text-xl num">0:00</span>' +
+                '<span class="row-x no-print" onclick="delSpeech(\'' + x.id + '\')">&times;</span>' +
+            '</div>' +
+            '<textarea rows="8" class="inp" data-k="sp-' + x.id + '-text" placeholder="Say it the way you would say it out loud…" ' +
+                'oninput="updateSpeechMeter(\'' + x.id + '\')" onchange="speechSet(\'' + x.id + '\',\'text\',this.value)">' + esc(x.text) + '</textarea>' +
+            '<p id="meter-' + x.id + '" class="text-[11px] mt-2" style="color:var(--ink-soft)"><span class="num">' + m.words + '</span> words · about <span class="num">' +
+                (m.mins < 1 ? Math.round(m.mins * 60) + ' seconds' : m.mins.toFixed(1) + ' minutes') + '</span></p>' +
+        '</div>';
+    }).join('');
+    document.getElementById('speech-empty').classList.toggle('hidden', S.speeches.length > 0);
+}
+
+/* =========================================================
+   ATTIRE & FITTINGS
+   ========================================================= */
+const ATTIRE_STATUS = ['Looking', 'Ordered', 'Arrived', 'In alterations', 'Ready', 'Collected'];
+function addAttire() {
+    const who = document.getElementById('nat-who').value.trim();
+    const item = document.getElementById('nat-item').value.trim();
+    if (!who && !item) { document.getElementById('nat-who').focus(); return; }
+    S.attire.push({
+        id: uid(), who: who, item: item || 'Outfit',
+        shop: document.getElementById('nat-shop').value.trim(),
+        size: '', cost: Math.max(0, num(document.getElementById('nat-cost').value)),
+        fitting: document.getElementById('nat-fitting').value || '',
+        status: ATTIRE_STATUS[0], notes: ''
+    });
+    ['nat-who','nat-item','nat-shop','nat-cost'].forEach(id => { document.getElementById(id).value = ''; });
+    document.getElementById('nat-who').focus();
+    save(); renderAttire();
+}
+function delAttire(id) { S.attire = S.attire.filter(a => a.id !== id); save(); scheduleRender(); }
+function attireSet(id, field, v) {
+    const a = S.attire.find(x => x.id === id);
+    if (!a) return;
+    a[field] = (field === 'cost') ? Math.max(0, num(v)) : v;
+    save(); scheduleRender();
+}
+function renderAttire() {
+    const items = S.attire;
+    const ready = items.filter(a => a.status === 'Ready' || a.status === 'Collected').length;
+    const spend = items.reduce((n, a) => n + num(a.cost), 0);
+    const dated = items.filter(a => a.fitting).map(a => a.fitting).sort();
+    const next = dated.find(d => daysUntil(d) >= 0) || dated[dated.length - 1] || '';
+    const stat = (label, val, sub, color, action) => statCard(label, val, sub, color, action);
+    document.getElementById('attire-stats').innerHTML =
+        stat('Outfits', items.length, items.filter(a => a.who).length + ' people', '', "focusOn('attire-body')") +
+        stat('Ready', ready + '/' + items.length, (items.length - ready) + ' still in progress', 'text-brand-teal', "focusOn('attire-body')") +
+        stat('Spent on attire', money(spend), 'across every outfit', '', "jump('budget')") +
+        stat('Next fitting', next ? (daysUntil(next) >= 0 ? 'in ' + daysUntil(next) + 'd' : 'passed') : '—',
+             next ? longDate(next) : 'none booked', next && daysUntil(next) <= 14 && daysUntil(next) >= 0 ? 'text-brand-gold' : '', "focusOn('attire-body')");
+
+    const opts = (sel) => ATTIRE_STATUS.map(x =>
+        '<option value="' + esc(x) + '"' + (sel === x ? ' selected' : '') + '>' + esc(x) + '</option>').join('');
+    document.getElementById('attire-body').innerHTML = items.map(a =>
+        '<tr>' +
+        '<td><input class="inp font-medium" data-k="at-' + a.id + '-who" value="' + esc(a.who) + '" onchange="attireSet(\'' + a.id + '\',\'who\',this.value)"></td>' +
+        '<td><input class="inp" data-k="at-' + a.id + '-item" value="' + esc(a.item) + '" onchange="attireSet(\'' + a.id + '\',\'item\',this.value)"></td>' +
+        '<td><input class="inp" data-k="at-' + a.id + '-shop" value="' + esc(a.shop) + '" placeholder="—" onchange="attireSet(\'' + a.id + '\',\'shop\',this.value)"></td>' +
+        '<td><input class="inp" data-k="at-' + a.id + '-size" value="' + esc(a.size) + '" placeholder="—" onchange="attireSet(\'' + a.id + '\',\'size\',this.value)"></td>' +
+        '<td><input type="number" min="0" step="25" class="inp inp-num" data-k="at-' + a.id + '-cost" value="' + num(a.cost) + '" onchange="attireSet(\'' + a.id + '\',\'cost\',this.value)"></td>' +
+        '<td><input type="date" class="inp" data-k="at-' + a.id + '-fitting" value="' + esc(a.fitting) + '" onchange="attireSet(\'' + a.id + '\',\'fitting\',this.value)"></td>' +
+        '<td><select class="inp" data-k="at-' + a.id + '-status" onchange="attireSet(\'' + a.id + '\',\'status\',this.value)">' + opts(a.status) + '</select></td>' +
+        '<td><input class="inp" data-k="at-' + a.id + '-notes" value="' + esc(a.notes) + '" placeholder="—" onchange="attireSet(\'' + a.id + '\',\'notes\',this.value)"></td>' +
+        '<td class="no-print text-right"><span class="row-x" onclick="delAttire(\'' + a.id + '\')">&times;</span></td>' +
+        '</tr>').join('');
+    document.getElementById('attire-empty').classList.toggle('hidden', items.length > 0);
+}
+
+/* =========================================================
+   MOOD BOARD
+   ========================================================= */
+/* Pictures are shrunk before they are stored — browser storage is small,
+   and a style sheet does not need a 4000px photograph. */
+function addBoardImages(input) {
+    const files = Array.prototype.slice.call(input.files || []);
+    input.value = '';
+    if (!files.length) return;
+    if (S.board.length + files.length > 16) {
+        alert('The board holds 16 pictures. Remove a few first.');
+        return;
+    }
+    let pending = files.length;
+    files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const img = new Image();
+            img.onload = () => {
+                const max = 720;
+                const scale = Math.min(1, max / Math.max(img.width, img.height));
+                const cv = document.createElement('canvas');
+                cv.width = Math.round(img.width * scale);
+                cv.height = Math.round(img.height * scale);
+                const ctx = cv.getContext('2d');
+                ctx.drawImage(img, 0, 0, cv.width, cv.height);
+                S.board.push({
+                    id: uid(), name: file.name, note: '',
+                    src: cv.toDataURL('image/jpeg', 0.72),
+                    colours: pickColours(ctx, cv.width, cv.height)
+                });
+                if (--pending === 0) { save(); renderBoard(); }
+            };
+            img.onerror = () => { if (--pending === 0) { save(); renderBoard(); } };
+            img.src = e.target.result;
+        };
+        reader.onerror = () => { if (--pending === 0) { save(); renderBoard(); } };
+        reader.readAsDataURL(file);
+    });
+}
+/* Coarse quantise, then the most common buckets — enough to name a palette. */
+function pickColours(ctx, w, h) {
+    let data;
+    try { data = ctx.getImageData(0, 0, w, h).data; } catch (e) { return []; }
+    const bins = {};
+    for (let i = 0; i < data.length; i += 4 * 17) {
+        if (data[i + 3] < 200) continue;
+        const r = data[i] >> 4, g = data[i + 1] >> 4, b = data[i + 2] >> 4;
+        const key = r + ',' + g + ',' + b;
+        if (!bins[key]) bins[key] = { n: 0, r: 0, g: 0, b: 0 };
+        bins[key].n++; bins[key].r += data[i]; bins[key].g += data[i + 1]; bins[key].b += data[i + 2];
+    }
+    return Object.keys(bins).sort((a, b) => bins[b].n - bins[a].n).slice(0, 5).map(k => {
+        const c = bins[k];
+        const hex = n => Math.round(n / c.n).toString(16).padStart(2, '0');
+        return '#' + hex(c.r) + hex(c.g) + hex(c.b);
+    });
+}
+function delBoard(id) { S.board = S.board.filter(b => b.id !== id); save(); renderBoard(); }
+function boardSet(id, field, v) {
+    const b = S.board.find(x => x.id === id);
+    if (!b) return;
+    b[field] = v;
+    save(); scheduleRender();
+}
+function boardPalette() {
+    const seen = [], out = [];
+    S.board.forEach(b => (b.colours || []).forEach(c => {
+        if (seen.indexOf(c) === -1) { seen.push(c); out.push(c); }
+    }));
+    return out.slice(0, 12);
+}
+function renderBoard() {
+    const palette = boardPalette();
+    document.getElementById('board-palette').innerHTML = palette.length
+        ? palette.map(c =>
+            '<div class="stat" style="padding:.5rem"><div style="width:74px;height:52px;border-radius:8px;border:2px solid var(--ink);background:' + esc(c) + '"></div>' +
+            '<div class="eyebrow mt-2" style="color:var(--ink-soft)">' + esc(c) + '</div></div>').join('')
+        : '<p class="text-sm text-gray-400">Add a picture and its colours land here.</p>';
+
+    document.getElementById('board-wrap').innerHTML = S.board.map(b =>
+        '<div class="card p-3">' +
+            '<img src="' + esc(b.src) + '" alt="' + esc(b.name) + '" class="w-full rounded-lg" style="border:2px solid var(--ink);aspect-ratio:1;object-fit:cover">' +
+            '<div class="flex gap-1 mt-2">' + (b.colours || []).map(c =>
+                '<span style="flex:1;height:14px;border-radius:4px;border:1.5px solid var(--ink);background:' + esc(c) + '"></span>').join('') + '</div>' +
+            '<div class="flex items-center gap-2 mt-2">' +
+                '<input class="inp" data-k="bd-' + b.id + '-note" placeholder="What you like about it" value="' + esc(b.note) + '" onchange="boardSet(\'' + b.id + '\',\'note\',this.value)">' +
+                '<span class="row-x no-print" onclick="delBoard(\'' + b.id + '\')">&times;</span>' +
+            '</div>' +
+        '</div>').join('');
+
+    const kb = Math.round(S.board.reduce((n, b) => n + (b.src || '').length, 0) / 1024);
+    document.getElementById('board-note').innerText = S.board.length
+        ? S.board.length + ' of 16 · about ' + kb + ' KB stored'
+        : 'Up to 16 pictures, shrunk to fit browser storage.';
+}
+
+
+/* =========================================================
+   SEATING RULES
+   ========================================================= */
+function addRule(kind) {
+    const a = document.getElementById('nr-a').value;
+    const b = document.getElementById('nr-b').value;
+    if (!a || !b || a === b) { alert('Pick two different parties.'); return; }
+    const dup = S.rules.some(r => r.kind === kind &&
+        ((r.a === a && r.b === b) || (r.a === b && r.b === a)));
+    if (!dup) S.rules.push({ id: uid(), a: a, b: b, kind: kind });
+    save(); renderSeating();
+}
+function delRule(id) { S.rules = S.rules.filter(r => r.id !== id); save(); renderSeating(); }
+function guestName(id) { const g = S.guests.find(x => x.id === id); return g ? g.name : '(removed)'; }
+
+/* Rules only bind parties that are actually coming and actually seated. */
+function ruleBreaks() {
+    const at = id => { const g = S.guests.find(x => x.id === id); return g && g.rsvp === 'yes' ? tableOf(g) : null; };
+    return S.rules.filter(r => {
+        const ta = at(r.a), tb = at(r.b);
+        if (!ta || !tb) return false;
+        return r.kind === 'apart' ? ta === tb : ta !== tb;
+    });
+}
+function canSeat(guest, tableId) {
+    for (let i = 0; i < S.rules.length; i++) {
+        const r = S.rules[i];
+        const other = r.a === guest.id ? r.b : (r.b === guest.id ? r.a : null);
+        if (!other) continue;
+        const og = S.guests.find(x => x.id === other);
+        if (!og || og.rsvp !== 'yes') continue;
+        const ot = tableOf(og);
+        if (!ot) continue;
+        if (r.kind === 'apart' && ot === tableId) return false;
+        if (r.kind === 'together' && ot !== tableId) return false;
+    }
+    return true;
+}
+
+/* =========================================================
+   SUN & LIGHT
+   ========================================================= */
+/* Coordinates come out of a pasted Google Maps link — no geocoder needed. */
+function parseLatLng(text) {
+    const t = String(text || '');
+    let m = t.match(/@(-?\d+\.\d+),\s*(-?\d+\.\d+)/);
+    if (!m) m = t.match(/[?&]q=(-?\d+\.\d+),\s*(-?\d+\.\d+)/);
+    if (!m) m = t.match(/^\s*(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)\s*$/);
+    if (!m) return null;
+    const lat = parseFloat(m[1]), lng = parseFloat(m[2]);
+    if (isNaN(lat) || isNaN(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+    return { lat: lat, lng: lng };
+}
+
+/* NOAA's solar position equations, enough for sunrise, sunset and the
+   golden hour. Returns local clock times for the browser's own offset. */
+function sunTimes(dateIso, lat, lng) {
+    const d = parseDate(dateIso);
+    if (!d || lat === null || lng === null) return null;
+    const rad = Math.PI / 180;
+    const start = new Date(Date.UTC(d.getFullYear(), 0, 0));
+    const doy = Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - start) / 86400000);
+
+    const frac = (doy - 1) / 365;
+    const gamma = 2 * Math.PI * frac;
+    const eqTime = 229.18 * (0.000075 + 0.001868 * Math.cos(gamma) - 0.032077 * Math.sin(gamma)
+        - 0.014615 * Math.cos(2 * gamma) - 0.040849 * Math.sin(2 * gamma));
+    const decl = 0.006918 - 0.399912 * Math.cos(gamma) + 0.070257 * Math.sin(gamma)
+        - 0.006758 * Math.cos(2 * gamma) + 0.000907 * Math.sin(2 * gamma)
+        - 0.002697 * Math.cos(3 * gamma) + 0.00148 * Math.sin(3 * gamma);
+
+    const offsetMins = -d.getTimezoneOffset();   // the couple's own clock
+
+    const eventAt = (zenithDeg, rising) => {
+        const cosH = Math.cos(zenithDeg * rad) / (Math.cos(lat * rad) * Math.cos(decl))
+                   - Math.tan(lat * rad) * Math.tan(decl);
+        if (cosH > 1 || cosH < -1) return null;          // sun never reaches that angle here
+        const ha = Math.acos(cosH) / rad * (rising ? 1 : -1);
+        const minsUtc = 720 - 4 * (lng + ha) - eqTime;
+        return hhmm(minsUtc + offsetMins);
+    };
+
+    return {
+        sunrise:     eventAt(90.833, true),
+        sunset:      eventAt(90.833, false),
+        goldenStart: eventAt(84, false),     // sun ~6° up, light turns
+        goldenEnd:   eventAt(90.833, false),
+        blueEnd:     eventAt(96, false),     // civil twilight
+        firstLight:  eventAt(96, true)
+    };
+}
+
+function setSun(field, value) {
+    if (field === 'paste') {
+        const c = parseLatLng(value);
+        if (!c) { alert('Paste a Google Maps link or "latitude, longitude".'); return; }
+        S.settings.sun.lat = c.lat;
+        S.settings.sun.lng = c.lng;
+    } else {
+        S.settings.sun[field] = value;
+    }
+    save(); renderSchedule();
+}
+
+function renderSun() {
+    const wrap = document.getElementById('sun-wrap');
+    if (!wrap) return;
+    const sun = S.settings.sun;
+    const paste = document.getElementById('sun-paste');
+    if (paste && document.activeElement !== paste && sun.lat !== null) {
+        paste.value = sun.lat.toFixed(5) + ', ' + sun.lng.toFixed(5);
+    }
+    if (sun.lat === null || !S.couple.date) {
+        wrap.innerHTML = '<p class="text-sm text-gray-400">' +
+            (S.couple.date ? 'Paste the venue’s map link above and the light for your date appears here.'
+                           : 'Set your wedding date in Setup, then paste the venue’s map link above.') + '</p>';
+        return;
+    }
+    const t = sunTimes(S.couple.date, sun.lat, sun.lng);
+    if (!t || !t.sunset) {
+        wrap.innerHTML = '<p class="text-sm text-gray-400">At that latitude the sun does not rise or set normally on this date.</p>';
+        return;
+    }
+    const ceremony = S.settings.timeline.ceremony;
+    const box = (label, value, note) =>
+        '<div class="stat"><div class="eyebrow" style="color:var(--ink-soft)">' + label + '</div>' +
+        '<div class="font-serif text-2xl mt-1 num">' + value + '</div>' +
+        '<div class="text-[11px] mt-1" style="color:var(--ink-soft)">' + note + '</div></div>';
+
+    const gStart = minutesOf(t.goldenStart), sSet = minutesOf(t.sunset), cer = minutesOf(ceremony);
+    let advice;
+    if (cer > sSet) {
+        advice = ['tang', 'Your ceremony starts after sunset — you will be marrying in the dark. Bring it forward, or plan the lighting.'];
+    } else if (cer > gStart) {
+        advice = ['sun', 'The ceremony runs into golden hour. Lovely light, but portraits afterwards will be tight — the sun is down at ' + t.sunset + '.'];
+    } else if (gStart - cer < 90) {
+        advice = ['go', 'Well placed: the ceremony finishes just as the good light arrives at ' + t.goldenStart + '.'];
+    } else {
+        advice = ['go', 'Golden hour is at ' + t.goldenStart + ' — worth stealing the couple away from the reception for fifteen minutes.'];
+    }
+    const tone = { tang: 'var(--tang)', sun: 'var(--sun)', go: 'var(--go)' }[advice[0]];
+
+    wrap.innerHTML =
+        '<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">' +
+            box('First light', t.firstLight, 'getting-ready shots') +
+            box('Sunrise', t.sunrise, '') +
+            box('Golden hour', t.goldenStart, 'until ' + t.sunset) +
+            box('Sunset', t.sunset, 'dark by ' + t.blueEnd) +
+        '</div>' +
+        '<div class="mt-4 p-4 rounded-lg" style="border:2px solid ' + tone + ';background:var(--card)">' +
+            '<p class="text-sm font-semibold" style="color:' + tone + '">' + esc(advice[1]) + '</p>' +
+        '</div>' +
+        '<p class="text-[11px] mt-3" style="color:var(--ink-soft)">Worked out on this page for ' +
+            esc(S.settings.sun.lat.toFixed(3)) + ', ' + esc(S.settings.sun.lng.toFixed(3)) +
+            ', shown on this device\'s clock — check it matches the venue\'s timezone if you are planning from abroad.</p>';
+}
+
+/* =========================================================
+   GUEST PAGE, QR CODES & PHOTO UPLOADS
+   ========================================================= */
+function setGuestPage(field, value) {
+    S.settings.guestPage[field] = value;
+    save(); renderGuestPage();
+}
+
+function qrSvg(text, size) {
+    if (typeof qrcode === 'undefined' || !text) return '';
+    try {
+        const q = qrcode(0, 'M');
+        q.addData(text);
+        q.make();
+        const n = q.getModuleCount();
+        const cell = size / n;
+        let path = '';
+        for (let r = 0; r < n; r++) {
+            for (let c = 0; c < n; c++) {
+                if (q.isDark(r, c)) {
+                    path += 'M' + (c * cell).toFixed(2) + ' ' + (r * cell).toFixed(2) +
+                            'h' + cell.toFixed(2) + 'v' + cell.toFixed(2) + 'h-' + cell.toFixed(2) + 'z';
+                }
+            }
+        }
+        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + size + ' ' + size + '" width="' + size + '" height="' + size + '">' +
+               '<rect width="' + size + '" height="' + size + '" fill="#fff"/><path d="' + path + '" fill="#17132E"/></svg>';
+    } catch (e) {
+        return '';
+    }
+}
+
+function renderGuestPage() {
+    const gp = S.settings.guestPage;
+    const set = (id, v) => { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = v || ''; };
+    set('gp-dress', gp.dressCode); set('gp-message', gp.message); set('gp-faq', gp.faq);
+    set('gp-url', gp.pageUrl); set('gp-upload', gp.uploadUrl); set('gp-album', gp.albumUrl); set('gp-prints', gp.printsUrl);
+
+    const codes = [
+        ['Guest page', gp.pageUrl, 'Everything they need to know'],
+        ['Send us photos', gp.uploadUrl, 'Goes on the table cards'],
+        ['See the album', gp.albumUrl, 'Order prints from Sidelio']
+    ];
+    document.getElementById('qr-wrap').innerHTML = codes.map(c => {
+        const svg = safeUrl(c[1]) ? qrSvg(c[1], 220) : '';
+        return '<div class="card p-5 text-center">' +
+            '<div class="eyebrow mb-3" style="color:var(--ink-soft)">' + esc(c[0]) + '</div>' +
+            (svg
+                ? '<div style="max-width:200px;margin:0 auto">' + svg + '</div>'
+                : '<div class="text-sm text-gray-400 py-10">' +
+                  (c[1] ? 'That needs to be a full https:// address.' : 'Add the address above and the code appears.') + '</div>') +
+            '<p class="text-[11px] mt-3" style="color:var(--ink-soft)">' + esc(c[2]) + '</p>' +
+            (safeUrl(c[1]) ? '<a class="text-[11px] font-semibold" style="color:var(--pink)" href="' + esc(c[1]) + '" target="_blank" rel="noopener noreferrer">' + esc(c[1]) + ' ↗</a>' : '') +
+        '</div>';
+    }).join('');
+}
+
+/* The guest page is a whole document of its own — self-contained, so it can be
+   emailed or dropped on any host. */
+function guestPageHtml() {
+    const c = S.couple, gp = S.settings.guestPage;
+    const couple = [c.partner1, c.partner2].filter(Boolean).join(' & ') || 'Our Wedding';
+    const events = S.events.slice().sort((a, b) =>
+        ((a.date || '') + (a.time || '')).localeCompare((b.date || '') + (b.time || '')));
+    const publicRun = S.schedule.slice().sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+        .filter(r => minutesOf(r.time) >= minutesOf(S.settings.timeline.ceremony) - 60);
+    const stays = S.places.filter(p => p.type === 'Accommodation');
+    const faq = String(gp.faq || '').split('\n').map(l => l.trim()).filter(Boolean);
+
+    const place = p => {
+        const q = placeQuery(p);
+        return '<li><strong>' + esc(p.name) + '</strong>' + (p.type ? ' <span class="t">' + esc(p.type) + '</span>' : '') +
+            (p.address ? '<br>' + esc(p.address) : '') +
+            (p.notes ? '<br><span class="t">' + esc(p.notes) + '</span>' : '') +
+            (q ? '<br><a href="' + esc(mapsSearchUrl(p)) + '">Open in Maps</a> · <a href="' + esc(mapsDirectionsUrl(p)) + '">Directions</a>' : '') +
+            '</li>';
+    };
+
+    return '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
+    '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+    '<title>' + esc(couple) + '</title><style>' +
+    ':root{--ink:#17132E;--paper:#F1EFFA;--pink:#FF2D87;--soft:#625C86;--card:#fff}' +
+    '*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);' +
+    'font-family:Outfit,system-ui,-apple-system,sans-serif;line-height:1.55}' +
+    'header{background:var(--ink);color:#fff;padding:3rem 1.25rem;text-align:center}' +
+    'h1{font-family:Georgia,serif;font-size:clamp(2rem,7vw,3.5rem);margin:.2em 0}' +
+    'h2{font-family:Georgia,serif;font-size:1.35rem;margin:0 0 .6rem}' +
+    '.wrap{max-width:44rem;margin:0 auto;padding:1.25rem}' +
+    'section{background:var(--card);border:2px solid var(--ink);border-radius:14px;box-shadow:3px 3px 0 var(--ink);padding:1.4rem;margin:1.25rem 0}' +
+    '.eyebrow{font-family:ui-monospace,monospace;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:#C6FF3D}' +
+    '.t{color:var(--soft);font-size:.9rem}ul{padding-left:1.1rem}li{margin:.5rem 0}' +
+    'table{width:100%;border-collapse:collapse}td{padding:.4rem .3rem;border-bottom:1px solid #E9E5F8;vertical-align:top}' +
+    'td.time{white-space:nowrap;font-weight:700;width:5.5rem}' +
+    'a{color:var(--pink);font-weight:600}' +
+    '.cta{display:inline-block;background:var(--pink);color:#fff;border:2px solid var(--ink);border-radius:10px;' +
+    'box-shadow:3px 3px 0 var(--ink);padding:.6rem 1rem;text-decoration:none;margin:.3rem .3rem 0 0}' +
+    '.qr{text-align:center}.qr svg{max-width:200px;height:auto;border:2px solid var(--ink);border-radius:10px}' +
+    'footer{text-align:center;padding:2rem 1rem;color:var(--soft);font-size:.8rem}' +
+    '</style></head><body>' +
+    '<header><p class="eyebrow">You are invited</p><h1>' + esc(couple) + '</h1>' +
+    (c.date ? '<p>' + esc(longDate(c.date)) + '</p>' : '') +
+    (c.venue ? '<p class="t" style="color:#cfc9ea">' + esc(c.venue) + (c.location ? ' · ' + esc(c.location) : '') + '</p>' : '') +
+    '</header><div class="wrap">' +
+
+    (gp.message ? '<section><h2>A word from us</h2><p>' + esc(gp.message).replace(/\n/g, '<br>') + '</p></section>' : '') +
+
+    (publicRun.length ? '<section><h2>The day</h2><table>' + publicRun.map(r =>
+        '<tr><td class="time">' + esc(r.time) + '</td><td>' + esc(r.title) +
+        (r.who ? '<br><span class="t">' + esc(r.who) + '</span>' : '') + '</td></tr>').join('') +
+        '</table></section>' : '') +
+
+    (events.length ? '<section><h2>Around the wedding</h2><ul>' + events.map(e =>
+        '<li><strong>' + esc(e.name) + '</strong>' +
+        (e.date ? ' — ' + esc(longDate(e.date)) : '') + (e.time ? ' at ' + esc(e.time) : '') +
+        (e.place ? '<br>' + esc(e.place) : '') +
+        (e.dress ? '<br><span class="t">' + esc(e.dress) + '</span>' : '') +
+        (e.notes ? '<br><span class="t">' + esc(e.notes) + '</span>' : '') + '</li>').join('') +
+        '</ul></section>' : '') +
+
+    (S.places.length ? '<section><h2>Where</h2><ul>' + S.places.filter(p => p.type !== 'Accommodation').map(place).join('') + '</ul></section>' : '') +
+    (stays.length ? '<section><h2>Staying over</h2><ul>' + stays.map(place).join('') + '</ul></section>' : '') +
+    (gp.dressCode ? '<section><h2>What to wear</h2><p>' + esc(gp.dressCode) + '</p></section>' : '') +
+    (faq.length ? '<section><h2>Good to know</h2><ul>' + faq.map(f => '<li>' + esc(f) + '</li>').join('') + '</ul></section>' : '') +
+
+    ((safeUrl(gp.uploadUrl) || safeUrl(gp.albumUrl)) ?
+        '<section class="qr"><h2>Your photos, please</h2>' +
+        '<p>Whatever you catch on the day — pictures and short videos — we would love to have them.</p>' +
+        (safeUrl(gp.uploadUrl) ? qrSvg(gp.uploadUrl, 220) +
+            '<p><a class="cta" href="' + esc(gp.uploadUrl) + '">Send us your photos</a></p>' : '') +
+        (safeUrl(gp.albumUrl) ? '<p><a class="cta" href="' + esc(gp.albumUrl) + '">See everyone’s album</a></p>' : '') +
+        (safeUrl(gp.printsUrl) ? '<p class="t">Prints and albums: <a href="' + esc(gp.printsUrl) + '">' + esc(gp.printsUrl.replace(/^https?:\/\//, '')) + '</a></p>' : '') +
+        '</section>' : '') +
+
+    '</div><footer>' + esc(couple) + (c.date ? ' · ' + esc(longDate(c.date)) : '') + '</footer></body></html>';
+}
+
+function exportGuestPage() {
+    const names = [S.couple.partner1, S.couple.partner2].filter(Boolean).join('-').replace(/\s+/g, '') || 'wedding';
+    download(new Blob([guestPageHtml()], { type: 'text/html;charset=utf-8' }), names.toLowerCase() + '-guest-page.html');
+}
+function previewGuestPage() {
+    const w = window.open('', '_blank');
+    if (!w) { alert('Your browser blocked the preview window.'); return; }
+    w.document.write(guestPageHtml());
+    w.document.close();
+}
+
 /* =========================================================
    VENDORS
    ========================================================= */
@@ -3354,6 +4339,7 @@ function renderSchedule() {
     set('tl-end', t.endTime);
 
     document.getElementById('dayof-date').innerText = S.couple.date ? longDate(S.couple.date) : '';
+    renderSun();
     const rows = S.schedule.slice().sort((a, b) => (a.time || '').localeCompare(b.time || ''));
     document.getElementById('schedule-wrap').innerHTML = rows.map(s =>
         '<div class="run-row py-2 border-b border-gray-50">' +
@@ -3501,7 +4487,16 @@ const PRINT_DOCS = [
     ['music',       'Music sheet',        'Must play, do not play and the key moments.'],
     ['checklist',   'Checklist',          'Every stage with dates and what is done.'],
     ['payments',    'Payment schedule',   'What is owed, to whom and when.'],
-    ['guests',      'Guest list',         'Parties, RSVP, meal and table.']
+    ['guests',      'Guest list',         'Parties, RSVP, meal and table.'],
+    ['cuecards',    'Cue cards',          'A card each for the wedding party — only their jobs.'],
+    ['thanks',      'Thank-you notes',    'One drafted note per gift still owed.'],
+    ['labels',      'Address labels',     'Envelope labels from the guest list.'],
+    ['qrcards',     'QR table cards',     'Send us your photos — one per table.'],
+    ['journal',     'The keepsake book',  'Everything you wrote down, in order.'],
+    ['board',       'Style sheet',        'The palette and the pictures behind it.'],
+    ['speeches',    'Reading cards',      'Vows and speeches in large type.'],
+    ['attire',      'Fitting list',       'Who is wearing what, and when it is due.'],
+    ['rainplan',    'Wet-weather plan',   'The light, and what changes if it rains.']
 ];
 
 function renderPrintTab() {
@@ -3641,6 +4636,109 @@ function printPack(kind) {
             '<tr class="pp-total"><td colspan="2">Outstanding</td><td class="pp-right">' +
                 money(S.payments.filter(p => !p.paid).reduce((n, p) => n + num(p.amount), 0)) + '</td><td colspan="2"></td></tr>' +
             '</tbody></table>';
+
+
+    } else if (kind === 'cuecards') {
+        /* Everyone named in the run sheet gets only their own lines. */
+        const people = [];
+        S.schedule.forEach(r => {
+            String(r.who || '').split(/[,/]| and /).map(x => x.trim()).filter(Boolean).forEach(w => {
+                if (people.indexOf(w) === -1) people.push(w);
+            });
+        });
+        if (!people.length) { alert('Put names in the "who / where" column of the run sheet first — those become the cards.'); return; }
+        html = people.map(person => {
+            const rows = S.schedule.slice().sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+                .filter(r => (r.who || '').toLowerCase().indexOf(person.toLowerCase()) > -1);
+            return '<div class="pp-page"><h2>' + esc(person) + '</h2>' +
+                '<p class="pp-small">' + esc(couple) + (S.couple.date ? ' · ' + esc(longDate(S.couple.date)) : '') +
+                (S.couple.venue ? ' · ' + esc(S.couple.venue) : '') + '</p>' +
+                '<table class="pp-table"><tbody>' + rows.map(r =>
+                    '<tr><td style="width:5rem;font-weight:700">' + esc(r.time) + '</td><td>' + esc(r.title) + '</td></tr>').join('') +
+                '</tbody></table></div>';
+        }).join('');
+
+    } else if (kind === 'thanks') {
+        const owed = S.gifts.filter(g => !g.thanked);
+        if (!owed.length) { alert('Every thank-you is written.'); return; }
+        html = owed.map(g =>
+            '<div class="pp-page"><p class="pp-small">' + esc(g.from) + ' · ' + esc(g.desc || g.type) + '</p>' +
+            '<div style="font-size:12pt;line-height:1.9;white-space:pre-wrap;margin-top:8mm">' + esc(thanksFor(g)) + '</div></div>').join('');
+
+    } else if (kind === 'labels') {
+        const withAddress = S.guests.filter(g => (g.contact || '').trim() || (g.notes || '').trim());
+        if (!withAddress.length) { alert('No addresses on the guest list yet — put them in the contact column.'); return; }
+        html = '<div class="pp-labels">' + withAddress.map(g =>
+            '<div class="pp-label"><strong>' + esc(g.name) + '</strong><br>' +
+            esc(g.contact || '').replace(/,\s*/g, '<br>') + '</div>').join('') + '</div>';
+
+    } else if (kind === 'qrcards') {
+        const gp = S.settings.guestPage;
+        const url = safeUrl(gp.uploadUrl);
+        if (!url) { alert('Add the upload address on the Guest Page tab first.'); return; }
+        const svg = qrSvg(url, 320);
+        const one =
+            '<div class="pp-card" style="padding:12mm 8mm">' +
+                '<div class="pp-name">Your photos, please</div>' +
+                '<p class="pp-sub">Scan and send us what you catch —<br>pictures and short videos both.</p>' +
+                '<div style="max-width:44mm;margin:4mm auto">' + svg + '</div>' +
+                '<p class="pp-small">' + esc(couple) + '</p>' +
+            '</div>';
+        html = '<div class="pp-grid">' + one + one + one + one + '</div>';
+
+    } else if (kind === 'journal') {
+        const rows = S.journal.slice().sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+        if (!rows.length) { alert('Nothing written in the journal yet.'); return; }
+        html = rows.map(j =>
+            '<div class="pp-block"><h2>' + esc(j.title) + '</h2>' +
+            '<p class="pp-small">' + esc(j.date ? longDate(j.date) : '') + '</p>' +
+            '<p style="white-space:pre-wrap">' + esc(j.text) + '</p></div>').join('');
+
+    } else if (kind === 'board') {
+        const palette = boardPalette();
+        html = '<h2>The palette</h2><div class="pp-swatches">' + palette.map(c =>
+            '<div><div class="pp-swatch" style="background:' + esc(c) + '"></div><span class="pp-small">' + esc(c) + '</span></div>').join('') + '</div>' +
+            (S.board.length ? '<h2>Where it came from</h2><div class="pp-grid">' + S.board.map(b =>
+                '<div class="pp-block"><img src="' + esc(b.src) + '" style="width:100%;border:1px solid #ccc">' +
+                (b.note ? '<p class="pp-small">' + esc(b.note) + '</p>' : '') + '</div>').join('') + '</div>' : '');
+
+    } else if (kind === 'speeches') {
+        if (!S.speeches.length) { alert('Nothing drafted yet.'); return; }
+        html = S.speeches.map(x =>
+            '<div class="pp-page"><p class="pp-small">' + esc(x.who) + ' · ' + esc(x.title) + ' · about ' +
+            speakingMinutes(x.text).mins.toFixed(1) + ' minutes</p>' +
+            '<div style="font-size:15pt;line-height:2;white-space:pre-wrap;margin-top:6mm">' + esc(x.text) + '</div></div>').join('');
+
+    } else if (kind === 'attire') {
+        if (!S.attire.length) { alert('Nothing on the attire list yet.'); return; }
+        html = '<table class="pp-table"><thead><tr><th>Who</th><th>Item</th><th>Shop</th><th>Size</th>' +
+            '<th class="pp-right">Cost</th><th>Fitting</th><th>Status</th></tr></thead><tbody>' +
+            S.attire.slice().sort((a, b) => (a.fitting || '9999').localeCompare(b.fitting || '9999')).map(a =>
+                '<tr><td>' + esc(a.who) + '</td><td>' + esc(a.item) + '</td><td>' + esc(a.shop) + '</td>' +
+                '<td>' + esc(a.size) + '</td><td class="pp-right">' + money(a.cost) + '</td>' +
+                '<td>' + esc(a.fitting) + '</td><td>' + esc(a.status) + '</td></tr>').join('') +
+            '</tbody></table>';
+
+    } else if (kind === 'rainplan') {
+        const sun = S.settings.sun;
+        const t = (sun.lat !== null && S.couple.date) ? sunTimes(S.couple.date, sun.lat, sun.lng) : null;
+        html = (t ? '<h2>Light</h2><table class="pp-table"><tbody>' +
+                '<tr><td>First light</td><td class="pp-right">' + esc(t.firstLight || '—') + '</td></tr>' +
+                '<tr><td>Sunrise</td><td class="pp-right">' + esc(t.sunrise || '—') + '</td></tr>' +
+                '<tr><td>Golden hour begins</td><td class="pp-right">' + esc(t.goldenStart || '—') + '</td></tr>' +
+                '<tr><td>Sunset</td><td class="pp-right">' + esc(t.sunset || '—') + '</td></tr>' +
+                '<tr><td>Dark</td><td class="pp-right">' + esc(t.blueEnd || '—') + '</td></tr>' +
+                '</tbody></table>' : '') +
+            '<h2>If it rains</h2><ul class="pp-list">' + [
+                'Where the ceremony moves to, and who decides — name the person and the time they call it',
+                'Who brings the umbrellas, and how many',
+                'Where guests wait if they arrive wet',
+                'Which photographs move indoors, and to which room',
+                'What happens to the drinks reception',
+                'Who tells the vendors the plan has changed',
+                'Flooring or matting for grass, if it has been wet all week',
+                'Hair and makeup timings if the light goes early'
+            ].map(x => '<li>☐ ' + x + '</li>').join('') + '</ul>';
 
     } else if (kind === 'guests') {
         html = '<table class="pp-table"><thead><tr><th>Party</th><th class="pp-right">Seats</th><th>RSVP</th><th>Meal</th><th>Table</th></tr></thead><tbody>' +
@@ -3838,7 +4936,13 @@ function renderSetup() {
         ['events',    'Extra events'],
         ['payments',  'Payment schedule'],
         ['photos',    'Photo shot list'],
-        ['music',     'Music planner']
+        ['music',     'Music planner'],
+        ['scenarios', 'Budget what-ifs'],
+        ['vows',      'Vows & speeches'],
+        ['guestpage', 'Guest page & QR'],
+        ['board',     'Mood board'],
+        ['attire',    'Attire & fittings'],
+        ['memories',  'Memories journal']
     ];
     document.getElementById('module-switches').innerHTML = MODULES.map(m =>
         '<label class="flex items-center gap-3 rounded-lg px-4 py-3 cursor-pointer" style="background:var(--paper-2);border:2px solid var(--ink)">' +
