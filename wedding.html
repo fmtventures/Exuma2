@@ -81,18 +81,71 @@
     }
     .num { font-variant-numeric: tabular-nums; }
 
-    /* ---------- tabs: a strip of tape, the active one lifted ---------- */
-    .tab-btn {
-        padding: .55rem .85rem; margin: .45rem .15rem 0;
-        font-size: .8125rem; font-weight: 600; color: var(--ink-soft);
-        background: transparent; border: 2px solid transparent;
-        border-radius: 10px 10px 0 0; white-space: nowrap; transition: all .12s;
+    /* ---------- app shell: rail beside the work, like the other tools ---------- */
+    .shell { display: flex; align-items: flex-start; min-height: 100vh; }
+    .shell-main { flex: 1 1 auto; min-width: 0; }
+
+    .rail {
+        flex: 0 0 246px; width: 246px;
+        position: sticky; top: 0; height: 100vh;
+        display: flex; flex-direction: column;
+        background: var(--card); border-right: 2px solid var(--ink);
     }
-    .tab-btn:hover { color: var(--ink); background: rgba(255,255,255,.6); }
+    .rail-brand {
+        display: flex; flex-direction: column; gap: .15rem;
+        padding: 1.1rem 1.15rem 1rem; border-bottom: 2px solid var(--ink);
+    }
+    .rail-mark {
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: .8125rem; font-weight: 700; letter-spacing: .22em;
+        text-transform: uppercase; color: var(--ink);
+    }
+    .rail-mark::after {
+        content: '®'; font-size: .5rem; vertical-align: super;
+        letter-spacing: 0; color: var(--pink); margin-left: .15rem;
+    }
+    .rail-product { font-family: 'Fraunces', Georgia, serif; font-size: 1.0625rem; font-weight: 700; }
+    .rail-nav { flex: 1 1 auto; min-width: 0; min-height: 0; overflow-y: auto; padding: .75rem .65rem 1rem; }
+    .rail-foot { padding: .75rem 1.15rem; border-top: 2px solid var(--ink); }
+
+    .nav-group { margin-bottom: .8rem; }
+    .nav-group-label {
+        font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: .5625rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase;
+        color: #A9A2C8; padding: 0 .55rem; margin-bottom: .3rem;
+    }
+
+    .tab-btn {
+        display: block; width: 100%; text-align: left;
+        padding: .42rem .6rem; margin: 1px 0; border-radius: 9px;
+        font-size: .8125rem; font-weight: 600; color: var(--ink-soft);
+        background: transparent; white-space: nowrap; transition: background .12s, color .12s;
+    }
+    .tab-btn:hover { color: var(--ink); background: var(--paper-2); }
+    /* Switched-off sections: beat both .tab-btn and .nav-group's own display. */
+    .tab-btn.hidden, .nav-group.hidden { display: none !important; }
     .tab-btn.active {
-        color: var(--ink); background: var(--card);
-        border-color: var(--ink); border-bottom-color: var(--card);
-        font-weight: 700; box-shadow: 3px -3px 0 var(--pink); margin-bottom: -2px;
+        color: #fff; background: var(--ink); font-weight: 700;
+        box-shadow: inset 3px 0 0 var(--pink);
+    }
+
+    /* Below the rail breakpoint it becomes a scrolling strip, so every
+       section stays one tap away instead of hiding behind a drawer. */
+    @media (max-width: 1023px) {
+        .shell { flex-direction: column; align-items: stretch; }
+        .rail {
+            flex: none; width: 100%; height: auto; position: sticky; top: 0; z-index: 30;
+            border-right: none; border-bottom: 2px solid var(--ink);
+            flex-direction: row; align-items: center; gap: .5rem; padding-right: .5rem;
+        }
+        .rail-brand { border-bottom: none; border-right: 2px solid var(--ink); padding: .6rem .9rem; flex: 0 0 auto; }
+        .rail-product { font-size: .9375rem; }
+        .rail-nav { display: flex; gap: .3rem; min-width: 0; overflow-x: auto; padding: .5rem .35rem; }
+        .nav-group { display: flex; gap: .3rem; margin: 0; }
+        .nav-group-label { display: none; }
+        .nav-group + .nav-group { border-left: 2px solid var(--paper-2); padding-left: .3rem; }
+        .tab-btn { width: auto; margin: 0; }
+        .rail-foot { display: none; }
     }
 
     /* ---------- surfaces ---------- */
@@ -136,6 +189,7 @@
         font-family: 'JetBrains Mono', ui-monospace, monospace;
         font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
         padding: .2rem .5rem; border-radius: 999px; border: 1.5px solid currentColor;
+        white-space: nowrap;
     }
     .row-x { color: #B9B2D8; font-weight: 700; cursor: pointer; transition: color .12s; }
     .row-x:hover { color: var(--tang); }
@@ -232,6 +286,8 @@
     @media print {
         .no-print { display:none !important; }
         body.printing > *:not(#print-area) { display:none !important; }
+        .rail { display:none !important; }
+        .shell { display:block; }
         body.printing #print-area { display:block !important; }
         body { background:#fff; background-image:none; }
         .card { box-shadow:none; border-color:#DDD; break-inside:avoid; }
@@ -242,14 +298,62 @@
 <body class="antialiased">
 
 <!-- HEADER -->
+<div class="shell">
+<aside class="rail no-print">
+    <div class="rail-brand">
+        <span class="rail-mark">Sidelio</span>
+        <span class="rail-product">Wedding Planner</span>
+    </div>
+    <nav class="rail-nav">
+        <div class="nav-group" data-group="Overview">
+            <p class="nav-group-label">Overview</p>
+            <button class="tab-btn active" data-view="dashboard" onclick="switchView('dashboard')">Dashboard</button>
+        </div>
+        <div class="nav-group" data-group="Money">
+            <p class="nav-group-label">Money</p>
+            <button class="tab-btn" data-view="budget" onclick="switchView('budget')">Budget</button>
+            <button class="tab-btn" data-view="payments" onclick="switchView('payments')">Payments</button>
+            <button class="tab-btn" data-view="vendors" onclick="switchView('vendors')">Vendors</button>
+        </div>
+        <div class="nav-group" data-group="People">
+            <p class="nav-group-label">People</p>
+            <button class="tab-btn" data-view="guests" onclick="switchView('guests')">Guest List</button>
+            <button class="tab-btn" data-view="travel" onclick="switchView('travel')">Travel</button>
+            <button class="tab-btn" data-view="seating" onclick="switchView('seating')">Seating</button>
+            <button class="tab-btn" data-view="gifts" onclick="switchView('gifts')">Gifts</button>
+        </div>
+        <div class="nav-group" data-group="The day">
+            <p class="nav-group-label">The day</p>
+            <button class="tab-btn" data-view="checklist" onclick="switchView('checklist')">Checklist</button>
+            <button class="tab-btn" data-view="dayof" onclick="switchView('dayof')">Day-Of</button>
+            <button class="tab-btn" data-view="events" onclick="switchView('events')">Events</button>
+            <button class="tab-btn" data-view="photos" onclick="switchView('photos')">Photos</button>
+            <button class="tab-btn" data-view="music" onclick="switchView('music')">Music</button>
+        </div>
+        <div class="nav-group" data-group="Things">
+            <p class="nav-group-label">Things</p>
+            <button class="tab-btn" data-view="inventory" onclick="switchView('inventory')">Inventory</button>
+            <button class="tab-btn" data-view="places" onclick="switchView('places')">Places</button>
+        </div>
+        <div class="nav-group" data-group="System">
+            <p class="nav-group-label">System</p>
+            <button class="tab-btn" data-view="print" onclick="switchView('print')">Print &amp; Export</button>
+            <button class="tab-btn" data-view="setup" onclick="switchView('setup')">Setup &amp; Data</button>
+        </div>
+    </nav>
+    <div class="rail-foot">
+        <span id="saveFlash" class="eyebrow px-2 py-1 rounded-full" style="background:var(--go);color:#fff">Saved</span>
+    </div>
+</aside>
+<div class="shell-main">
 <header class="relative overflow-hidden" style="background:var(--ink)">
     <div class="absolute inset-0 opacity-90" aria-hidden="true"
          style="background:radial-gradient(1100px 320px at 8% -40%, rgba(255,45,135,.55), transparent 60%), radial-gradient(760px 300px at 92% 130%, rgba(68,54,255,.6), transparent 62%)"></div>
-    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="relative mx-auto px-4 sm:px-6 lg:px-8 py-5" style="max-width:1500px">
         <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-7">
             <div>
                 <p class="eyebrow mb-3" style="color:var(--lime)">The Wedding Planner</p>
-                <h1 id="hdr-couple" class="text-4xl sm:text-5xl lg:text-6xl text-white leading-[1.02]">Your Wedding</h1>
+                <h1 id="hdr-couple" class="text-3xl sm:text-4xl text-white leading-[1.05]">Your Wedding</h1>
                 <p id="hdr-meta" class="text-white/65 text-sm mt-3">Set your details in Setup &amp; Data</p>
             </div>
             <div class="flex flex-wrap items-stretch gap-3 sm:gap-4">
@@ -270,36 +374,8 @@
     </div>
 </header>
 
-<!-- NAV -->
-<div class="sticky top-0 z-30 no-print" style="background:var(--paper-2);border-bottom:2px solid var(--ink)">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <nav class="flex overflow-x-auto -mb-px">
-            <button class="tab-btn active" data-view="dashboard" onclick="switchView('dashboard')">Dashboard</button>
-            <button class="tab-btn" data-view="budget" onclick="switchView('budget')">Budget</button>
-            <button class="tab-btn" data-view="payments" onclick="switchView('payments')">Payments</button>
-            <button class="tab-btn" data-view="guests" onclick="switchView('guests')">Guest List</button>
-            <button class="tab-btn" data-view="travel" onclick="switchView('travel')">Travel</button>
-            <button class="tab-btn" data-view="seating" onclick="switchView('seating')">Seating</button>
-            <button class="tab-btn" data-view="events" onclick="switchView('events')">Events</button>
-            <button class="tab-btn" data-view="gifts" onclick="switchView('gifts')">Gifts</button>
-            <button class="tab-btn" data-view="inventory" onclick="switchView('inventory')">Inventory</button>
-            <button class="tab-btn" data-view="places" onclick="switchView('places')">Places</button>
-            <button class="tab-btn" data-view="checklist" onclick="switchView('checklist')">Checklist</button>
-            <button class="tab-btn" data-view="vendors" onclick="switchView('vendors')">Vendors</button>
-            <button class="tab-btn" data-view="photos" onclick="switchView('photos')">Photos</button>
-            <button class="tab-btn" data-view="music" onclick="switchView('music')">Music</button>
-            <button class="tab-btn" data-view="dayof" onclick="switchView('dayof')">Day-Of</button>
-            <button class="tab-btn" data-view="print" onclick="switchView('print')">Print &amp; Export</button>
-            <button class="tab-btn" data-view="setup" onclick="switchView('setup')">Setup &amp; Data</button>
-            <div class="flex-1"></div>
-            <div class="flex items-center pr-1">
-                <span id="saveFlash" class="eyebrow px-2 py-1 rounded-full" style="background:var(--go);color:#fff">Saved</span>
-            </div>
-        </nav>
-    </div>
-</div>
 
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<main class="mx-auto px-4 sm:px-6 lg:px-8 py-8" style="max-width:1500px">
 
     <!-- ============ DASHBOARD ============ -->
     <section id="view-dashboard" class="view space-y-6">
@@ -1147,6 +1223,9 @@
         </div>
     </section>
 </main>
+
+</div>
+</div>
 
 <canvas id="confetti" aria-hidden="true"></canvas>
 <div id="print-area"></div>
@@ -3701,6 +3780,11 @@ function renderNav() {
     document.querySelectorAll('.tab-btn').forEach(b => {
         const v = b.dataset.view;
         b.classList.toggle('hidden', GATED.indexOf(v) > -1 && !moduleOn(v));
+    });
+    document.querySelectorAll('.nav-group').forEach(g => {
+        const live = Array.prototype.slice.call(g.querySelectorAll('.tab-btn'))
+            .some(b => !b.classList.contains('hidden'));
+        g.classList.toggle('hidden', !live);
     });
     if (GATED.indexOf(activeView) > -1 && !moduleOn(activeView)) switchView('dashboard');
 }
