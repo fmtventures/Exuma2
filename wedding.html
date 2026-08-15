@@ -141,6 +141,9 @@
             <button class="tab-btn" data-view="budget" onclick="switchView('budget')">Budget</button>
             <button class="tab-btn" data-view="guests" onclick="switchView('guests')">Guest List</button>
             <button class="tab-btn" data-view="seating" onclick="switchView('seating')">Seating</button>
+            <button class="tab-btn" data-view="gifts" onclick="switchView('gifts')">Gifts</button>
+            <button class="tab-btn" data-view="inventory" onclick="switchView('inventory')">Inventory</button>
+            <button class="tab-btn" data-view="places" onclick="switchView('places')">Places</button>
             <button class="tab-btn" data-view="checklist" onclick="switchView('checklist')">Checklist</button>
             <button class="tab-btn" data-view="vendors" onclick="switchView('vendors')">Vendors</button>
             <button class="tab-btn" data-view="dayof" onclick="switchView('dayof')">Day-Of</button>
@@ -215,6 +218,7 @@
             <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
                 <h3 class="text-lg font-bold">Line items</h3>
                 <div class="flex gap-2 no-print">
+                    <button class="btn btn-ghost" onclick="addCategory()">+ Category</button>
                     <button class="btn btn-ghost" onclick="rebalanceBudget()">Re-spread estimates</button>
                     <button class="btn btn-primary" onclick="addBudgetRow()">+ Add line</button>
                 </div>
@@ -380,6 +384,182 @@
         <div id="checklist-wrap" class="space-y-5"></div>
     </section>
 
+    <!-- ============ GIFTS ============ -->
+    <section id="view-gifts" class="view hidden space-y-6">
+        <div id="gift-stats" class="grid grid-cols-2 sm:grid-cols-4 gap-4"></div>
+
+        <div class="card p-6 no-print">
+            <h3 class="text-lg font-bold mb-4">Log a gift</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+                <div class="lg:col-span-2">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">From</label>
+                    <input id="ngf-from" class="inp mt-1" list="guest-names" placeholder="Name — pick a guest or type one" onkeydown="if(event.key==='Enter')addGift()">
+                    <datalist id="guest-names"></datalist>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Kind</label>
+                    <select id="ngf-type" class="inp mt-1"></select>
+                </div>
+                <div class="lg:col-span-2">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">What it was</label>
+                    <input id="ngf-desc" class="inp mt-1" placeholder="e.g. stand mixer" onkeydown="if(event.key==='Enter')addGift()">
+                </div>
+                <div class="flex gap-2">
+                    <div class="flex-1">
+                        <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Value</label>
+                        <input id="ngf-value" type="number" min="0" step="10" class="inp inp-num mt-1" placeholder="0">
+                    </div>
+                    <div class="flex items-end">
+                        <button class="btn btn-primary" onclick="addGift()">+ Add</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-6">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <h3 class="text-lg font-bold">Gifts received</h3>
+                <div class="flex flex-wrap gap-2 no-print">
+                    <input id="gf-search" class="inp" style="width:180px" placeholder="Search…" oninput="renderGifts()">
+                    <select id="gf-filter" class="inp" style="width:auto" onchange="renderGifts()">
+                        <option value="">All gifts</option>
+                        <option value="unthanked">Thank-you outstanding</option>
+                        <option value="thanked">Thank-you sent</option>
+                    </select>
+                    <button class="btn btn-ghost" onclick="exportGiftsCsv()">Export CSV</button>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="grid">
+                    <thead>
+                        <tr>
+                            <th style="min-width:170px">From</th>
+                            <th style="min-width:140px">Kind</th>
+                            <th style="min-width:190px">What it was</th>
+                            <th class="text-right" style="width:110px">Value</th>
+                            <th style="min-width:140px">Received</th>
+                            <th style="width:90px">Thanked</th>
+                            <th style="min-width:150px">Notes</th>
+                            <th class="no-print"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="gift-body"></tbody>
+                </table>
+            </div>
+            <p id="gift-empty" class="text-sm text-gray-400 py-6 text-center hidden">No gifts logged yet.</p>
+        </div>
+
+        <div class="card p-6">
+            <div class="flex flex-wrap items-end gap-3 mb-4 no-print">
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Registry / wish list</label>
+                    <input id="nr-name" class="inp mt-1" style="width:200px" placeholder="Shop or site" onkeydown="if(event.key==='Enter')addRegistry()">
+                </div>
+                <div class="flex-1 min-w-[220px]">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Link</label>
+                    <input id="nr-url" class="inp mt-1" placeholder="https://…" onkeydown="if(event.key==='Enter')addRegistry()">
+                </div>
+                <button class="btn btn-primary" onclick="addRegistry()">+ Add registry</button>
+            </div>
+            <div id="registry-wrap" class="flex flex-wrap gap-2"></div>
+        </div>
+    </section>
+
+    <!-- ============ INVENTORY ============ -->
+    <section id="view-inventory" class="view hidden space-y-6">
+        <div id="inv-stats" class="grid grid-cols-2 sm:grid-cols-4 gap-4"></div>
+
+        <div class="card p-6 no-print">
+            <h3 class="text-lg font-bold mb-4">Add an item</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+                <div class="lg:col-span-2">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Item</label>
+                    <input id="ni-item" class="inp mt-1" placeholder="e.g. glass lanterns" onkeydown="if(event.key==='Enter')addInventory()">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Category</label>
+                    <select id="ni-cat" class="inp mt-1"></select>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Qty</label>
+                    <input id="ni-qty" type="number" min="1" value="1" class="inp inp-num mt-1">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Status</label>
+                    <select id="ni-status" class="inp mt-1"></select>
+                </div>
+                <div class="flex items-end">
+                    <button class="btn btn-primary w-full" onclick="addInventory()">+ Add</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-6">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <h3 class="text-lg font-bold">Everything for the day</h3>
+                <div class="flex flex-wrap gap-2 no-print">
+                    <input id="inv-search" class="inp" style="width:180px" placeholder="Search…" oninput="renderInventory()">
+                    <select id="inv-filter" class="inp" style="width:auto" onchange="renderInventory()">
+                        <option value="">All items</option>
+                        <option value="tobuy">Still to buy</option>
+                        <option value="unpacked">Not packed</option>
+                        <option value="return">To return</option>
+                    </select>
+                    <button class="btn btn-ghost" onclick="exportInventoryCsv()">Export CSV</button>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="grid">
+                    <thead>
+                        <tr>
+                            <th style="min-width:170px">Item</th>
+                            <th style="min-width:150px">Category</th>
+                            <th class="text-right" style="width:70px">Qty</th>
+                            <th style="min-width:150px">Status</th>
+                            <th style="min-width:130px">Source</th>
+                            <th class="text-right" style="width:100px">Cost</th>
+                            <th style="min-width:130px">Where it is</th>
+                            <th style="min-width:150px">Notes</th>
+                            <th style="width:80px">Packed</th>
+                            <th style="width:90px">Returned</th>
+                            <th class="no-print"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="inv-body"></tbody>
+                </table>
+            </div>
+            <p id="inv-empty" class="text-sm text-gray-400 py-6 text-center hidden">Nothing listed yet — décor, rentals, signage, favours, anything you have to carry there.</p>
+        </div>
+    </section>
+
+    <!-- ============ PLACES ============ -->
+    <section id="view-places" class="view hidden space-y-6">
+        <div class="card p-6 no-print">
+            <h3 class="text-lg font-bold mb-4">Add a place</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Name</label>
+                    <input id="np-name" class="inp mt-1" placeholder="e.g. St. Mary's" onkeydown="if(event.key==='Enter')addPlace()">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">What happens here</label>
+                    <select id="np-type" class="inp mt-1"></select>
+                </div>
+                <div class="lg:col-span-2">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Address</label>
+                    <input id="np-address" class="inp mt-1" placeholder="Street, town, postcode" onkeydown="if(event.key==='Enter')addPlace()">
+                </div>
+                <div class="flex items-end">
+                    <button class="btn btn-primary w-full" onclick="addPlace()">+ Add place</button>
+                </div>
+            </div>
+            <p class="text-[11px] text-gray-500 mt-3">Every place gets Google Maps links you can send to guests, and an optional map preview.</p>
+        </div>
+
+        <div id="places-wrap" class="grid grid-cols-1 lg:grid-cols-2 gap-5"></div>
+        <p id="places-empty" class="text-sm text-gray-400 py-6 text-center hidden">No places yet — the venue, the reception, hotels, parking, wherever people need directions to.</p>
+    </section>
+
     <!-- ============ VENDORS ============ -->
     <section id="view-vendors" class="view hidden space-y-6">
         <div class="card p-6 no-print">
@@ -515,6 +695,12 @@
         </div>
 
         <div class="card p-6">
+            <h3 class="text-lg font-bold mb-2">Which sections you want</h3>
+            <p class="text-sm text-gray-600 mb-5">Switch off anything you are not using and it disappears from the tabs. Nothing is deleted — turn it back on and your data is still there.</p>
+            <div id="module-switches" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+        </div>
+
+        <div class="card p-6">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div class="max-w-2xl">
                     <h3 class="text-lg font-bold mb-2">Destination wedding mode</h3>
@@ -591,7 +777,17 @@ const CATEGORIES = [
     { name: 'Contingency',          pct: 2  }
 ];
 
+const GIFT_TYPES = ['Gift', 'Cash', 'Cheque', 'Gift card', 'Registry item', 'Donation', 'Other'];
+const INV_CATEGORIES = ['Decor', 'Rentals', 'Signage', 'Stationery', 'Favours', 'Attire', 'Flowers', 'Food & drink', 'Equipment', 'Ceremony', 'Other'];
+const INV_STATUS = ['To buy', 'Ordered', 'Have it', 'Rented', 'Borrowed', 'Made'];
+const PLACE_TYPES = ['Ceremony', 'Reception', 'Getting ready', 'Photos', 'Accommodation', 'Parking', 'Rehearsal dinner', 'Transport pickup', 'Airport / station', 'Other'];
+
 const VENDOR_TYPES = ['Venue','Caterer','Bar','Photographer','Videographer','Florist','Band / DJ','Officiant','Cake','Hair & Makeup','Rentals','Planner','Transport','Stationery','Other'];
+/* The standard split plus anything the couple has added themselves. */
+function allCategories() {
+    return CATEGORIES.map(c => c.name).concat(S.settings.extraCategories || []);
+}
+
 const VENDOR_STATUS = ['Researching','Contacted','Quoted','Booked','Paid in full','Passed'];
 
 const BASE_TASKS = [
@@ -691,8 +887,11 @@ function defaultState() {
         version: 1,
         couple:   { partner1: '', partner2: '', date: '', venue: '', location: '', guestTarget: 80 },
         settings: { currency: 'USD', budget: 40000, destination: false, estimatesTouched: false,
-                    meals: ['Beef','Fish','Vegetarian','Kids'], sides: ['Partner 1','Partner 2','Both'] },
-        budget: [], guests: [], tables: [], tasks: [], vendors: [], schedule: []
+                    meals: ['Beef','Fish','Vegetarian','Kids'], sides: ['Partner 1','Partner 2','Both'],
+                    extraCategories: [],
+                    modules: { seating: true, gifts: true, inventory: true, places: true, vendors: true, dayof: true } },
+        budget: [], guests: [], tables: [], tasks: [], vendors: [], schedule: [],
+        gifts: [], registries: [], inventory: [], places: []
     };
     s.budget = CATEGORIES.map(c => ({
         id: uid(), category: c.name, item: c.name, vendor: '',
@@ -738,9 +937,11 @@ function migrate(obj) {
     const out = Object.assign({}, base, obj || {});
     out.couple   = Object.assign({}, base.couple,   obj.couple   || {});
     out.settings = Object.assign({}, base.settings, obj.settings || {});
-    ['budget','guests','tables','tasks','vendors','schedule'].forEach(k => {
+    ['budget','guests','tables','tasks','vendors','schedule','gifts','registries','inventory','places'].forEach(k => {
         if (!Array.isArray(out[k])) out[k] = base[k];
     });
+    out.settings.modules = Object.assign({}, base.settings.modules, out.settings.modules || {});
+    if (!Array.isArray(out.settings.extraCategories)) out.settings.extraCategories = [];
     if (!Array.isArray(out.settings.meals) || !out.settings.meals.length) out.settings.meals = base.settings.meals;
     if (!Array.isArray(out.settings.sides) || !out.settings.sides.length) out.settings.sides = base.settings.sides;
     out.guests.forEach(g => { g.party = Math.max(1, parseInt(g.party) || 1); });
@@ -820,7 +1021,11 @@ function guestCounts() {
 /* =========================================================
    NAVIGATION
    ========================================================= */
+function moduleOn(key) { return S.settings.modules[key] !== false; }
+
 function switchView(view) {
+    const gated = { seating: 'seating', gifts: 'gifts', inventory: 'inventory', places: 'places', vendors: 'vendors', dayof: 'dayof' };
+    if (gated[view] && !moduleOn(gated[view])) view = 'dashboard';
     activeView = view;
     document.querySelectorAll('.view').forEach(el => el.classList.add('hidden'));
     const target = document.getElementById('view-' + view);
@@ -865,6 +1070,9 @@ function renderActive() {
         case 'budget':    renderBudget(); break;
         case 'guests':    renderGuests(); break;
         case 'seating':   renderSeating(); break;
+        case 'gifts':     renderGifts(); break;
+        case 'inventory': renderInventory(); break;
+        case 'places':    renderPlaces(); break;
         case 'checklist': renderChecklist(); break;
         case 'vendors':   renderVendors(); break;
         case 'dayof':     renderSchedule(); break;
@@ -913,11 +1121,22 @@ function renderDashboard() {
             '<div class="text-[11px] text-gray-500 mt-1">' + sub + '</div>' +
         '</div>';
 
-    document.getElementById('dash-stats').innerHTML =
+    let tiles =
         stat('Attending', g.yes, g.pending + ' still pending') +
         stat('Invited', g.invited, g.parties + ' parties') +
         stat('Projected spend', money(t.projected), 'of ' + money(budget) + ' budget') +
         stat('Tasks done', done + '/' + S.tasks.length, (S.tasks.length - done) + ' to go', 'text-brand-teal');
+    if (moduleOn('gifts') && S.gifts.length) {
+        const owed = S.gifts.filter(x => !x.thanked).length;
+        tiles += stat('Thank-yous', (S.gifts.length - owed) + '/' + S.gifts.length,
+            owed ? owed + ' still to write' : 'all written', owed ? 'text-brand-coral' : 'text-brand-teal');
+    }
+    if (moduleOn('inventory') && S.inventory.length) {
+        const packed = S.inventory.filter(x => x.packed).length;
+        tiles += stat('Packed', packed + '/' + S.inventory.length,
+            S.inventory.filter(x => x.status === 'To buy').length + ' still to buy');
+    }
+    document.getElementById('dash-stats').innerHTML = tiles;
 
     const bar = (label, valLabel, percent, color) =>
         '<div>' +
@@ -1094,6 +1313,15 @@ function spreadEstimates() {
     });
 }
 
+function addCategory() {
+    const name = (prompt('Name the new budget category') || '').trim();
+    if (!name) return;
+    if (allCategories().indexOf(name) === -1) S.settings.extraCategories.push(name);
+    S.budget.push({ id: uid(), category: name, item: '', vendor: '', estimate: 0, actual: 0, paid: 0 });
+    S.settings.estimatesTouched = true;
+    save(); renderBudget();
+}
+
 function addBudgetRow() {
     S.budget.push({ id: uid(), category: CATEGORIES[0].name, item: '', vendor: '', estimate: 0, actual: 0, paid: 0 });
     S.settings.estimatesTouched = true;
@@ -1147,9 +1375,10 @@ function renderBudget() {
         ? money(rem) + ' left of budget'
         : '<span class="text-brand-coral font-semibold">' + money(-rem) + ' over budget</span>';
 
-    const catOptions = (sel) => CATEGORIES.map(c =>
-        '<option value="' + esc(c.name) + '"' + (c.name === sel ? ' selected' : '') + '>' + esc(c.name) + '</option>'
-    ).join('') + (CATEGORIES.some(c => c.name === sel) ? '' :
+    const cats = allCategories();
+    const catOptions = (sel) => cats.map(c =>
+        '<option value="' + esc(c) + '"' + (c === sel ? ' selected' : '') + '>' + esc(c) + '</option>'
+    ).join('') + (cats.indexOf(sel) > -1 ? '' :
         '<option value="' + esc(sel) + '" selected>' + esc(sel) + '</option>');
 
     document.getElementById('budget-body').innerHTML = S.budget.map(r => {
@@ -1557,6 +1786,314 @@ function renderLegalPanel() {
 }
 
 /* =========================================================
+   GIFTS
+   ========================================================= */
+function todayIso() {
+    const t = new Date();
+    return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+}
+
+function addGift() {
+    const from = document.getElementById('ngf-from').value.trim();
+    const desc = document.getElementById('ngf-desc').value.trim();
+    if (!from && !desc) { document.getElementById('ngf-from').focus(); return; }
+    S.gifts.push({
+        id: uid(), from: from, type: document.getElementById('ngf-type').value || GIFT_TYPES[0],
+        desc: desc, value: Math.max(0, num(document.getElementById('ngf-value').value)),
+        date: todayIso(), thanked: false, notes: ''
+    });
+    ['ngf-from','ngf-desc','ngf-value'].forEach(id => { document.getElementById(id).value = ''; });
+    document.getElementById('ngf-from').focus();
+    save(); renderGifts();
+}
+function delGift(id) { S.gifts = S.gifts.filter(g => g.id !== id); save(); scheduleRender(); }
+function giftSet(id, field, v) {
+    const g = S.gifts.find(x => x.id === id);
+    if (!g) return;
+    g[field] = (field === 'value') ? Math.max(0, num(v)) : (field === 'thanked' ? !!v : v);
+    save(); scheduleRender();
+}
+function addRegistry() {
+    const name = document.getElementById('nr-name').value.trim();
+    const url = document.getElementById('nr-url').value.trim();
+    if (!name && !url) { document.getElementById('nr-name').focus(); return; }
+    S.registries.push({ id: uid(), name: name || url, url: url });
+    document.getElementById('nr-name').value = '';
+    document.getElementById('nr-url').value = '';
+    save(); renderGifts();
+}
+function delRegistry(id) { S.registries = S.registries.filter(r => r.id !== id); save(); scheduleRender(); }
+
+/* Only http(s) links are turned into anchors — anything else stays plain text. */
+function safeUrl(u) {
+    const s = String(u || '').trim();
+    return /^https?:\/\//i.test(s) ? s : '';
+}
+
+function renderGifts() {
+    fillSelect('ngf-type', GIFT_TYPES, document.getElementById('ngf-type').value);
+    document.getElementById('guest-names').innerHTML =
+        S.guests.map(g => '<option value="' + esc(g.name) + '"></option>').join('');
+
+    const total = S.gifts.reduce((n, g) => n + num(g.value), 0);
+    const thanked = S.gifts.filter(g => g.thanked).length;
+    const stat = (label, val, color) =>
+        '<div class="card p-4"><div class="text-[10px] font-bold uppercase tracking-wider text-gray-500">' + label +
+        '</div><div class="text-2xl font-bold mt-1 ' + (color || '') + '">' + val + '</div></div>';
+    document.getElementById('gift-stats').innerHTML =
+        stat('Gifts logged', S.gifts.length) +
+        stat('Declared value', money(total)) +
+        stat('Thank-yous sent', thanked, 'text-brand-teal') +
+        stat('Still to write', S.gifts.length - thanked, S.gifts.length - thanked ? 'text-brand-coral' : '');
+
+    const q = (document.getElementById('gf-search').value || '').toLowerCase();
+    const f = document.getElementById('gf-filter').value;
+    const list = S.gifts.filter(g => {
+        if (f === 'thanked' && !g.thanked) return false;
+        if (f === 'unthanked' && g.thanked) return false;
+        if (q && !((g.from || '') + ' ' + (g.desc || '') + ' ' + (g.notes || '')).toLowerCase().includes(q)) return false;
+        return true;
+    });
+
+    const typeOpts = (sel) => GIFT_TYPES.map(t =>
+        '<option value="' + esc(t) + '"' + (sel === t ? ' selected' : '') + '>' + esc(t) + '</option>').join('');
+
+    document.getElementById('gift-body').innerHTML = list.map(g =>
+        '<tr>' +
+        '<td><input class="inp" data-k="gf-' + g.id + '-from" list="guest-names" value="' + esc(g.from) + '" onchange="giftSet(\'' + g.id + '\',\'from\',this.value)"></td>' +
+        '<td><select class="inp" data-k="gf-' + g.id + '-type" onchange="giftSet(\'' + g.id + '\',\'type\',this.value)">' + typeOpts(g.type) + '</select></td>' +
+        '<td><input class="inp" data-k="gf-' + g.id + '-desc" value="' + esc(g.desc) + '" placeholder="—" onchange="giftSet(\'' + g.id + '\',\'desc\',this.value)"></td>' +
+        '<td><input type="number" min="0" step="10" class="inp inp-num" data-k="gf-' + g.id + '-value" value="' + num(g.value) + '" onchange="giftSet(\'' + g.id + '\',\'value\',this.value)"></td>' +
+        '<td><input type="date" class="inp" data-k="gf-' + g.id + '-date" value="' + esc(g.date) + '" onchange="giftSet(\'' + g.id + '\',\'date\',this.value)"></td>' +
+        '<td class="text-center"><input type="checkbox" class="cb" data-k="gf-' + g.id + '-thanked" ' + (g.thanked ? 'checked' : '') + ' onchange="giftSet(\'' + g.id + '\',\'thanked\',this.checked)"></td>' +
+        '<td><input class="inp" data-k="gf-' + g.id + '-notes" value="' + esc(g.notes) + '" placeholder="—" onchange="giftSet(\'' + g.id + '\',\'notes\',this.value)"></td>' +
+        '<td class="no-print text-right"><span class="row-x" onclick="delGift(\'' + g.id + '\')">&times;</span></td>' +
+        '</tr>').join('');
+    document.getElementById('gift-empty').classList.toggle('hidden', list.length > 0);
+
+    document.getElementById('registry-wrap').innerHTML = S.registries.length
+        ? S.registries.map(r => {
+            const url = safeUrl(r.url);
+            const label = esc(r.name);
+            return '<span class="flex items-center gap-2 bg-brand-sand/70 rounded-lg pl-3 pr-2 py-2 text-sm">' +
+                (url ? '<a class="font-medium text-brand-darkteal hover:underline" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + label + ' ↗</a>'
+                     : '<span class="font-medium">' + label + '</span>') +
+                '<span class="row-x no-print" onclick="delRegistry(\'' + r.id + '\')">&times;</span></span>';
+          }).join('')
+        : '<p class="text-sm text-gray-400">No registries or wish lists added.</p>';
+}
+
+function exportGiftsCsv() {
+    const header = ['From','Kind','What it was','Value','Received','Thank-you sent','Notes'];
+    const rows = S.gifts.map(g => [g.from, g.type, g.desc, num(g.value), g.date, g.thanked ? 'yes' : 'no', g.notes]);
+    download(new Blob([[header].concat(rows).map(r => r.map(csvCell).join(',')).join('\r\n')],
+        { type: 'text/csv;charset=utf-8' }), 'gifts.csv');
+}
+
+/* =========================================================
+   INVENTORY
+   ========================================================= */
+function addInventory() {
+    const item = document.getElementById('ni-item').value.trim();
+    if (!item) { document.getElementById('ni-item').focus(); return; }
+    S.inventory.push({
+        id: uid(), item: item,
+        category: document.getElementById('ni-cat').value || INV_CATEGORIES[0],
+        qty: Math.max(1, parseInt(document.getElementById('ni-qty').value) || 1),
+        status: document.getElementById('ni-status').value || INV_STATUS[0],
+        source: '', cost: 0, location: '', packed: false, returned: false, notes: ''
+    });
+    document.getElementById('ni-item').value = '';
+    document.getElementById('ni-qty').value = 1;
+    document.getElementById('ni-item').focus();
+    save(); renderInventory();
+}
+function delInventory(id) { S.inventory = S.inventory.filter(i => i.id !== id); save(); scheduleRender(); }
+function invSet(id, field, v) {
+    const i = S.inventory.find(x => x.id === id);
+    if (!i) return;
+    if (field === 'qty') i.qty = Math.max(1, parseInt(v) || 1);
+    else if (field === 'cost') i.cost = Math.max(0, num(v));
+    else if (field === 'packed' || field === 'returned') i[field] = !!v;
+    else i[field] = v;
+    save(); scheduleRender();
+}
+/* Rented and borrowed items are the ones that have to go back. */
+function needsReturn(i) { return (i.status === 'Rented' || i.status === 'Borrowed') && !i.returned; }
+
+function renderInventory() {
+    fillSelect('ni-cat', INV_CATEGORIES, document.getElementById('ni-cat').value);
+    fillSelect('ni-status', INV_STATUS, document.getElementById('ni-status').value);
+
+    const items = S.inventory;
+    const units = items.reduce((n, i) => n + (parseInt(i.qty) || 1), 0);
+    const toBuy = items.filter(i => i.status === 'To buy').length;
+    const packed = items.filter(i => i.packed).length;
+    const toReturn = items.filter(needsReturn).length;
+    const spend = items.reduce((n, i) => n + num(i.cost), 0);
+
+    const stat = (label, val, sub, color) =>
+        '<div class="card p-4"><div class="text-[10px] font-bold uppercase tracking-wider text-gray-500">' + label +
+        '</div><div class="text-2xl font-bold mt-1 ' + (color || '') + '">' + val + '</div>' +
+        '<div class="text-[11px] text-gray-500 mt-1">' + sub + '</div></div>';
+    document.getElementById('inv-stats').innerHTML =
+        stat('Items', items.length, units + ' units · ' + money(spend) + ' costed') +
+        stat('Still to buy', toBuy, toBuy ? 'not sourced yet' : 'all sourced', toBuy ? 'text-brand-coral' : 'text-brand-teal') +
+        stat('Packed', packed + '/' + items.length, (items.length - packed) + ' to go', 'text-brand-teal') +
+        stat('To return', toReturn, 'rented or borrowed', toReturn ? 'text-brand-gold' : '') ;
+
+    const q = (document.getElementById('inv-search').value || '').toLowerCase();
+    const f = document.getElementById('inv-filter').value;
+    const list = items.filter(i => {
+        if (f === 'tobuy' && i.status !== 'To buy') return false;
+        if (f === 'unpacked' && i.packed) return false;
+        if (f === 'return' && !needsReturn(i)) return false;
+        if (q && !((i.item || '') + ' ' + (i.source || '') + ' ' + (i.location || '') + ' ' + (i.notes || '')).toLowerCase().includes(q)) return false;
+        return true;
+    });
+
+    const opts = (values, sel) => values.map(v =>
+        '<option value="' + esc(v) + '"' + (sel === v ? ' selected' : '') + '>' + esc(v) + '</option>').join('');
+
+    document.getElementById('inv-body').innerHTML = list.map(i =>
+        '<tr>' +
+        '<td><input class="inp" data-k="iv-' + i.id + '-item" value="' + esc(i.item) + '" onchange="invSet(\'' + i.id + '\',\'item\',this.value)"></td>' +
+        '<td><select class="inp" data-k="iv-' + i.id + '-category" onchange="invSet(\'' + i.id + '\',\'category\',this.value)">' + opts(INV_CATEGORIES, i.category) + '</select></td>' +
+        '<td><input type="number" min="1" class="inp inp-num" data-k="iv-' + i.id + '-qty" value="' + (parseInt(i.qty) || 1) + '" onchange="invSet(\'' + i.id + '\',\'qty\',this.value)"></td>' +
+        '<td><select class="inp" data-k="iv-' + i.id + '-status" onchange="invSet(\'' + i.id + '\',\'status\',this.value)">' + opts(INV_STATUS, i.status) + '</select></td>' +
+        '<td><input class="inp" data-k="iv-' + i.id + '-source" value="' + esc(i.source) + '" placeholder="shop / vendor" onchange="invSet(\'' + i.id + '\',\'source\',this.value)"></td>' +
+        '<td><input type="number" min="0" step="10" class="inp inp-num" data-k="iv-' + i.id + '-cost" value="' + num(i.cost) + '" onchange="invSet(\'' + i.id + '\',\'cost\',this.value)"></td>' +
+        '<td><input class="inp" data-k="iv-' + i.id + '-location" value="' + esc(i.location) + '" placeholder="box / room" onchange="invSet(\'' + i.id + '\',\'location\',this.value)"></td>' +
+        '<td><input class="inp" data-k="iv-' + i.id + '-notes" value="' + esc(i.notes) + '" placeholder="—" onchange="invSet(\'' + i.id + '\',\'notes\',this.value)"></td>' +
+        '<td class="text-center"><input type="checkbox" class="cb" data-k="iv-' + i.id + '-packed" ' + (i.packed ? 'checked' : '') + ' onchange="invSet(\'' + i.id + '\',\'packed\',this.checked)"></td>' +
+        '<td class="text-center">' + (i.status === 'Rented' || i.status === 'Borrowed'
+            ? '<input type="checkbox" class="cb" data-k="iv-' + i.id + '-returned" ' + (i.returned ? 'checked' : '') + ' onchange="invSet(\'' + i.id + '\',\'returned\',this.checked)">'
+            : '<span class="text-gray-300 text-xs">—</span>') + '</td>' +
+        '<td class="no-print text-right whitespace-nowrap">' +
+            '<button class="text-[10px] font-bold text-brand-teal mr-2" title="Copy to budget" onclick="inventoryToBudget(\'' + i.id + '\')">→ BUDGET</button>' +
+            '<span class="row-x" onclick="delInventory(\'' + i.id + '\')">&times;</span></td>' +
+        '</tr>').join('');
+    document.getElementById('inv-empty').classList.toggle('hidden', list.length > 0);
+}
+
+const INV_TO_BUDGET = {
+    'Decor': 'Flowers & Decor', 'Flowers': 'Flowers & Decor', 'Signage': 'Stationery & Signage',
+    'Rentals': 'Venue & Rentals', 'Stationery': 'Stationery & Signage', 'Favours': 'Gifts & Favours',
+    'Attire': 'Attire & Beauty', 'Food & drink': 'Catering & Bar', 'Equipment': 'Music & Entertainment',
+    'Ceremony': 'Officiant & Legal'
+};
+
+function inventoryToBudget(id) {
+    const i = S.inventory.find(x => x.id === id);
+    if (!i) return;
+    const cost = num(i.cost) * (parseInt(i.qty) || 1);
+    S.budget.push({
+        id: uid(), category: INV_TO_BUDGET[i.category] || 'Flowers & Decor',
+        item: i.item + ((parseInt(i.qty) || 1) > 1 ? ' ×' + i.qty : ''), vendor: i.source,
+        estimate: cost, actual: i.status === 'To buy' ? 0 : cost, paid: 0
+    });
+    S.settings.estimatesTouched = true;
+    save();
+    switchView('budget');
+}
+
+function exportInventoryCsv() {
+    const header = ['Item','Category','Qty','Status','Source','Cost','Where it is','Packed','Returned','Notes'];
+    const rows = S.inventory.map(i => [i.item, i.category, parseInt(i.qty) || 1, i.status, i.source,
+        num(i.cost), i.location, i.packed ? 'yes' : 'no', i.returned ? 'yes' : 'no', i.notes]);
+    download(new Blob([[header].concat(rows).map(r => r.map(csvCell).join(',')).join('\r\n')],
+        { type: 'text/csv;charset=utf-8' }), 'inventory.csv');
+}
+
+/* =========================================================
+   PLACES  (Google Maps links, no API key needed)
+   ========================================================= */
+function mapsSearchUrl(p) {
+    return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(placeQuery(p));
+}
+function mapsDirectionsUrl(p) {
+    return 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(placeQuery(p));
+}
+function mapsEmbedUrl(p) {
+    return 'https://maps.google.com/maps?q=' + encodeURIComponent(placeQuery(p)) + '&output=embed';
+}
+function placeQuery(p) { return [p.address, p.name].filter(Boolean).join(', ') || p.name || ''; }
+
+function addPlace() {
+    const name = document.getElementById('np-name').value.trim();
+    const address = document.getElementById('np-address').value.trim();
+    if (!name && !address) { document.getElementById('np-name').focus(); return; }
+    S.places.push({
+        id: uid(), name: name || address,
+        type: document.getElementById('np-type').value || PLACE_TYPES[0],
+        address: address, notes: '', showMap: false
+    });
+    document.getElementById('np-name').value = '';
+    document.getElementById('np-address').value = '';
+    document.getElementById('np-name').focus();
+    save(); renderPlaces();
+}
+function delPlace(id) { S.places = S.places.filter(p => p.id !== id); save(); scheduleRender(); }
+function placeSet(id, field, v) {
+    const p = S.places.find(x => x.id === id);
+    if (!p) return;
+    p[field] = v;
+    save(); scheduleRender();
+}
+function toggleMap(id) {
+    const p = S.places.find(x => x.id === id);
+    if (!p) return;
+    p.showMap = !p.showMap;
+    save(); renderPlaces();
+}
+function copyAddress(id) {
+    const p = S.places.find(x => x.id === id);
+    if (!p || !navigator.clipboard) return;
+    navigator.clipboard.writeText(placeQuery(p)).then(() => {
+        const el = document.getElementById('copied-' + id);
+        if (!el) return;
+        el.classList.remove('hidden');
+        setTimeout(() => el.classList.add('hidden'), 1500);
+    }).catch(() => {});
+}
+
+function renderPlaces() {
+    fillSelect('np-type', PLACE_TYPES, document.getElementById('np-type').value);
+    const typeOpts = (sel) => PLACE_TYPES.map(t =>
+        '<option value="' + esc(t) + '"' + (sel === t ? ' selected' : '') + '>' + esc(t) + '</option>').join('');
+
+    document.getElementById('places-wrap').innerHTML = S.places.map(p => {
+        const hasQuery = !!placeQuery(p);
+        return '<div class="card p-5">' +
+            '<div class="flex items-start justify-between gap-3 mb-3">' +
+                '<div class="flex-1">' +
+                    '<input class="inp font-semibold" data-k="pl-' + p.id + '-name" value="' + esc(p.name) + '" onchange="placeSet(\'' + p.id + '\',\'name\',this.value)">' +
+                '</div>' +
+                '<select class="inp" data-k="pl-' + p.id + '-type" style="width:150px" onchange="placeSet(\'' + p.id + '\',\'type\',this.value)">' + typeOpts(p.type) + '</select>' +
+                '<span class="row-x no-print mt-2" onclick="delPlace(\'' + p.id + '\')">&times;</span>' +
+            '</div>' +
+            '<input class="inp mb-2" data-k="pl-' + p.id + '-address" placeholder="Address" value="' + esc(p.address) + '" onchange="placeSet(\'' + p.id + '\',\'address\',this.value)">' +
+            '<input class="inp mb-3" data-k="pl-' + p.id + '-notes" placeholder="Notes — parking, entrance, who to ask for" value="' + esc(p.notes) + '" onchange="placeSet(\'' + p.id + '\',\'notes\',this.value)">' +
+            (hasQuery
+                ? '<div class="flex flex-wrap items-center gap-2 no-print">' +
+                    '<a class="btn btn-ghost" href="' + esc(mapsSearchUrl(p)) + '" target="_blank" rel="noopener noreferrer">Open in Maps ↗</a>' +
+                    '<a class="btn btn-ghost" href="' + esc(mapsDirectionsUrl(p)) + '" target="_blank" rel="noopener noreferrer">Directions ↗</a>' +
+                    '<button class="btn btn-ghost" onclick="copyAddress(\'' + p.id + '\')">Copy address</button>' +
+                    '<button class="btn btn-ghost" onclick="toggleMap(\'' + p.id + '\')">' + (p.showMap ? 'Hide map' : 'Show map') + '</button>' +
+                    '<span id="copied-' + p.id + '" class="hidden text-[11px] font-semibold text-brand-teal">Copied</span>' +
+                  '</div>'
+                : '<p class="text-[11px] text-gray-400">Add a name or address to get map links.</p>') +
+            (p.showMap && hasQuery
+                ? '<iframe class="w-full rounded-lg border border-gray-100 mt-3" style="height:220px" loading="lazy" ' +
+                  'referrerpolicy="no-referrer-when-downgrade" title="Map of ' + esc(p.name) + '" src="' + esc(mapsEmbedUrl(p)) + '"></iframe>' +
+                  '<p class="text-[11px] text-gray-400 mt-2">Preview comes from Google Maps — if it stays blank you are offline, and the links above still work.</p>'
+                : '') +
+        '</div>';
+    }).join('');
+    document.getElementById('places-empty').classList.toggle('hidden', S.places.length > 0);
+}
+
+/* =========================================================
    VENDORS
    ========================================================= */
 function addVendor() {
@@ -1701,6 +2238,25 @@ function toggleDestination(on) {
     save(); renderSetup(); renderHeader();
 }
 
+function toggleModule(key, on) {
+    S.settings.modules[key] = !!on;
+    save();
+    renderNav();
+    renderSetup();
+}
+
+/* Tabs for switched-off sections are hidden rather than removed, so the data survives. */
+function renderNav() {
+    document.querySelectorAll('.tab-btn').forEach(b => {
+        const v = b.dataset.view;
+        const gated = ['seating','gifts','inventory','places','vendors','dayof'];
+        b.classList.toggle('hidden', gated.indexOf(v) > -1 && !moduleOn(v));
+    });
+    if (['seating','gifts','inventory','places','vendors','dayof'].indexOf(activeView) > -1 && !moduleOn(activeView)) {
+        switchView('dashboard');
+    }
+}
+
 function renderSetup() {
     document.getElementById('set-p1').value = S.couple.partner1 || '';
     document.getElementById('set-p2').value = S.couple.partner2 || '';
@@ -1713,9 +2269,25 @@ function renderSetup() {
     document.getElementById('set-sides').value = (S.settings.sides || []).join(', ');
     document.getElementById('set-destination').checked = !!S.settings.destination;
 
+    const MODULES = [
+        ['seating',   'Seating plan'],
+        ['gifts',     'Gifts & registries'],
+        ['inventory', 'Inventory'],
+        ['places',    'Places & maps'],
+        ['vendors',   'Vendors'],
+        ['dayof',     'Day-of run sheet']
+    ];
+    document.getElementById('module-switches').innerHTML = MODULES.map(m =>
+        '<label class="flex items-center gap-3 bg-brand-sand/60 rounded-lg px-4 py-3 cursor-pointer">' +
+            '<input type="checkbox" class="cb" ' + (moduleOn(m[0]) ? 'checked' : '') +
+            ' onchange="toggleModule(\'' + m[0] + '\',this.checked)">' +
+            '<span class="text-sm font-semibold">' + esc(m[1]) + '</span>' +
+        '</label>').join('');
+
     document.getElementById('data-note').innerText =
         S.guests.length + ' guest entries · ' + S.budget.length + ' budget lines · ' +
-        S.tasks.length + ' tasks · ' + S.vendors.length + ' vendors · ' + S.tables.length + ' tables.';
+        S.tasks.length + ' tasks · ' + S.vendors.length + ' vendors · ' + S.tables.length + ' tables · ' +
+        S.gifts.length + ' gifts · ' + S.inventory.length + ' inventory items · ' + S.places.length + ' places.';
 }
 
 function download(blob, filename) {
@@ -1804,6 +2376,27 @@ function loadSample() {
         { id: uid(), name: 'Northside Sound', type: 'Band / DJ', contact: '555-0177', cost: 2800, deposit: 700, status: 'Booked', notes: '' }
     ];
 
+    S.gifts = [
+        { id: uid(), from: 'Marc & Julie Arsenault', type: 'Gift', desc: 'Stand mixer', value: 380, date: todayIso(), thanked: true, notes: '' },
+        { id: uid(), from: 'Dr. Ken & Amy Liu', type: 'Cash', desc: '', value: 500, date: todayIso(), thanked: false, notes: 'Card on the hall table' },
+        { id: uid(), from: 'Sophie Doucette', type: 'Registry item', desc: 'Dinner set, 8 place settings', value: 260, date: todayIso(), thanked: false, notes: '' }
+    ];
+    S.registries = [
+        { id: uid(), name: 'Main registry', url: 'https://example.com/registry' }
+    ];
+    S.inventory = [
+        { id: uid(), item: 'Glass lanterns', category: 'Decor', qty: 12, status: 'Rented', source: 'Party rentals', cost: 6, location: 'Delivered to venue', packed: false, returned: false, notes: 'Back by Monday' },
+        { id: uid(), item: 'Table numbers', category: 'Signage', qty: 10, status: 'Made', source: 'Homemade', cost: 0, location: 'Box 2', packed: true, returned: false, notes: '' },
+        { id: uid(), item: 'Guest book & pens', category: 'Stationery', qty: 1, status: 'Have it', source: '', cost: 45, location: 'Box 1', packed: true, returned: false, notes: '' },
+        { id: uid(), item: 'Favour boxes', category: 'Favours', qty: 60, status: 'To buy', source: '', cost: 2, location: '', packed: false, returned: false, notes: 'Order 10 spare' },
+        { id: uid(), item: 'Ceremony arch', category: 'Ceremony', qty: 1, status: 'Borrowed', source: "Aunt's garden", cost: 0, location: 'Pickup Friday', packed: false, returned: false, notes: '' }
+    ];
+    S.places = [
+        { id: uid(), name: 'The Old Barn', type: 'Reception', address: '', notes: 'Parking behind the barn', showMap: false },
+        { id: uid(), name: 'St. Mary\'s Church', type: 'Ceremony', address: '', notes: 'Doors open 3:30', showMap: false },
+        { id: uid(), name: 'Riverside Inn', type: 'Accommodation', address: '', notes: 'Room block held until 6 weeks out', showMap: false }
+    ];
+
     // Tick off the earliest stage so the progress bar isn't empty.
     S.tasks.filter(t => t.phase === 'p12').forEach(t => { t.done = true; });
     autoSeat();
@@ -1820,6 +2413,11 @@ function loadSample() {
     fillSelect('ng-side', S.settings.sides);
     fillSelect('g-filter-side', S.settings.sides, '', 'All sides');
     fillSelect('nv-type', VENDOR_TYPES);
+    fillSelect('ngf-type', GIFT_TYPES);
+    fillSelect('ni-cat', INV_CATEGORIES);
+    fillSelect('ni-status', INV_STATUS);
+    fillSelect('np-type', PLACE_TYPES);
+    renderNav();
     renderSetup();
     switchView('dashboard');
 })();
