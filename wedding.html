@@ -1,0 +1,1828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wedding Planner | Interactive</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<script>
+    // Guarded so the page still opens cleanly if the CDN is unreachable.
+    if (window.tailwind) tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    brand: {
+                        sand: '#F5F2EA',
+                        beige: '#E6E2D6',
+                        teal: '#2A9D8F',
+                        darkteal: '#20756B',
+                        navy: '#264653',
+                        gold: '#E9C46A',
+                        coral: '#E76F51',
+                        rose: '#C97B84'
+                    }
+                },
+                fontFamily: {
+                    serif: ['"Playfair Display"', 'serif'],
+                    sans: ['"Inter"', 'sans-serif']
+                }
+            }
+        }
+    };
+</script>
+
+<style>
+    body { font-family: 'Inter', sans-serif; background-color: #F5F2EA; color: #264653; }
+    h1,h2,h3,h4,h5 { font-family: 'Playfair Display', serif; }
+
+    .tab-btn {
+        padding: 0.75rem 1rem; font-size: 0.8125rem; font-weight: 500; color: #6B7280;
+        transition: all .2s; border-bottom-width: 4px; border-color: transparent; white-space: nowrap;
+    }
+    .tab-btn:hover { color: #2A9D8F; }
+    .tab-btn.active { color: #264653; border-color: #2A9D8F; font-weight: 700; background-color: #fff; }
+
+    .card { background:#fff; border:1px solid #F0EEE8; border-radius:.75rem; box-shadow:0 1px 2px rgba(38,70,83,.04); }
+    .inp {
+        width:100%; background:#F9FAFB; border:1px solid #D1D5DB; border-radius:.375rem;
+        padding:.4rem .6rem; font-size:.8125rem; color:#264653; transition:all .15s;
+    }
+    .inp:focus { outline:none; border-color:#2A9D8F; background:#fff; box-shadow:0 0 0 3px rgba(42,157,143,.12); }
+    .inp-num { text-align:right; font-weight:600; }
+    .btn { border-radius:.375rem; font-size:.8125rem; font-weight:600; padding:.5rem .9rem; transition:all .15s; }
+    .btn-primary { background:#2A9D8F; color:#fff; }
+    .btn-primary:hover { background:#20756B; }
+    .btn-ghost { background:#fff; color:#264653; border:1px solid #E6E2D6; }
+    .btn-ghost:hover { border-color:#2A9D8F; color:#2A9D8F; }
+    .btn-danger { background:#fff; color:#E76F51; border:1px solid #F3D5CB; }
+    .btn-danger:hover { background:#E76F51; color:#fff; }
+
+    .chip { font-size:.625rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; padding:.15rem .5rem; border-radius:9999px; }
+    .row-x { color:#D1D5DB; font-weight:700; cursor:pointer; }
+    .row-x:hover { color:#E76F51; }
+
+    table.grid { width:100%; border-collapse:collapse; }
+    table.grid th {
+        font-size:.625rem; text-transform:uppercase; letter-spacing:.06em; color:#8A9AA0;
+        font-weight:700; text-align:left; padding:.5rem .5rem; border-bottom:1px solid #EEECE5;
+    }
+    table.grid td { padding:.35rem .5rem; border-bottom:1px solid #F5F3EE; font-size:.8125rem; vertical-align:middle; }
+    table.grid tr:hover td { background:#FCFBF8; }
+
+    /* Run-sheet rows: these must come after .inp, whose width:100% would
+       otherwise beat any width utility and push every field onto its own line. */
+    .run-row { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; }
+    .run-time { flex:0 0 110px; width:110px; }
+    .run-title { flex:1 1 100%; min-width:160px; border-color:transparent; background:transparent; font-weight:600; }
+    .run-who { flex:1 1 160px; width:auto; }
+    @media (min-width:640px) {
+        .run-row { gap:.75rem; }
+        .run-title { flex:1 1 auto; width:auto; }
+        .run-who { flex:0 0 190px; width:190px; }
+    }
+
+    .bar { height:.5rem; border-radius:9999px; background:#EEECE5; overflow:hidden; }
+    .bar > div { height:100%; border-radius:9999px; transition:width .3s; }
+
+    .task-done .task-title { text-decoration:line-through; color:#9CA3AF; }
+    .chart-container { position:relative; width:100%; height:280px; }
+
+    input[type=checkbox].cb { width:1.05rem; height:1.05rem; accent-color:#2A9D8F; cursor:pointer; }
+
+    #saveFlash { opacity:0; transition:opacity .3s; }
+    #saveFlash.show { opacity:1; }
+
+    @media print {
+        .no-print { display:none !important; }
+        body { background:#fff; }
+        .card { box-shadow:none; border-color:#DDD; break-inside:avoid; }
+        .view { display:block !important; }
+    }
+</style>
+</head>
+<body class="antialiased">
+
+<!-- HEADER -->
+<header class="bg-brand-navy text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+            <div>
+                <p class="text-brand-gold text-[10px] font-bold uppercase tracking-[.2em] mb-1">Interactive Wedding Planner</p>
+                <h1 id="hdr-couple" class="text-3xl sm:text-4xl font-bold">Your Wedding</h1>
+                <p id="hdr-meta" class="text-white/60 text-sm mt-1">Set your details in Setup &amp; Data</p>
+            </div>
+            <div class="flex items-stretch gap-3">
+                <div class="bg-white/10 rounded-lg px-5 py-3 text-center min-w-[110px]">
+                    <div id="hdr-days" class="text-3xl font-bold text-brand-gold leading-none">—</div>
+                    <div class="text-[10px] uppercase tracking-wider text-white/60 mt-1">Days to go</div>
+                </div>
+                <div class="bg-white/10 rounded-lg px-5 py-3 text-center min-w-[110px]">
+                    <div id="hdr-guests" class="text-3xl font-bold leading-none">0</div>
+                    <div class="text-[10px] uppercase tracking-wider text-white/60 mt-1">Confirmed</div>
+                </div>
+                <div class="bg-white/10 rounded-lg px-5 py-3 text-center min-w-[130px]">
+                    <div id="hdr-budget" class="text-3xl font-bold leading-none">$0</div>
+                    <div class="text-[10px] uppercase tracking-wider text-white/60 mt-1">Projected</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- NAV -->
+<div class="bg-brand-beige/60 border-b border-brand-beige sticky top-0 z-30 no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <nav class="flex overflow-x-auto -mb-px">
+            <button class="tab-btn active" data-view="dashboard" onclick="switchView('dashboard')">Dashboard</button>
+            <button class="tab-btn" data-view="budget" onclick="switchView('budget')">Budget</button>
+            <button class="tab-btn" data-view="guests" onclick="switchView('guests')">Guest List</button>
+            <button class="tab-btn" data-view="seating" onclick="switchView('seating')">Seating</button>
+            <button class="tab-btn" data-view="checklist" onclick="switchView('checklist')">Checklist</button>
+            <button class="tab-btn" data-view="vendors" onclick="switchView('vendors')">Vendors</button>
+            <button class="tab-btn" data-view="dayof" onclick="switchView('dayof')">Day-Of</button>
+            <button class="tab-btn" data-view="setup" onclick="switchView('setup')">Setup &amp; Data</button>
+            <div class="flex-1"></div>
+            <div class="flex items-center pr-1">
+                <span id="saveFlash" class="text-[10px] font-bold uppercase tracking-wider text-brand-teal">Saved</span>
+            </div>
+        </nav>
+    </div>
+</div>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- ============ DASHBOARD ============ -->
+    <section id="view-dashboard" class="view space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="card p-6 lg:col-span-2">
+                <h3 class="text-lg font-bold mb-4">Where things stand</h3>
+                <div id="dash-stats" class="grid grid-cols-2 sm:grid-cols-4 gap-4"></div>
+                <div id="dash-bars" class="mt-6 space-y-4"></div>
+            </div>
+            <div class="card p-6">
+                <h4 class="font-bold mb-4">RSVP breakdown</h4>
+                <div class="chart-container" style="height:240px"><canvas id="chartRsvp"></canvas></div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="card p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h4 class="font-bold">Next up</h4>
+                    <button class="text-xs text-brand-teal font-semibold no-print" onclick="switchView('checklist')">Open checklist →</button>
+                </div>
+                <div id="dash-tasks" class="space-y-2"></div>
+            </div>
+            <div class="card p-6">
+                <h4 class="font-bold mb-4">Budget by category</h4>
+                <div class="chart-container"><canvas id="chartDashBudget"></canvas></div>
+            </div>
+        </div>
+
+        <div id="dash-alerts" class="space-y-3"></div>
+    </section>
+
+    <!-- ============ BUDGET ============ -->
+    <section id="view-budget" class="view hidden space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            <div class="card p-5">
+                <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Total budget</label>
+                <input id="in-budget" type="number" min="0" step="500" class="inp inp-num mt-2 text-lg" onchange="setBudget(this.value)">
+                <p id="bd-perguest" class="text-[11px] text-gray-500 mt-2">—</p>
+            </div>
+            <div class="card p-5">
+                <div class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Estimated</div>
+                <div id="bd-est" class="text-2xl font-bold mt-2">$0</div>
+                <div id="bd-est-note" class="text-[11px] text-gray-500 mt-1">—</div>
+            </div>
+            <div class="card p-5">
+                <div class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Actual (contracted)</div>
+                <div id="bd-act" class="text-2xl font-bold mt-2 text-brand-navy">$0</div>
+                <div id="bd-paid" class="text-[11px] text-gray-500 mt-1">—</div>
+            </div>
+            <div class="card p-5">
+                <div class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Still to pay</div>
+                <div id="bd-due" class="text-2xl font-bold mt-2 text-brand-coral">$0</div>
+                <div id="bd-remaining" class="text-[11px] text-gray-500 mt-1">—</div>
+            </div>
+        </div>
+
+        <div class="card p-6">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <h3 class="text-lg font-bold">Line items</h3>
+                <div class="flex gap-2 no-print">
+                    <button class="btn btn-ghost" onclick="rebalanceBudget()">Re-spread estimates</button>
+                    <button class="btn btn-primary" onclick="addBudgetRow()">+ Add line</button>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="grid" id="budget-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width:150px">Category</th>
+                            <th style="min-width:190px">Item</th>
+                            <th style="min-width:150px">Vendor</th>
+                            <th class="text-right" style="min-width:110px">Estimate</th>
+                            <th class="text-right" style="min-width:110px">Actual</th>
+                            <th class="text-right" style="min-width:110px">Paid</th>
+                            <th class="text-right" style="min-width:100px">Balance</th>
+                            <th class="no-print"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="budget-body"></tbody>
+                    <tfoot id="budget-foot" class="font-bold"></tfoot>
+                </table>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="card p-6">
+                <h4 class="font-bold mb-4">Estimate vs. actual by category</h4>
+                <div class="chart-container" style="height:340px"><canvas id="chartBudget"></canvas></div>
+            </div>
+            <div class="card p-6">
+                <h4 class="font-bold mb-4">Category rollup</h4>
+                <div class="overflow-x-auto">
+                    <table class="grid">
+                        <thead><tr><th>Category</th><th class="text-right">Estimate</th><th class="text-right">Actual</th><th class="text-right">Variance</th><th class="text-right">% of budget</th></tr></thead>
+                        <tbody id="rollup-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ GUESTS ============ -->
+    <section id="view-guests" class="view hidden space-y-6">
+        <div id="guest-stats" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4"></div>
+
+        <div class="card p-6 no-print">
+            <h3 class="text-lg font-bold mb-4">Add a guest or party</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+                <div class="lg:col-span-2">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Name / party</label>
+                    <input id="ng-name" class="inp mt-1" placeholder="e.g. Marc &amp; Julie Arsenault" onkeydown="if(event.key==='Enter')addGuest()">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Side</label>
+                    <select id="ng-side" class="inp mt-1"></select>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Seats</label>
+                    <input id="ng-party" type="number" min="1" value="1" class="inp inp-num mt-1">
+                </div>
+                <div class="lg:col-span-1">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Email / phone</label>
+                    <input id="ng-contact" class="inp mt-1" placeholder="optional" onkeydown="if(event.key==='Enter')addGuest()">
+                </div>
+                <div class="flex items-end">
+                    <button class="btn btn-primary w-full" onclick="addGuest()">+ Add</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-6">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <h3 class="text-lg font-bold">Guest list</h3>
+                <div class="flex flex-wrap gap-2 no-print">
+                    <input id="g-search" class="inp" style="width:180px" placeholder="Search…" oninput="renderGuests()">
+                    <select id="g-filter-side" class="inp" style="width:auto" onchange="renderGuests()"></select>
+                    <select id="g-filter-rsvp" class="inp" style="width:auto" onchange="renderGuests()">
+                        <option value="">All RSVPs</option>
+                        <option value="pending">Pending</option>
+                        <option value="yes">Attending</option>
+                        <option value="maybe">Maybe</option>
+                        <option value="no">Declined</option>
+                    </select>
+                    <button class="btn btn-ghost" onclick="exportGuestsCsv()">Export CSV</button>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="grid">
+                    <thead>
+                        <tr>
+                            <th style="min-width:170px">Name / party</th>
+                            <th style="min-width:130px">Side</th>
+                            <th class="text-right" style="width:70px">Seats</th>
+                            <th style="min-width:130px">RSVP</th>
+                            <th style="min-width:140px">Meal</th>
+                            <th style="min-width:160px">Table</th>
+                            <th style="min-width:130px">Contact</th>
+                            <th style="min-width:130px">Notes</th>
+                            <th class="no-print"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="guest-body"></tbody>
+                </table>
+            </div>
+            <p id="guest-empty" class="text-sm text-gray-400 py-6 text-center hidden">No guests match this filter yet.</p>
+        </div>
+
+        <div class="card p-6">
+            <h4 class="font-bold mb-4">Meal counts (attending only)</h4>
+            <div id="meal-counts" class="flex flex-wrap gap-3"></div>
+        </div>
+    </section>
+
+    <!-- ============ SEATING ============ -->
+    <section id="view-seating" class="view hidden space-y-6">
+        <div class="card p-6 no-print">
+            <div class="flex flex-wrap items-end gap-3">
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Table name</label>
+                    <input id="nt-name" class="inp mt-1" style="width:200px" placeholder="e.g. Table 1 / Head Table" onkeydown="if(event.key==='Enter')addTable()">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Seats</label>
+                    <input id="nt-seats" type="number" min="1" value="8" class="inp inp-num mt-1" style="width:90px">
+                </div>
+                <button class="btn btn-primary" onclick="addTable()">+ Add table</button>
+                <div class="flex-1"></div>
+                <button class="btn btn-ghost" onclick="autoSeat()">Auto-seat unassigned</button>
+                <button class="btn btn-danger" onclick="clearSeating()">Clear all seating</button>
+            </div>
+            <p class="text-[11px] text-gray-500 mt-3">Only guests who have RSVP'd <strong>attending</strong> are seated. Party seats are kept together.</p>
+        </div>
+
+        <div id="seating-summary" class="grid grid-cols-2 sm:grid-cols-4 gap-4"></div>
+
+        <div class="card p-6">
+            <h4 class="font-bold mb-4">Unseated (attending)</h4>
+            <div id="unseated" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <div id="tables-wrap" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+    </section>
+
+    <!-- ============ CHECKLIST ============ -->
+    <section id="view-checklist" class="view hidden space-y-6">
+        <div class="card p-6">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h3 class="text-lg font-bold">Planning checklist</h3>
+                    <p id="task-progress-label" class="text-sm text-gray-500 mt-1">—</p>
+                </div>
+                <div class="flex items-center gap-3 no-print">
+                    <label class="flex items-center gap-2 text-xs font-semibold text-gray-600">
+                        <input type="checkbox" class="cb" id="hide-done" onchange="renderChecklist()"> Hide completed
+                    </label>
+                    <button class="btn btn-ghost" onclick="addTaskPrompt()">+ Add task</button>
+                </div>
+            </div>
+            <div class="bar mt-4"><div id="task-progress-bar" style="width:0%;background:#2A9D8F"></div></div>
+        </div>
+
+        <div id="legal-panel" class="hidden"></div>
+        <div id="checklist-wrap" class="space-y-5"></div>
+    </section>
+
+    <!-- ============ VENDORS ============ -->
+    <section id="view-vendors" class="view hidden space-y-6">
+        <div class="card p-6 no-print">
+            <h3 class="text-lg font-bold mb-4">Add a vendor</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Name</label>
+                    <input id="nv-name" class="inp mt-1" placeholder="Business or person" onkeydown="if(event.key==='Enter')addVendor()">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Type</label>
+                    <select id="nv-type" class="inp mt-1"></select>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Contact</label>
+                    <input id="nv-contact" class="inp mt-1" placeholder="email / phone" onkeydown="if(event.key==='Enter')addVendor()">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Quote</label>
+                    <input id="nv-cost" type="number" min="0" step="50" class="inp inp-num mt-1" placeholder="0">
+                </div>
+                <div class="flex items-end">
+                    <button class="btn btn-primary w-full" onclick="addVendor()">+ Add vendor</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-6">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <h3 class="text-lg font-bold">Vendor tracker</h3>
+                <div id="vendor-summary" class="text-xs text-gray-500"></div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="grid">
+                    <thead>
+                        <tr>
+                            <th style="min-width:170px">Vendor</th>
+                            <th style="min-width:140px">Type</th>
+                            <th style="min-width:170px">Contact</th>
+                            <th style="min-width:130px">Status</th>
+                            <th class="text-right" style="min-width:110px">Quote</th>
+                            <th class="text-right" style="min-width:110px">Deposit</th>
+                            <th style="min-width:130px">Balance due</th>
+                            <th style="min-width:170px">Notes</th>
+                            <th class="no-print"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="vendor-body"></tbody>
+                </table>
+            </div>
+            <p id="vendor-empty" class="text-sm text-gray-400 py-6 text-center hidden">No vendors yet — add your first above.</p>
+        </div>
+    </section>
+
+    <!-- ============ DAY OF ============ -->
+    <section id="view-dayof" class="view hidden space-y-6">
+        <div class="card p-6 no-print">
+            <div class="flex flex-wrap items-end gap-3">
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Time</label>
+                    <input id="ns-time" type="time" class="inp mt-1" style="width:130px">
+                </div>
+                <div class="flex-1 min-w-[200px]">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">What's happening</label>
+                    <input id="ns-title" class="inp mt-1" placeholder="e.g. First look, before the ceremony" onkeydown="if(event.key==='Enter')addSchedule()">
+                </div>
+                <div class="flex-1 min-w-[180px]">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Who / where</label>
+                    <input id="ns-who" class="inp mt-1" placeholder="optional" onkeydown="if(event.key==='Enter')addSchedule()">
+                </div>
+                <button class="btn btn-primary" onclick="addSchedule()">+ Add</button>
+            </div>
+        </div>
+
+        <div class="card p-6">
+            <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 mb-5">
+                <h3 class="text-lg font-bold">Wedding day run sheet</h3>
+                <span id="dayof-date" class="text-xs text-gray-500"></span>
+            </div>
+            <div id="schedule-wrap" class="space-y-1"></div>
+            <p id="schedule-empty" class="text-sm text-gray-400 py-6 text-center hidden">Nothing scheduled yet.</p>
+        </div>
+    </section>
+
+    <!-- ============ SETUP ============ -->
+    <section id="view-setup" class="view hidden space-y-6">
+        <div class="card p-6">
+            <h3 class="text-lg font-bold mb-5">The basics</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Partner 1</label>
+                    <input id="set-p1" class="inp mt-1" onchange="setField('couple','partner1',this.value)">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Partner 2</label>
+                    <input id="set-p2" class="inp mt-1" onchange="setField('couple','partner2',this.value)">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Wedding date</label>
+                    <input id="set-date" type="date" class="inp mt-1" onchange="setField('couple','date',this.value)">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Venue</label>
+                    <input id="set-venue" class="inp mt-1" onchange="setField('couple','venue',this.value)">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Location</label>
+                    <input id="set-location" class="inp mt-1" onchange="setField('couple','location',this.value)">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Guest target</label>
+                    <input id="set-target" type="number" min="0" class="inp inp-num mt-1" onchange="setField('couple','guestTarget',parseInt(this.value)||0)">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Currency</label>
+                    <select id="set-currency" class="inp mt-1" onchange="setField('settings','currency',this.value)">
+                        <option value="USD">USD — US dollar</option>
+                        <option value="CAD">CAD — Canadian dollar</option>
+                        <option value="AUD">AUD — Australian dollar</option>
+                        <option value="EUR">EUR — Euro</option>
+                        <option value="GBP">GBP — Pound sterling</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Meal options (comma separated)</label>
+                    <input id="set-meals" class="inp mt-1" onchange="setMeals(this.value)">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-gray-500">Side labels (comma separated)</label>
+                    <input id="set-sides" class="inp mt-1" onchange="setSides(this.value)">
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-6">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div class="max-w-2xl">
+                    <h3 class="text-lg font-bold mb-2">Destination wedding mode</h3>
+                    <p class="text-sm text-gray-600 leading-relaxed">
+                        Turn this on for a wedding away from home. It adds the travel-and-paperwork tasks a local wedding never
+                        needs — passports, guest travel logistics, shipping décor, and the marriage licence rules of wherever
+                        you're marrying — and shows a reference panel on the Checklist tab.
+                    </p>
+                </div>
+                <label class="flex items-center gap-3 cursor-pointer shrink-0">
+                    <input type="checkbox" class="cb" id="set-destination" onchange="toggleDestination(this.checked)">
+                    <span class="text-sm font-semibold">Destination mode</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="card p-6">
+            <h3 class="text-lg font-bold mb-2">Your data</h3>
+            <p class="text-sm text-gray-600 mb-5">
+                Everything is saved in this browser only — nothing is uploaded anywhere. Export a backup file if you want to move
+                to another computer, or share the plan with someone else.
+            </p>
+            <div class="flex flex-wrap gap-2">
+                <button class="btn btn-primary" onclick="exportJson()">Export backup (.json)</button>
+                <button class="btn btn-ghost" onclick="document.getElementById('import-file').click()">Import backup</button>
+                <input id="import-file" type="file" accept="application/json,.json" class="hidden" onchange="importJson(this)">
+                <button class="btn btn-ghost" onclick="window.print()">Print / save as PDF</button>
+                <button class="btn btn-ghost" onclick="loadSample()">Load sample data</button>
+                <button class="btn btn-danger" onclick="resetAll()">Start over</button>
+            </div>
+            <p id="data-note" class="text-xs text-gray-500 mt-4"></p>
+        </div>
+    </section>
+</main>
+
+<footer class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">
+    <p class="text-[11px] text-gray-400 text-center">
+        Saved locally in your browser. Clearing site data will erase the plan — keep a backup export.
+        Legal and travel notes are general guidance only; confirm the current requirements with the relevant authority.
+    </p>
+</footer>
+
+<script>
+/* =========================================================
+   STATE
+   ========================================================= */
+const STORE_KEY = 'wedding.planner.v1';
+
+const PHASES = [
+    { key: 'p12',   label: '12+ months out' },
+    { key: 'p9',    label: '9–12 months out' },
+    { key: 'p6',    label: '6–9 months out' },
+    { key: 'p3',    label: '3–6 months out' },
+    { key: 'p1',    label: '1–3 months out' },
+    { key: 'month', label: 'Final month' },
+    { key: 'week',  label: 'Week of' },
+    { key: 'day',   label: 'Wedding day' },
+    { key: 'after', label: 'After the wedding' }
+];
+
+const CATEGORIES = [
+    { name: 'Venue & Rentals',      pct: 20 },
+    { name: 'Catering & Bar',       pct: 24 },
+    { name: 'Photo & Video',        pct: 12 },
+    { name: 'Attire & Beauty',      pct: 8  },
+    { name: 'Flowers & Decor',      pct: 10 },
+    { name: 'Music & Entertainment',pct: 8  },
+    { name: 'Cake & Desserts',      pct: 2  },
+    { name: 'Stationery & Signage', pct: 2  },
+    { name: 'Rings',                pct: 3  },
+    { name: 'Travel & Transport',   pct: 5  },
+    { name: 'Officiant & Legal',    pct: 2  },
+    { name: 'Gifts & Favours',      pct: 2  },
+    { name: 'Contingency',          pct: 2  }
+];
+
+const VENDOR_TYPES = ['Venue','Caterer','Bar','Photographer','Videographer','Florist','Band / DJ','Officiant','Cake','Hair & Makeup','Rentals','Planner','Transport','Stationery','Other'];
+const VENDOR_STATUS = ['Researching','Contacted','Quoted','Booked','Paid in full','Passed'];
+
+const BASE_TASKS = [
+    ['p12','Agree on the overall budget and who is contributing'],
+    ['p12','Draft the guest list and settle on a rough headcount'],
+    ['p12','Pick a season and two or three candidate dates'],
+    ['p12','Tour venues and check availability on your dates'],
+    ['p12','Book the venue and lock the date'],
+    ['p12','Decide the overall style and colour direction'],
+    ['p9','Book the photographer'],
+    ['p9','Book the caterer and set a tasting date'],
+    ['p9','Book music — band, DJ, or ceremony musicians'],
+    ['p9','Book the officiant'],
+    ['p9','Send save-the-dates'],
+    ['p9','Start shopping for wedding attire'],
+    ['p9','Reserve blocks of accommodation for guests'],
+    ['p6','Book florist and decor'],
+    ['p6','Book hair and makeup, schedule a trial'],
+    ['p6','Order the wedding attire'],
+    ['p6','Book the cake or dessert table'],
+    ['p6','Plan and book guest transportation'],
+    ['p6','Build the wedding website or info page'],
+    ['p3','Order invitations and stationery'],
+    ['p3','Choose and ask the wedding party'],
+    ['p3','Plan the rehearsal dinner'],
+    ['p3','Register for gifts, if you want a registry'],
+    ['p3','Buy wedding rings'],
+    ['p3','Book the honeymoon'],
+    ['p1','Send invitations (about 8 weeks ahead)'],
+    ['p1','Finalise the ceremony order and vows'],
+    ['p1','Confirm the menu after the tasting'],
+    ['p1','Attire fittings and alterations'],
+    ['p1','Arrange the marriage licence'],
+    ['p1','Order favours, signage and place cards'],
+    ['month','Chase outstanding RSVPs'],
+    ['month','Give the caterer the final headcount and meal counts'],
+    ['month','Finish the seating plan'],
+    ['month','Confirm timings with every vendor in writing'],
+    ['month','Write the day-of run sheet and share it'],
+    ['month','Prepare vendor final payments and gratuities'],
+    ['week','Pack for the wedding and the honeymoon'],
+    ['week','Final headcount reconfirmed with the venue'],
+    ['week','Rehearsal and rehearsal dinner'],
+    ['week','Break in your shoes'],
+    ['week','Delegate day-of jobs to specific people'],
+    ['week','Pack an emergency kit — pins, tape, plasters, stain wipes'],
+    ['day','Eat breakfast'],
+    ['day','Hand rings, licence and payments to the right person'],
+    ['day','Give the run sheet to whoever is coordinating'],
+    ['after','Return rentals and suits'],
+    ['after','Send thank-you notes'],
+    ['after','Preserve the dress and order photo albums'],
+    ['after','File the marriage licence and update your names / documents']
+];
+
+const DESTINATION_TASKS = [
+    ['p12','Check passports are valid for at least six months past the travel date'],
+    ['p12','Research the marriage licence requirements of the destination country'],
+    ['p9','Reserve a room block and negotiate group rates'],
+    ['p9','Send travel details early — destination guests need extra lead time'],
+    ['p6','Book your own flights and the wedding-party flights'],
+    ['p6','Confirm the local marriage-licence appointment and residency requirement'],
+    ['p6','Buy travel insurance covering weather cancellation'],
+    ['p3','Plan airport transfers for guests'],
+    ['p3','Decide what ships ahead versus what flies in your luggage'],
+    ['p3','Arrange welcome bags and a welcome event'],
+    ['p1','Gather legal documents — passports, birth certificates, divorce decrees or death certificates'],
+    ['p1','Confirm a wet-weather backup location'],
+    ['week','Carry the dress and rings as hand luggage'],
+    ['week','Apply for the marriage licence in country'],
+    ['after','Request certified copies of the marriage certificate before flying home']
+];
+
+const DAYOF_SEED = [
+    ['08:00','Breakfast and getting-ready begins',''],
+    ['10:00','Hair and makeup start','Bridal suite'],
+    ['12:30','Photographer arrives — detail shots',''],
+    ['13:30','Get dressed',''],
+    ['14:30','First look and couple portraits',''],
+    ['15:30','Guests arrive, welcome drinks',''],
+    ['16:00','Ceremony',''],
+    ['16:30','Cocktail hour and family photos',''],
+    ['18:00','Guests seated, entrances',''],
+    ['18:15','Dinner service',''],
+    ['19:30','Speeches and toasts',''],
+    ['20:15','First dance',''],
+    ['20:30','Dancing',''],
+    ['22:00','Cake cutting',''],
+    ['23:30','Last call',''],
+    ['00:00','Send-off','']
+];
+
+function uid() { return 'i' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-3); }
+
+function defaultState() {
+    const s = {
+        version: 1,
+        couple:   { partner1: '', partner2: '', date: '', venue: '', location: '', guestTarget: 80 },
+        settings: { currency: 'USD', budget: 40000, destination: false, estimatesTouched: false,
+                    meals: ['Beef','Fish','Vegetarian','Kids'], sides: ['Partner 1','Partner 2','Both'] },
+        budget: [], guests: [], tables: [], tasks: [], vendors: [], schedule: []
+    };
+    s.budget = CATEGORIES.map(c => ({
+        id: uid(), category: c.name, item: c.name, vendor: '',
+        estimate: Math.round(s.settings.budget * c.pct / 100), actual: 0, paid: 0
+    }));
+    s.tasks = BASE_TASKS.map(t => ({ id: uid(), phase: t[0], title: t[1], due: '', done: false, origin: 'base' }));
+    s.schedule = DAYOF_SEED.map(r => ({ id: uid(), time: r[0], title: r[1], who: r[2] }));
+    return s;
+}
+
+let S = defaultState();
+let charts = {};
+let activeView = 'dashboard';
+
+/* =========================================================
+   PERSISTENCE
+   ========================================================= */
+function save() {
+    try {
+        localStorage.setItem(STORE_KEY, JSON.stringify(S));
+        flashSaved();
+    } catch (e) {
+        console.warn('Could not save to localStorage:', e);
+    }
+}
+
+function loadStored() {
+    try {
+        const raw = localStorage.getItem(STORE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return migrate(parsed);
+    } catch (e) {
+        console.warn('Stored plan could not be read, starting fresh:', e);
+        return null;
+    }
+}
+
+/* Fills in anything a older/partial saved file is missing so the app never
+   renders against undefined arrays. */
+function migrate(obj) {
+    const base = defaultState();
+    const out = Object.assign({}, base, obj || {});
+    out.couple   = Object.assign({}, base.couple,   obj.couple   || {});
+    out.settings = Object.assign({}, base.settings, obj.settings || {});
+    ['budget','guests','tables','tasks','vendors','schedule'].forEach(k => {
+        if (!Array.isArray(out[k])) out[k] = base[k];
+    });
+    if (!Array.isArray(out.settings.meals) || !out.settings.meals.length) out.settings.meals = base.settings.meals;
+    if (!Array.isArray(out.settings.sides) || !out.settings.sides.length) out.settings.sides = base.settings.sides;
+    out.guests.forEach(g => { g.party = Math.max(1, parseInt(g.party) || 1); });
+    return out;
+}
+
+let flashTimer = null;
+function flashSaved() {
+    const el = document.getElementById('saveFlash');
+    if (!el) return;
+    el.classList.add('show');
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => el.classList.remove('show'), 1200);
+}
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+function money(n) {
+    const v = Number(n) || 0;
+    try {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency', currency: S.settings.currency || 'USD', maximumFractionDigits: 0
+        }).format(v);
+    } catch (e) {
+        return '$' + Math.round(v).toLocaleString();
+    }
+}
+function num(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+function esc(s) {
+    return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function parseDate(str) {
+    if (!str) return null;
+    const p = String(str).split('-').map(Number);
+    if (p.length !== 3 || p.some(isNaN)) return null;
+    return new Date(p[0], p[1] - 1, p[2]);
+}
+function today() { const t = new Date(); return new Date(t.getFullYear(), t.getMonth(), t.getDate()); }
+function daysUntil(str) {
+    const d = parseDate(str);
+    if (!d) return null;
+    return Math.round((d - today()) / 86400000);
+}
+function longDate(str) {
+    const d = parseDate(str);
+    if (!d) return '';
+    return d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+}
+function pct(a, b) { return b > 0 ? Math.min(100, Math.round(a / b * 100)) : 0; }
+/* Charts come from a CDN — opened offline the page must still work, just without them. */
+function chartsReady() { return typeof Chart !== 'undefined'; }
+
+/* Totals used across several views. */
+function totals() {
+    const t = { est: 0, act: 0, paid: 0 };
+    S.budget.forEach(r => { t.est += num(r.estimate); t.act += num(r.actual); t.paid += num(r.paid); });
+    t.due = Math.max(0, t.act - t.paid);
+    t.projected = S.budget.reduce((sum, r) => sum + Math.max(num(r.actual), num(r.estimate)), 0);
+    return t;
+}
+function guestCounts() {
+    const c = { parties: S.guests.length, invited: 0, yes: 0, no: 0, maybe: 0, pending: 0 };
+    S.guests.forEach(g => {
+        const n = Math.max(1, parseInt(g.party) || 1);
+        c.invited += n;
+        if (g.rsvp === 'yes') c.yes += n;
+        else if (g.rsvp === 'no') c.no += n;
+        else if (g.rsvp === 'maybe') c.maybe += n;
+        else c.pending += n;
+    });
+    return c;
+}
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+function switchView(view) {
+    activeView = view;
+    document.querySelectorAll('.view').forEach(el => el.classList.add('hidden'));
+    const target = document.getElementById('view-' + view);
+    if (target) target.classList.remove('hidden');
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+    renderActive();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function renderAll() { renderHeader(); renderActive(); }
+
+/* A change handler that rebuilds its own table destroys the very input the
+   browser is moving focus to, so tabbing along a row or clicking straight from
+   one field into another would drop the caret. Renders triggered by an edit are
+   therefore deferred to the end of the event, and focus is put back by data-k. */
+let pendingRender = null;
+function scheduleRender() {
+    if (pendingRender) return;
+    pendingRender = setTimeout(() => {
+        pendingRender = null;
+        const a = document.activeElement;
+        const key = a && a.getAttribute ? a.getAttribute('data-k') : null;
+        const sel = a && typeof a.selectionStart === 'number' ? [a.selectionStart, a.selectionEnd] : null;
+        // Text being typed has not fired change yet, so the render would wipe it.
+        const typed = a && a.tagName === 'INPUT' && a.type !== 'checkbox' ? a.value : null;
+        renderActive();
+        if (!key) return;
+        const el = document.querySelector('[data-k="' + key + '"]');
+        if (!el || el === document.activeElement) return;
+        el.focus();
+        if (typed !== null && el.value !== typed) el.value = typed;
+        if (sel && el.setSelectionRange) {
+            try { el.setSelectionRange(sel[0], sel[1]); } catch (e) { /* not a text input */ }
+        }
+    }, 0);
+}
+
+function renderActive() {
+    renderHeader();
+    switch (activeView) {
+        case 'dashboard': renderDashboard(); break;
+        case 'budget':    renderBudget(); break;
+        case 'guests':    renderGuests(); break;
+        case 'seating':   renderSeating(); break;
+        case 'checklist': renderChecklist(); break;
+        case 'vendors':   renderVendors(); break;
+        case 'dayof':     renderSchedule(); break;
+        case 'setup':     renderSetup(); break;
+    }
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+function renderHeader() {
+    const c = S.couple;
+    const names = [c.partner1, c.partner2].filter(Boolean).join(' & ');
+    document.getElementById('hdr-couple').innerText = names || 'Your Wedding';
+
+    const bits = [];
+    if (c.date) bits.push(longDate(c.date));
+    if (c.venue) bits.push(c.venue);
+    if (c.location) bits.push(c.location);
+    document.getElementById('hdr-meta').innerText = bits.length ? bits.join('  ·  ') : 'Set your details in Setup & Data';
+
+    const d = daysUntil(c.date);
+    const daysEl = document.getElementById('hdr-days');
+    if (d === null) daysEl.innerText = '—';
+    else if (d > 0) daysEl.innerText = d;
+    else if (d === 0) daysEl.innerText = 'Today';
+    else daysEl.innerText = Math.abs(d) + 'd ago';
+
+    document.getElementById('hdr-guests').innerText = guestCounts().yes;
+    document.getElementById('hdr-budget').innerText = money(totals().projected);
+}
+
+/* =========================================================
+   DASHBOARD
+   ========================================================= */
+function renderDashboard() {
+    const g = guestCounts();
+    const t = totals();
+    const done = S.tasks.filter(x => x.done).length;
+    const budget = num(S.settings.budget);
+
+    const stat = (label, value, sub, color) =>
+        '<div class="bg-brand-sand/60 rounded-lg p-4">' +
+            '<div class="text-[10px] font-bold uppercase tracking-wider text-gray-500">' + esc(label) + '</div>' +
+            '<div class="text-2xl font-bold mt-1 ' + (color || '') + '">' + value + '</div>' +
+            '<div class="text-[11px] text-gray-500 mt-1">' + sub + '</div>' +
+        '</div>';
+
+    document.getElementById('dash-stats').innerHTML =
+        stat('Attending', g.yes, g.pending + ' still pending') +
+        stat('Invited', g.invited, g.parties + ' parties') +
+        stat('Projected spend', money(t.projected), 'of ' + money(budget) + ' budget') +
+        stat('Tasks done', done + '/' + S.tasks.length, (S.tasks.length - done) + ' to go', 'text-brand-teal');
+
+    const bar = (label, valLabel, percent, color) =>
+        '<div>' +
+            '<div class="flex justify-between text-xs mb-1"><span class="font-semibold">' + esc(label) + '</span>' +
+            '<span class="text-gray-500">' + valLabel + '</span></div>' +
+            '<div class="bar"><div style="width:' + percent + '%;background:' + color + '"></div></div>' +
+        '</div>';
+
+    const target = num(S.couple.guestTarget);
+    document.getElementById('dash-bars').innerHTML =
+        bar('Budget committed', money(t.projected) + ' of ' + money(budget),
+            pct(t.projected, budget), t.projected > budget ? '#E76F51' : '#2A9D8F') +
+        bar('Paid so far', money(t.paid) + ' paid · ' + money(t.due) + ' still due',
+            pct(t.paid, t.act || budget), '#E9C46A') +
+        bar('Headcount vs target', g.yes + ' of ' + (target || '—'),
+            pct(g.yes, target), g.yes > target ? '#E76F51' : '#264653') +
+        bar('Checklist', done + ' of ' + S.tasks.length + ' complete',
+            pct(done, S.tasks.length), '#2A9D8F');
+
+    // Next up: dated open tasks first, then undated in phase order.
+    const open = S.tasks.filter(t2 => !t2.done);
+    const dated = open.filter(t2 => t2.due).sort((a, b) => a.due.localeCompare(b.due));
+    const undated = open.filter(t2 => !t2.due)
+        .sort((a, b) => PHASES.findIndex(p => p.key === a.phase) - PHASES.findIndex(p => p.key === b.phase));
+    const next = dated.concat(undated).slice(0, 7);
+
+    document.getElementById('dash-tasks').innerHTML = next.length
+        ? next.map(t2 => {
+            const dd = t2.due ? daysUntil(t2.due) : null;
+            let flag = '<span class="chip bg-gray-100 text-gray-500">' + esc(phaseLabel(t2.phase)) + '</span>';
+            if (dd !== null) {
+                const cls = dd < 0 ? 'bg-brand-coral/15 text-brand-coral'
+                          : dd <= 14 ? 'bg-brand-gold/25 text-brand-navy'
+                          : 'bg-brand-teal/15 text-brand-darkteal';
+                const txt = dd < 0 ? Math.abs(dd) + 'd overdue' : dd === 0 ? 'due today' : 'in ' + dd + 'd';
+                flag = '<span class="chip ' + cls + '">' + txt + '</span>';
+            }
+            return '<label class="flex items-center gap-3 py-2 border-b border-gray-50 cursor-pointer">' +
+                '<input type="checkbox" class="cb" onchange="toggleTask(\'' + t2.id + '\')">' +
+                '<span class="text-sm flex-1">' + esc(t2.title) + '</span>' + flag + '</label>';
+          }).join('')
+        : '<p class="text-sm text-gray-400 py-4">Everything on the checklist is done. 🎉</p>';
+
+    renderAlerts();
+    drawRsvpChart();
+    drawDashBudgetChart();
+}
+
+function renderAlerts() {
+    const alerts = [];
+    const t = totals();
+    const g = guestCounts();
+    const budget = num(S.settings.budget);
+    const target = num(S.couple.guestTarget);
+
+    if (budget > 0 && t.projected > budget) {
+        alerts.push(['coral', 'Over budget by ' + money(t.projected - budget) +
+            '. Trim a category or raise the total in the Budget tab.']);
+    }
+    if (target > 0 && g.yes > target) {
+        alerts.push(['coral', g.yes + ' people have accepted against a target of ' + target + '. Check your venue capacity.']);
+    }
+    const overdue = S.tasks.filter(x => !x.done && x.due && daysUntil(x.due) < 0).length;
+    if (overdue) alerts.push(['gold', overdue + ' task' + (overdue > 1 ? 's are' : ' is') + ' past its due date.']);
+
+    const d = daysUntil(S.couple.date);
+    if (d !== null && d <= 45 && d >= 0 && g.pending > 0) {
+        alerts.push(['gold', g.pending + ' guests have not replied and the wedding is ' + d + ' days away. Time to chase.']);
+    }
+    const unseated = attendingParties().filter(x => !tableOf(x)).length;
+    if (d !== null && d <= 21 && d >= 0 && unseated > 0) {
+        alerts.push(['gold', unseated + ' attending parties still have no table.']);
+    }
+    if (!S.couple.date) alerts.push(['teal', 'Add your wedding date in Setup & Data to switch on the countdown and due-date warnings.']);
+
+    const colors = {
+        coral: 'border-brand-coral/40 bg-brand-coral/5 text-brand-coral',
+        gold:  'border-brand-gold/50 bg-brand-gold/10 text-brand-navy',
+        teal:  'border-brand-teal/40 bg-brand-teal/5 text-brand-darkteal'
+    };
+    document.getElementById('dash-alerts').innerHTML = alerts.map(a =>
+        '<div class="border rounded-lg px-4 py-3 text-sm font-medium ' + colors[a[0]] + '">' + esc(a[1]) + '</div>'
+    ).join('');
+}
+
+function drawRsvpChart() {
+    const g = guestCounts();
+    const ctx = document.getElementById('chartRsvp');
+    if (!ctx || !chartsReady()) return;
+    if (charts.rsvp) charts.rsvp.destroy();
+    if (!g.invited) {
+        const c = ctx.getContext('2d');
+        c.clearRect(0, 0, ctx.width, ctx.height);
+        return;
+    }
+    charts.rsvp = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Attending', 'Pending', 'Maybe', 'Declined'],
+            datasets: [{
+                data: [g.yes, g.pending, g.maybe, g.no],
+                backgroundColor: ['#2A9D8F', '#E6E2D6', '#E9C46A', '#E76F51'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false, cutout: '62%',
+            plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } }
+        }
+    });
+}
+
+function categoryRollup() {
+    const map = {};
+    S.budget.forEach(r => {
+        const k = r.category || 'Uncategorised';
+        if (!map[k]) map[k] = { category: k, estimate: 0, actual: 0, paid: 0 };
+        map[k].estimate += num(r.estimate);
+        map[k].actual   += num(r.actual);
+        map[k].paid     += num(r.paid);
+    });
+    return Object.values(map).sort((a, b) =>
+        Math.max(b.actual, b.estimate) - Math.max(a.actual, a.estimate));
+}
+
+function drawDashBudgetChart() {
+    const rows = categoryRollup().filter(r => Math.max(r.actual, r.estimate) > 0).slice(0, 8);
+    const ctx = document.getElementById('chartDashBudget');
+    if (!ctx || !chartsReady()) return;
+    if (charts.dashBudget) charts.dashBudget.destroy();
+    if (!rows.length) return;
+    charts.dashBudget = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: rows.map(r => r.category),
+            datasets: [{
+                data: rows.map(r => Math.max(r.actual, r.estimate)),
+                backgroundColor: ['#2A9D8F','#264653','#E9C46A','#E76F51','#C97B84','#20756B','#8AB3AD','#D9CBA0'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } },
+                tooltip: { callbacks: { label: c => c.label + ': ' + money(c.parsed) } }
+            }
+        }
+    });
+}
+
+/* =========================================================
+   BUDGET
+   ========================================================= */
+/* While the sheet is still the seeded split, changing the total re-spreads it —
+   once anything has been edited by hand, the total moves on its own and the
+   "Re-spread estimates" button is the only thing that overwrites the estimates. */
+function setBudget(v) {
+    S.settings.budget = Math.max(0, num(v));
+    if (!S.settings.estimatesTouched) spreadEstimates();
+    save(); scheduleRender();
+}
+
+function spreadEstimates() {
+    const total = num(S.settings.budget);
+    const byCat = {};
+    CATEGORIES.forEach(c => { byCat[c.name] = c.pct; });
+    const counts = {};
+    S.budget.forEach(r => { counts[r.category] = (counts[r.category] || 0) + 1; });
+    S.budget.forEach(r => {
+        const p = byCat[r.category];
+        if (p === undefined) return;
+        r.estimate = Math.round(total * p / 100 / counts[r.category]);
+    });
+}
+
+function addBudgetRow() {
+    S.budget.push({ id: uid(), category: CATEGORIES[0].name, item: '', vendor: '', estimate: 0, actual: 0, paid: 0 });
+    S.settings.estimatesTouched = true;
+    save(); scheduleRender();
+}
+function delBudgetRow(id) { S.budget = S.budget.filter(r => r.id !== id); save(); scheduleRender(); }
+function budgetSet(id, field, v) {
+    const r = S.budget.find(x => x.id === id);
+    if (!r) return;
+    r[field] = (field === 'estimate' || field === 'actual' || field === 'paid') ? Math.max(0, num(v)) : v;
+    if (field === 'estimate') S.settings.estimatesTouched = true;
+    save(); scheduleRender();
+}
+function payInFull(id) {
+    const r = S.budget.find(x => x.id === id);
+    if (!r) return;
+    r.paid = num(r.actual) || num(r.estimate);
+    if (!num(r.actual)) r.actual = r.paid;
+    save(); scheduleRender();
+}
+/* Spreads the total budget back over the standard category percentages,
+   leaving anything already contracted (actual > 0) untouched. */
+function rebalanceBudget() {
+    if (!confirm('Reset every estimate to the standard split of your total budget? Actuals and payments are kept.')) return;
+    spreadEstimates();
+    save(); scheduleRender();
+}
+
+function renderBudget() {
+    const t = totals();
+    const budget = num(S.settings.budget);
+    const g = guestCounts();
+
+    document.getElementById('in-budget').value = budget;
+    document.getElementById('bd-perguest').innerText = g.yes
+        ? money(t.projected / g.yes) + ' per attending guest'
+        : 'Add guests to see cost per head';
+
+    document.getElementById('bd-est').innerText = money(t.est);
+    const diff = budget - t.est;
+    document.getElementById('bd-est-note').innerHTML = budget
+        ? (diff >= 0 ? '<span class="text-brand-teal font-semibold">' + money(diff) + ' unallocated</span>'
+                     : '<span class="text-brand-coral font-semibold">' + money(-diff) + ' over budget</span>')
+        : 'Set a total budget';
+
+    document.getElementById('bd-act').innerText = money(t.act);
+    document.getElementById('bd-paid').innerText = money(t.paid) + ' paid';
+    document.getElementById('bd-due').innerText = money(t.due);
+    const rem = budget - t.projected;
+    document.getElementById('bd-remaining').innerHTML = rem >= 0
+        ? money(rem) + ' left of budget'
+        : '<span class="text-brand-coral font-semibold">' + money(-rem) + ' over budget</span>';
+
+    const catOptions = (sel) => CATEGORIES.map(c =>
+        '<option value="' + esc(c.name) + '"' + (c.name === sel ? ' selected' : '') + '>' + esc(c.name) + '</option>'
+    ).join('') + (CATEGORIES.some(c => c.name === sel) ? '' :
+        '<option value="' + esc(sel) + '" selected>' + esc(sel) + '</option>');
+
+    document.getElementById('budget-body').innerHTML = S.budget.map(r => {
+        const bal = Math.max(0, num(r.actual) - num(r.paid));
+        const settled = num(r.actual) > 0 && bal === 0;
+        return '<tr>' +
+            '<td><select class="inp" data-k="b-' + r.id + '-category" onchange="budgetSet(\'' + r.id + '\',\'category\',this.value)">' + catOptions(r.category) + '</select></td>' +
+            '<td><input class="inp" data-k="b-' + r.id + '-item" value="' + esc(r.item) + '" placeholder="Describe the line" onchange="budgetSet(\'' + r.id + '\',\'item\',this.value)"></td>' +
+            '<td><input class="inp" data-k="b-' + r.id + '-vendor" value="' + esc(r.vendor) + '" placeholder="—" onchange="budgetSet(\'' + r.id + '\',\'vendor\',this.value)"></td>' +
+            '<td><input type="number" min="0" step="50" class="inp inp-num" data-k="b-' + r.id + '-estimate" value="' + num(r.estimate) + '" onchange="budgetSet(\'' + r.id + '\',\'estimate\',this.value)"></td>' +
+            '<td><input type="number" min="0" step="50" class="inp inp-num" data-k="b-' + r.id + '-actual" value="' + num(r.actual) + '" onchange="budgetSet(\'' + r.id + '\',\'actual\',this.value)"></td>' +
+            '<td><input type="number" min="0" step="50" class="inp inp-num" data-k="b-' + r.id + '-paid" value="' + num(r.paid) + '" onchange="budgetSet(\'' + r.id + '\',\'paid\',this.value)"></td>' +
+            '<td class="text-right ' + (settled ? 'text-brand-teal' : bal > 0 ? 'text-brand-coral font-semibold' : 'text-gray-400') + '">' +
+                (settled ? 'Settled' : money(bal)) + '</td>' +
+            '<td class="no-print text-right whitespace-nowrap">' +
+                '<button class="text-[10px] font-bold text-brand-teal mr-2" title="Mark fully paid" onclick="payInFull(\'' + r.id + '\')">PAID</button>' +
+                '<span class="row-x" onclick="delBudgetRow(\'' + r.id + '\')">&times;</span></td>' +
+        '</tr>';
+    }).join('');
+
+    document.getElementById('budget-foot').innerHTML =
+        '<tr class="bg-brand-sand/60"><td colspan="3" class="p-2">Totals</td>' +
+        '<td class="text-right p-2">' + money(t.est) + '</td>' +
+        '<td class="text-right p-2">' + money(t.act) + '</td>' +
+        '<td class="text-right p-2">' + money(t.paid) + '</td>' +
+        '<td class="text-right p-2 text-brand-coral">' + money(t.due) + '</td><td class="no-print"></td></tr>';
+
+    const rollup = categoryRollup();
+    document.getElementById('rollup-body').innerHTML = rollup.map(r => {
+        const variance = r.actual > 0 ? r.actual - r.estimate : 0;
+        const share = budget > 0 ? Math.round(Math.max(r.actual, r.estimate) / budget * 100) : 0;
+        return '<tr><td class="font-medium">' + esc(r.category) + '</td>' +
+            '<td class="text-right">' + money(r.estimate) + '</td>' +
+            '<td class="text-right">' + (r.actual ? money(r.actual) : '<span class="text-gray-300">—</span>') + '</td>' +
+            '<td class="text-right ' + (variance > 0 ? 'text-brand-coral' : variance < 0 ? 'text-brand-teal' : 'text-gray-300') + '">' +
+                (variance ? (variance > 0 ? '+' : '−') + money(Math.abs(variance)) : '—') + '</td>' +
+            '<td class="text-right text-gray-500">' + share + '%</td></tr>';
+    }).join('');
+
+    drawBudgetChart(rollup);
+}
+
+function drawBudgetChart(rollup) {
+    const rows = rollup.filter(r => r.estimate > 0 || r.actual > 0);
+    const ctx = document.getElementById('chartBudget');
+    if (!ctx || !chartsReady()) return;
+    if (charts.budget) charts.budget.destroy();
+    if (!rows.length) return;
+    charts.budget = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: rows.map(r => r.category),
+            datasets: [
+                { label: 'Estimate', data: rows.map(r => r.estimate), backgroundColor: '#E6E2D6' },
+                { label: 'Actual',   data: rows.map(r => r.actual),   backgroundColor: '#2A9D8F' }
+            ]
+        },
+        options: {
+            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+            scales: {
+                x: { ticks: { callback: v => money(v), font: { size: 10 } }, grid: { color: '#F3F1EB' } },
+                y: { ticks: { font: { size: 10 } }, grid: { display: false } }
+            },
+            plugins: {
+                legend: { position: 'top', labels: { boxWidth: 10, font: { size: 11 } } },
+                tooltip: { callbacks: { label: c => c.dataset.label + ': ' + money(c.parsed.x) } }
+            }
+        }
+    });
+}
+
+/* =========================================================
+   GUESTS
+   ========================================================= */
+function addGuest() {
+    const name = document.getElementById('ng-name').value.trim();
+    if (!name) { document.getElementById('ng-name').focus(); return; }
+    S.guests.push({
+        id: uid(), name: name,
+        side: document.getElementById('ng-side').value,
+        party: Math.max(1, parseInt(document.getElementById('ng-party').value) || 1),
+        rsvp: 'pending', meal: '', table: '',
+        contact: document.getElementById('ng-contact').value.trim(), notes: ''
+    });
+    document.getElementById('ng-name').value = '';
+    document.getElementById('ng-contact').value = '';
+    document.getElementById('ng-party').value = 1;
+    document.getElementById('ng-name').focus();
+    save(); renderGuests(); renderHeader();
+}
+function delGuest(id) { S.guests = S.guests.filter(g => g.id !== id); save(); scheduleRender(); }
+function guestSet(id, field, v) {
+    const g = S.guests.find(x => x.id === id);
+    if (!g) return;
+    g[field] = (field === 'party') ? Math.max(1, parseInt(v) || 1) : v;
+    save(); scheduleRender();
+}
+
+function renderGuests() {
+    fillSelect('ng-side', S.settings.sides, document.getElementById('ng-side').value);
+    fillSelect('g-filter-side', S.settings.sides, document.getElementById('g-filter-side').value, 'All sides');
+
+    const c = guestCounts();
+    const stat = (label, val, color) =>
+        '<div class="card p-4"><div class="text-[10px] font-bold uppercase tracking-wider text-gray-500">' + label +
+        '</div><div class="text-2xl font-bold mt-1 ' + (color || '') + '">' + val + '</div></div>';
+    document.getElementById('guest-stats').innerHTML =
+        stat('Parties', c.parties) + stat('Invited', c.invited) +
+        stat('Attending', c.yes, 'text-brand-teal') + stat('Pending', c.pending) +
+        stat('Maybe', c.maybe, 'text-brand-gold') + stat('Declined', c.no, 'text-brand-coral');
+
+    const q = (document.getElementById('g-search').value || '').toLowerCase();
+    const fSide = document.getElementById('g-filter-side').value;
+    const fRsvp = document.getElementById('g-filter-rsvp').value;
+
+    const list = S.guests.filter(g => {
+        if (fSide && g.side !== fSide) return false;
+        if (fRsvp && (g.rsvp || 'pending') !== fRsvp) return false;
+        if (q && !((g.name || '') + ' ' + (g.contact || '') + ' ' + (g.notes || '')).toLowerCase().includes(q)) return false;
+        return true;
+    });
+
+    const rsvpOpts = (sel) => [['pending','Pending'],['yes','Attending'],['maybe','Maybe'],['no','Declined']]
+        .map(o => '<option value="' + o[0] + '"' + ((sel || 'pending') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('');
+    const mealOpts = (sel) => '<option value="">—</option>' + S.settings.meals
+        .map(m => '<option value="' + esc(m) + '"' + (sel === m ? ' selected' : '') + '>' + esc(m) + '</option>').join('');
+    const tableOpts = (sel) => '<option value="">Unseated</option>' + S.tables
+        .map(t => '<option value="' + t.id + '"' + (sel === t.id ? ' selected' : '') + '>' + esc(t.name) + '</option>').join('');
+    const sideOpts = (sel) => S.settings.sides
+        .map(s => '<option value="' + esc(s) + '"' + (sel === s ? ' selected' : '') + '>' + esc(s) + '</option>').join('') +
+        (S.settings.sides.includes(sel) || !sel ? '' : '<option value="' + esc(sel) + '" selected>' + esc(sel) + '</option>');
+
+    document.getElementById('guest-body').innerHTML = list.map(g =>
+        '<tr>' +
+        '<td><input class="inp" data-k="g-' + g.id + '-name" value="' + esc(g.name) + '" onchange="guestSet(\'' + g.id + '\',\'name\',this.value)"></td>' +
+        '<td><select class="inp" data-k="g-' + g.id + '-side" onchange="guestSet(\'' + g.id + '\',\'side\',this.value)">' + sideOpts(g.side) + '</select></td>' +
+        '<td><input type="number" min="1" class="inp inp-num" data-k="g-' + g.id + '-party" value="' + Math.max(1, parseInt(g.party) || 1) + '" onchange="guestSet(\'' + g.id + '\',\'party\',this.value)"></td>' +
+        '<td><select class="inp" data-k="g-' + g.id + '-rsvp" onchange="guestSet(\'' + g.id + '\',\'rsvp\',this.value)">' + rsvpOpts(g.rsvp) + '</select></td>' +
+        '<td><select class="inp" data-k="g-' + g.id + '-meal" onchange="guestSet(\'' + g.id + '\',\'meal\',this.value)">' + mealOpts(g.meal) + '</select></td>' +
+        '<td><select class="inp" data-k="g-' + g.id + '-table" onchange="guestSet(\'' + g.id + '\',\'table\',this.value)">' + tableOpts(g.table) + '</select></td>' +
+        '<td><input class="inp" data-k="g-' + g.id + '-contact" value="' + esc(g.contact) + '" placeholder="—" onchange="guestSet(\'' + g.id + '\',\'contact\',this.value)"></td>' +
+        '<td><input class="inp" data-k="g-' + g.id + '-notes" value="' + esc(g.notes) + '" placeholder="—" onchange="guestSet(\'' + g.id + '\',\'notes\',this.value)"></td>' +
+        '<td class="no-print text-right"><span class="row-x" onclick="delGuest(\'' + g.id + '\')">&times;</span></td>' +
+        '</tr>'
+    ).join('');
+    document.getElementById('guest-empty').classList.toggle('hidden', list.length > 0);
+
+    // Meal counts across attending parties only.
+    const meals = {};
+    S.guests.filter(g => g.rsvp === 'yes').forEach(g => {
+        const key = g.meal || 'Not chosen';
+        meals[key] = (meals[key] || 0) + Math.max(1, parseInt(g.party) || 1);
+    });
+    const keys = Object.keys(meals);
+    document.getElementById('meal-counts').innerHTML = keys.length
+        ? keys.map(k =>
+            '<div class="bg-brand-sand/70 rounded-lg px-4 py-3 min-w-[110px]">' +
+            '<div class="text-xl font-bold">' + meals[k] + '</div>' +
+            '<div class="text-[11px] text-gray-500">' + esc(k) + '</div></div>').join('')
+        : '<p class="text-sm text-gray-400">No confirmed guests yet.</p>';
+}
+
+function fillSelect(id, values, keep, allLabel) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const current = keep || el.value;
+    el.innerHTML = (allLabel ? '<option value="">' + allLabel + '</option>' : '') +
+        values.map(v => '<option value="' + esc(v) + '">' + esc(v) + '</option>').join('');
+    if (current && values.includes(current)) el.value = current;
+    else if (allLabel) el.value = '';
+}
+
+function csvCell(v) {
+    const s = String(v == null ? '' : v);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function exportGuestsCsv() {
+    const header = ['Name','Side','Seats','RSVP','Meal','Table','Contact','Notes'];
+    const rows = S.guests.map(g => [
+        g.name, g.side, Math.max(1, parseInt(g.party) || 1), g.rsvp || 'pending',
+        g.meal, (S.tables.find(t => t.id === g.table) || {}).name || '', g.contact, g.notes
+    ]);
+    const csv = [header].concat(rows).map(r => r.map(csvCell).join(',')).join('\r\n');
+    download(new Blob([csv], { type: 'text/csv;charset=utf-8' }), 'guest-list.csv');
+}
+
+/* =========================================================
+   SEATING
+   ========================================================= */
+function attendingParties() { return S.guests.filter(g => g.rsvp === 'yes'); }
+function tableOf(g) { return g.table && S.tables.some(t => t.id === g.table) ? g.table : ''; }
+function seatsUsed(tableId) {
+    return attendingParties().filter(g => g.table === tableId)
+        .reduce((n, g) => n + Math.max(1, parseInt(g.party) || 1), 0);
+}
+
+function addTable() {
+    const nameEl = document.getElementById('nt-name');
+    const name = nameEl.value.trim() || 'Table ' + (S.tables.length + 1);
+    const seats = Math.max(1, parseInt(document.getElementById('nt-seats').value) || 8);
+    S.tables.push({ id: uid(), name: name, seats: seats });
+    nameEl.value = '';
+    save(); renderSeating();
+}
+function delTable(id) {
+    S.guests.forEach(g => { if (g.table === id) g.table = ''; });
+    S.tables = S.tables.filter(t => t.id !== id);
+    save(); renderSeating();
+}
+function tableSet(id, field, v) {
+    const t = S.tables.find(x => x.id === id);
+    if (!t) return;
+    t[field] = (field === 'seats') ? Math.max(1, parseInt(v) || 1) : v;
+    save(); scheduleRender();
+}
+function seatGuest(guestId, tableId) {
+    const g = S.guests.find(x => x.id === guestId);
+    if (!g) return;
+    g.table = tableId;
+    save(); renderSeating();
+}
+function clearSeating() {
+    if (!confirm('Remove every table assignment? The tables themselves are kept.')) return;
+    S.guests.forEach(g => { g.table = ''; });
+    save(); renderSeating();
+}
+/* First-fit: keeps each party together and never overfills a table. */
+function autoSeat() {
+    if (!S.tables.length) { alert('Add at least one table first.'); return; }
+    const pending = attendingParties().filter(g => !tableOf(g))
+        .sort((a, b) => (parseInt(b.party) || 1) - (parseInt(a.party) || 1));
+    let placed = 0, skipped = 0;
+    pending.forEach(g => {
+        const size = Math.max(1, parseInt(g.party) || 1);
+        const t = S.tables.find(t2 => t2.seats - seatsUsed(t2.id) >= size);
+        if (t) { g.table = t.id; placed++; } else { skipped++; }
+    });
+    save(); renderSeating();
+    if (skipped) alert(placed + ' seated. ' + skipped + ' could not fit — add tables or seats.');
+}
+
+function renderSeating() {
+    const attending = attendingParties();
+    const heads = attending.reduce((n, g) => n + Math.max(1, parseInt(g.party) || 1), 0);
+    const capacity = S.tables.reduce((n, t) => n + t.seats, 0);
+    const seated = S.tables.reduce((n, t) => n + seatsUsed(t.id), 0);
+
+    const stat = (label, val, color) =>
+        '<div class="card p-4"><div class="text-[10px] font-bold uppercase tracking-wider text-gray-500">' + label +
+        '</div><div class="text-2xl font-bold mt-1 ' + (color || '') + '">' + val + '</div></div>';
+    document.getElementById('seating-summary').innerHTML =
+        stat('Attending', heads) + stat('Seats available', capacity, capacity < heads ? 'text-brand-coral' : '') +
+        stat('Seated', seated, 'text-brand-teal') + stat('Still to seat', heads - seated, heads - seated > 0 ? 'text-brand-gold' : '');
+
+    const unseated = attending.filter(g => !tableOf(g));
+    document.getElementById('unseated').innerHTML = unseated.length
+        ? unseated.map(g => {
+            const opts = S.tables.map(t => {
+                const free = t.seats - seatsUsed(t.id);
+                return '<option value="' + t.id + '"' + (free < Math.max(1, parseInt(g.party) || 1) ? ' disabled' : '') + '>' +
+                    esc(t.name) + ' (' + free + ' free)</option>';
+            }).join('');
+            return '<div class="flex items-center gap-2 bg-brand-sand/70 rounded-lg pl-3 pr-2 py-2">' +
+                '<span class="text-sm font-medium">' + esc(g.name) + '</span>' +
+                '<span class="chip bg-white text-gray-500">' + Math.max(1, parseInt(g.party) || 1) + '</span>' +
+                '<select class="inp no-print" style="width:auto" onchange="seatGuest(\'' + g.id + '\',this.value)">' +
+                '<option value="">Seat at…</option>' + opts + '</select></div>';
+          }).join('')
+        : '<p class="text-sm text-gray-400">Everyone attending has a table.</p>';
+
+    document.getElementById('tables-wrap').innerHTML = S.tables.length
+        ? S.tables.map(t => {
+            const used = seatsUsed(t.id);
+            const at = attending.filter(g => g.table === t.id);
+            const over = used > t.seats;
+            return '<div class="card p-5">' +
+                '<div class="flex items-center justify-between gap-2 mb-3">' +
+                    '<input class="inp font-semibold" data-k="tb-' + t.id + '-name" style="width:60%" value="' + esc(t.name) + '" onchange="tableSet(\'' + t.id + '\',\'name\',this.value)">' +
+                    '<div class="flex items-center gap-2">' +
+                        '<input type="number" min="1" class="inp inp-num" data-k="tb-' + t.id + '-seats" style="width:64px" value="' + t.seats + '" onchange="tableSet(\'' + t.id + '\',\'seats\',this.value)">' +
+                        '<span class="row-x no-print" onclick="delTable(\'' + t.id + '\')">&times;</span>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="bar mb-2"><div style="width:' + pct(used, t.seats) + '%;background:' + (over ? '#E76F51' : '#2A9D8F') + '"></div></div>' +
+                '<p class="text-[11px] ' + (over ? 'text-brand-coral font-semibold' : 'text-gray-500') + ' mb-3">' +
+                    used + ' of ' + t.seats + ' seats' + (over ? ' — over capacity' : '') + '</p>' +
+                (at.length
+                    ? '<ul class="space-y-1">' + at.map(g =>
+                        '<li class="flex items-center justify-between text-sm border-b border-gray-50 py-1">' +
+                        '<span>' + esc(g.name) + (Math.max(1, parseInt(g.party) || 1) > 1 ? ' <span class="text-gray-400">×' + g.party + '</span>' : '') + '</span>' +
+                        '<button class="row-x no-print" onclick="seatGuest(\'' + g.id + '\',\'\')" title="Unseat">&times;</button></li>').join('') + '</ul>'
+                    : '<p class="text-xs text-gray-300">Empty</p>') +
+            '</div>';
+          }).join('')
+        : '<div class="card p-8 text-center text-sm text-gray-400 sm:col-span-2 lg:col-span-3">No tables yet — add one above.</div>';
+}
+
+/* =========================================================
+   CHECKLIST
+   ========================================================= */
+function phaseLabel(key) { const p = PHASES.find(x => x.key === key); return p ? p.label : key; }
+function toggleTask(id) {
+    const t = S.tasks.find(x => x.id === id);
+    if (!t) return;
+    t.done = !t.done;
+    save(); scheduleRender();
+}
+function taskSet(id, field, v) {
+    const t = S.tasks.find(x => x.id === id);
+    if (!t) return;
+    t[field] = v;
+    save(); scheduleRender();
+}
+function delTask(id) { S.tasks = S.tasks.filter(t => t.id !== id); save(); scheduleRender(); }
+function addTask(phase, title) {
+    S.tasks.push({ id: uid(), phase: phase, title: title, due: '', done: false, origin: 'custom' });
+    save(); renderChecklist();
+}
+function addTaskInline(phase) {
+    const el = document.getElementById('newtask-' + phase);
+    const v = el.value.trim();
+    if (!v) return;
+    el.value = '';
+    addTask(phase, v);
+    const again = document.getElementById('newtask-' + phase);
+    if (again) again.focus();
+}
+function addTaskPrompt() {
+    const v = prompt('What needs doing?');
+    if (v && v.trim()) addTask('p3', v.trim());
+}
+
+function renderChecklist() {
+    const hideDone = document.getElementById('hide-done').checked;
+    const done = S.tasks.filter(t => t.done).length;
+    document.getElementById('task-progress-label').innerText =
+        done + ' of ' + S.tasks.length + ' complete · ' + pct(done, S.tasks.length) + '%';
+    document.getElementById('task-progress-bar').style.width = pct(done, S.tasks.length) + '%';
+
+    document.getElementById('checklist-wrap').innerHTML = PHASES.map(p => {
+        const all = S.tasks.filter(t => t.phase === p.key);
+        const shown = hideDone ? all.filter(t => !t.done) : all;
+        const d = all.filter(t => t.done).length;
+        if (!all.length && hideDone) return '';
+        return '<div class="card p-6">' +
+            '<div class="flex items-center justify-between mb-4">' +
+                '<h4 class="font-bold">' + esc(p.label) + '</h4>' +
+                '<span class="chip ' + (all.length && d === all.length ? 'bg-brand-teal/15 text-brand-darkteal' : 'bg-gray-100 text-gray-500') + '">' +
+                    d + '/' + all.length + '</span>' +
+            '</div>' +
+            (shown.length ? '<div class="space-y-1">' + shown.map(t =>
+                '<div class="flex items-center gap-3 py-1.5 border-b border-gray-50 ' + (t.done ? 'task-done' : '') + '">' +
+                    '<input type="checkbox" class="cb" data-k="t-' + t.id + '-done" ' + (t.done ? 'checked' : '') + ' onchange="toggleTask(\'' + t.id + '\')">' +
+                    '<input class="inp task-title flex-1" data-k="t-' + t.id + '-title" style="border-color:transparent;background:transparent" value="' + esc(t.title) + '" onchange="taskSet(\'' + t.id + '\',\'title\',this.value)">' +
+                    '<input type="date" class="inp no-print" data-k="t-' + t.id + '-due" style="width:150px" value="' + esc(t.due) + '" onchange="taskSet(\'' + t.id + '\',\'due\',this.value)">' +
+                    dueChip(t) +
+                    '<span class="row-x no-print" onclick="delTask(\'' + t.id + '\')">&times;</span>' +
+                '</div>').join('') + '</div>'
+             : '<p class="text-xs text-gray-300 py-2">Nothing outstanding here.</p>') +
+            '<div class="flex gap-2 mt-4 no-print">' +
+                '<input id="newtask-' + p.key + '" data-k="newtask-' + p.key + '" class="inp" placeholder="Add a task to this stage…" onkeydown="if(event.key===\'Enter\')addTaskInline(\'' + p.key + '\')">' +
+                '<button class="btn btn-ghost shrink-0" onclick="addTaskInline(\'' + p.key + '\')">Add</button>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+
+    renderLegalPanel();
+}
+
+function dueChip(t) {
+    if (t.done) return '<span class="chip bg-brand-teal/15 text-brand-darkteal">Done</span>';
+    if (!t.due) return '<span class="chip bg-gray-50 text-gray-300">No date</span>';
+    const d = daysUntil(t.due);
+    if (d < 0) return '<span class="chip bg-brand-coral/15 text-brand-coral">' + Math.abs(d) + 'd late</span>';
+    if (d === 0) return '<span class="chip bg-brand-gold/25 text-brand-navy">Today</span>';
+    if (d <= 14) return '<span class="chip bg-brand-gold/25 text-brand-navy">' + d + 'd</span>';
+    return '<span class="chip bg-gray-100 text-gray-500">' + d + 'd</span>';
+}
+
+function renderLegalPanel() {
+    const el = document.getElementById('legal-panel');
+    if (!S.settings.destination) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+    el.classList.remove('hidden');
+
+    const items = [
+        'Confirm how many days you must be in the country before you can apply for the licence.',
+        'Check which documents the registry wants — passports are universal, but many places also ask for birth certificates, and a decree absolute or death certificate if either of you was married before.',
+        'Ask whether documents need an apostille, a certified translation, or both.',
+        'Ask what the licence costs, how long it stays valid, and how many witnesses the ceremony needs.',
+        'Find out how to get certified copies of the marriage certificate, and how long they take to issue.',
+        'Confirm your home country recognises the marriage and what, if anything, you need to register on return.'
+    ];
+
+    el.innerHTML =
+        '<div class="card p-6 border-l-4 border-brand-gold">' +
+            '<h4 class="font-bold mb-3">Marrying away from home — what to check</h4>' +
+            '<ul class="space-y-2">' + items.map(i =>
+                '<li class="flex gap-3 text-sm text-gray-600 leading-relaxed"><span class="text-brand-gold">◆</span><span>' + esc(i) + '</span></li>').join('') +
+            '</ul>' +
+            '<p class="text-[11px] text-gray-500 mt-4 pt-4 border-t border-gray-100">' +
+                'General guidance, not legal advice. Fees and rules change — confirm everything directly with the registry ' +
+                'or civil authority for your destination before you book flights around a licence appointment.' +
+            '</p>' +
+        '</div>';
+}
+
+/* =========================================================
+   VENDORS
+   ========================================================= */
+function addVendor() {
+    const name = document.getElementById('nv-name').value.trim();
+    if (!name) { document.getElementById('nv-name').focus(); return; }
+    S.vendors.push({
+        id: uid(), name: name,
+        type: document.getElementById('nv-type').value,
+        contact: document.getElementById('nv-contact').value.trim(),
+        cost: Math.max(0, num(document.getElementById('nv-cost').value)),
+        deposit: 0, status: 'Researching', notes: ''
+    });
+    document.getElementById('nv-name').value = '';
+    document.getElementById('nv-contact').value = '';
+    document.getElementById('nv-cost').value = '';
+    document.getElementById('nv-name').focus();
+    save(); renderVendors();
+}
+function delVendor(id) { S.vendors = S.vendors.filter(v => v.id !== id); save(); scheduleRender(); }
+function vendorSet(id, field, v) {
+    const x = S.vendors.find(y => y.id === id);
+    if (!x) return;
+    x[field] = (field === 'cost' || field === 'deposit') ? Math.max(0, num(v)) : v;
+    save(); scheduleRender();
+}
+/* Pushes a booked vendor onto the budget so the two views agree. */
+function vendorToBudget(id) {
+    const v = S.vendors.find(x => x.id === id);
+    if (!v) return;
+    const guess = CATEGORIES.find(c => c.name.toLowerCase().includes((v.type || '').toLowerCase().split(' ')[0]));
+    S.budget.push({
+        id: uid(),
+        category: guess ? guess.name : 'Venue & Rentals',
+        item: v.type + ' — ' + v.name, vendor: v.name,
+        estimate: num(v.cost), actual: num(v.cost), paid: num(v.deposit)
+    });
+    S.settings.estimatesTouched = true;
+    save();
+    switchView('budget');
+}
+
+function renderVendors() {
+    fillSelect('nv-type', VENDOR_TYPES, document.getElementById('nv-type').value);
+
+    const booked = S.vendors.filter(v => v.status === 'Booked' || v.status === 'Paid in full').length;
+    const quoted = S.vendors.reduce((n, v) => n + num(v.cost), 0);
+    const deposits = S.vendors.reduce((n, v) => n + num(v.deposit), 0);
+    document.getElementById('vendor-summary').innerText =
+        S.vendors.length + ' tracked · ' + booked + ' booked · ' + money(quoted) + ' quoted · ' + money(deposits) + ' in deposits';
+
+    const statusOpts = (sel) => VENDOR_STATUS.map(s =>
+        '<option value="' + s + '"' + (sel === s ? ' selected' : '') + '>' + s + '</option>').join('');
+    const typeOpts = (sel) => VENDOR_TYPES.map(t =>
+        '<option value="' + t + '"' + (sel === t ? ' selected' : '') + '>' + t + '</option>').join('');
+
+    document.getElementById('vendor-body').innerHTML = S.vendors.map(v => {
+        const bal = Math.max(0, num(v.cost) - num(v.deposit));
+        return '<tr>' +
+            '<td><input class="inp font-medium" data-k="v-' + v.id + '-name" value="' + esc(v.name) + '" onchange="vendorSet(\'' + v.id + '\',\'name\',this.value)"></td>' +
+            '<td><select class="inp" data-k="v-' + v.id + '-type" onchange="vendorSet(\'' + v.id + '\',\'type\',this.value)">' + typeOpts(v.type) + '</select></td>' +
+            '<td><input class="inp" data-k="v-' + v.id + '-contact" value="' + esc(v.contact) + '" placeholder="—" onchange="vendorSet(\'' + v.id + '\',\'contact\',this.value)"></td>' +
+            '<td><select class="inp" data-k="v-' + v.id + '-status" onchange="vendorSet(\'' + v.id + '\',\'status\',this.value)">' + statusOpts(v.status) + '</select></td>' +
+            '<td><input type="number" min="0" step="50" class="inp inp-num" data-k="v-' + v.id + '-cost" value="' + num(v.cost) + '" onchange="vendorSet(\'' + v.id + '\',\'cost\',this.value)"></td>' +
+            '<td><input type="number" min="0" step="50" class="inp inp-num" data-k="v-' + v.id + '-deposit" value="' + num(v.deposit) + '" onchange="vendorSet(\'' + v.id + '\',\'deposit\',this.value)"></td>' +
+            '<td class="' + (bal > 0 ? 'text-brand-coral font-semibold' : 'text-brand-teal') + '">' + (bal > 0 ? money(bal) : 'Settled') + '</td>' +
+            '<td><input class="inp" data-k="v-' + v.id + '-notes" value="' + esc(v.notes) + '" placeholder="—" onchange="vendorSet(\'' + v.id + '\',\'notes\',this.value)"></td>' +
+            '<td class="no-print text-right whitespace-nowrap">' +
+                '<button class="text-[10px] font-bold text-brand-teal mr-2" title="Copy to budget" onclick="vendorToBudget(\'' + v.id + '\')">→ BUDGET</button>' +
+                '<span class="row-x" onclick="delVendor(\'' + v.id + '\')">&times;</span></td>' +
+        '</tr>';
+    }).join('');
+    document.getElementById('vendor-empty').classList.toggle('hidden', S.vendors.length > 0);
+}
+
+/* =========================================================
+   DAY-OF SCHEDULE
+   ========================================================= */
+function addSchedule() {
+    const title = document.getElementById('ns-title').value.trim();
+    if (!title) { document.getElementById('ns-title').focus(); return; }
+    S.schedule.push({
+        id: uid(),
+        time: document.getElementById('ns-time').value || '12:00',
+        title: title,
+        who: document.getElementById('ns-who').value.trim()
+    });
+    document.getElementById('ns-title').value = '';
+    document.getElementById('ns-who').value = '';
+    save(); renderSchedule();
+}
+function delSchedule(id) { S.schedule = S.schedule.filter(s => s.id !== id); save(); scheduleRender(); }
+function scheduleSet(id, field, v) {
+    const s = S.schedule.find(x => x.id === id);
+    if (!s) return;
+    s[field] = v;
+    save(); scheduleRender();
+}
+
+function renderSchedule() {
+    document.getElementById('dayof-date').innerText = S.couple.date ? longDate(S.couple.date) : '';
+    const rows = S.schedule.slice().sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+    document.getElementById('schedule-wrap').innerHTML = rows.map(s =>
+        '<div class="run-row py-2 border-b border-gray-50">' +
+            '<input type="time" class="inp run-time" data-k="s-' + s.id + '-time" value="' + esc(s.time) + '" onchange="scheduleSet(\'' + s.id + '\',\'time\',this.value)">' +
+            '<span class="w-2 h-2 rounded-full bg-brand-teal shrink-0"></span>' +
+            '<input class="inp run-title" data-k="s-' + s.id + '-title" value="' + esc(s.title) + '" onchange="scheduleSet(\'' + s.id + '\',\'title\',this.value)">' +
+            '<input class="inp run-who" data-k="s-' + s.id + '-who" placeholder="who / where" value="' + esc(s.who) + '" onchange="scheduleSet(\'' + s.id + '\',\'who\',this.value)">' +
+            '<span class="row-x no-print shrink-0" onclick="delSchedule(\'' + s.id + '\')">&times;</span>' +
+        '</div>').join('');
+    document.getElementById('schedule-empty').classList.toggle('hidden', rows.length > 0);
+}
+
+/* =========================================================
+   SETUP & DATA
+   ========================================================= */
+function setField(group, field, value) {
+    S[group][field] = value;
+    save(); renderAll();
+}
+function setMeals(v) {
+    const list = v.split(',').map(x => x.trim()).filter(Boolean);
+    S.settings.meals = list.length ? list : ['Beef','Fish','Vegetarian','Kids'];
+    save(); renderSetup();
+}
+function setSides(v) {
+    const list = v.split(',').map(x => x.trim()).filter(Boolean);
+    S.settings.sides = list.length ? list : ['Partner 1','Partner 2','Both'];
+    save(); renderSetup();
+}
+
+function toggleDestination(on) {
+    S.settings.destination = !!on;
+    if (on) {
+        const existing = new Set(S.tasks.map(t => t.title));
+        DESTINATION_TASKS.forEach(t => {
+            if (!existing.has(t[1])) S.tasks.push({ id: uid(), phase: t[0], title: t[1], due: '', done: false, origin: 'destination' });
+        });
+    } else {
+        // Only remove the untouched destination tasks — anything ticked or dated is kept.
+        S.tasks = S.tasks.filter(t => t.origin !== 'destination' || t.done || t.due);
+    }
+    save(); renderSetup(); renderHeader();
+}
+
+function renderSetup() {
+    document.getElementById('set-p1').value = S.couple.partner1 || '';
+    document.getElementById('set-p2').value = S.couple.partner2 || '';
+    document.getElementById('set-date').value = S.couple.date || '';
+    document.getElementById('set-venue').value = S.couple.venue || '';
+    document.getElementById('set-location').value = S.couple.location || '';
+    document.getElementById('set-target').value = S.couple.guestTarget || 0;
+    document.getElementById('set-currency').value = S.settings.currency || 'USD';
+    document.getElementById('set-meals').value = (S.settings.meals || []).join(', ');
+    document.getElementById('set-sides').value = (S.settings.sides || []).join(', ');
+    document.getElementById('set-destination').checked = !!S.settings.destination;
+
+    document.getElementById('data-note').innerText =
+        S.guests.length + ' guest entries · ' + S.budget.length + ' budget lines · ' +
+        S.tasks.length + ' tasks · ' + S.vendors.length + ' vendors · ' + S.tables.length + ' tables.';
+}
+
+function download(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function exportJson() {
+    const names = [S.couple.partner1, S.couple.partner2].filter(Boolean).join('-').replace(/\s+/g, '') || 'wedding';
+    download(new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' }), names.toLowerCase() + '-plan.json');
+}
+function importJson(input) {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (!data || typeof data !== 'object') throw new Error('not a plan file');
+            if (!confirm('Replace the current plan with the contents of this file?')) return;
+            S = migrate(data);
+            save(); renderAll();
+            alert('Plan imported.');
+        } catch (err) {
+            alert('That file could not be read as a wedding plan.');
+        } finally {
+            input.value = '';
+        }
+    };
+    reader.readAsText(file);
+}
+function resetAll() {
+    if (!confirm('Delete this plan and start from a blank planner? Export a backup first if you might want it back.')) return;
+    S = defaultState();
+    save(); renderAll();
+}
+
+function loadSample() {
+    if (!confirm('Replace the current plan with sample data?')) return;
+    S = defaultState();
+    const d = new Date();
+    d.setMonth(d.getMonth() + 8);
+    S.couple = {
+        partner1: 'Alex', partner2: 'Jordan',
+        date: d.toISOString().slice(0, 10),
+        venue: 'The Old Barn', location: '', guestTarget: 60
+    };
+    S.settings.budget = 55000;
+    S.settings.currency = 'USD';
+
+    S.budget = CATEGORIES.map(c => ({
+        id: uid(), category: c.name, item: c.name, vendor: '',
+        estimate: Math.round(55000 * c.pct / 100),
+        actual: c.pct > 9 ? Math.round(55000 * c.pct / 100 * 1.05) : 0,
+        paid: c.pct > 9 ? Math.round(55000 * c.pct / 100 * 0.4) : 0
+    }));
+
+    const sample = [
+        ['Marc & Julie Arsenault', 2, 'yes', 'Fish'], ['The Gallant Family', 4, 'yes', 'Beef'],
+        ['Sophie Doucette', 1, 'yes', 'Vegetarian'], ['Dr. Ken & Amy Liu', 2, 'yes', 'Fish'],
+        ['Patrick Murphy', 1, 'maybe', ''], ['Nadine & Eric Comeau', 2, 'yes', 'Beef'],
+        ['The Roberts Family', 3, 'pending', ''], ['Cara Whitehead', 1, 'no', ''],
+        ['Tom & Beth Ellsworth', 2, 'yes', 'Beef'], ['Jean-Luc Bernard', 1, 'yes', 'Fish'],
+        ['The Okafor Family', 4, 'pending', ''], ['Hannah Reid & guest', 2, 'yes', 'Vegetarian']
+    ];
+    const sides = S.settings.sides;
+    S.guests = sample.map((g, i) => ({
+        id: uid(), name: g[0], side: sides[i % sides.length], party: g[1],
+        rsvp: g[2], meal: g[3], table: '', contact: '', notes: ''
+    }));
+
+    S.tables = [
+        { id: uid(), name: 'Head Table', seats: 8 },
+        { id: uid(), name: 'Table 1', seats: 8 },
+        { id: uid(), name: 'Table 2', seats: 8 },
+        { id: uid(), name: 'Table 3', seats: 8 }
+    ];
+
+    S.vendors = [
+        { id: uid(), name: 'Long Table Catering', type: 'Caterer', contact: 'hello@example.com', cost: 14500, deposit: 5000, status: 'Booked', notes: 'Tasting booked' },
+        { id: uid(), name: 'Fieldstone Photography', type: 'Photographer', contact: '555-0142', cost: 6200, deposit: 2000, status: 'Booked', notes: '8h + second shooter' },
+        { id: uid(), name: 'Corner Florist', type: 'Florist', contact: 'flowers@example.com', cost: 3400, deposit: 0, status: 'Quoted', notes: 'Awaiting revised quote' },
+        { id: uid(), name: 'Northside Sound', type: 'Band / DJ', contact: '555-0177', cost: 2800, deposit: 700, status: 'Booked', notes: '' }
+    ];
+
+    // Tick off the earliest stage so the progress bar isn't empty.
+    S.tasks.filter(t => t.phase === 'p12').forEach(t => { t.done = true; });
+    autoSeat();
+    save(); renderAll();
+    switchView('dashboard');
+}
+
+/* =========================================================
+   BOOT
+   ========================================================= */
+(function init() {
+    const stored = loadStored();
+    if (stored) S = stored;
+    fillSelect('ng-side', S.settings.sides);
+    fillSelect('g-filter-side', S.settings.sides, '', 'All sides');
+    fillSelect('nv-type', VENDOR_TYPES);
+    renderSetup();
+    switchView('dashboard');
+})();
+</script>
+</body>
+</html>
