@@ -222,6 +222,14 @@
         background: var(--card); border: 2px solid var(--ink);
         border-radius: 12px; box-shadow: var(--shadow); padding: .85rem 1rem;
     }
+    /* A tile that goes somewhere says so: it lifts under the cursor. */
+    .stat-link {
+        cursor: pointer; text-align: left; width: 100%;
+        transition: transform .1s, box-shadow .1s;
+    }
+    .stat-link:hover { transform: translate(-1px, -1px); box-shadow: var(--shadow-lg); }
+    .stat-link:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
+    .stat-link:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
 
     .eyebrow {
         font-family: 'JetBrains Mono', ui-monospace, monospace;
@@ -357,18 +365,18 @@
                 <p id="hdr-meta" class="text-white/65 text-sm mt-3">Set your details in Setup &amp; Data</p>
             </div>
             <div class="flex flex-wrap items-stretch gap-3 sm:gap-4">
-                <div class="sticker sticker-tilt flex-1 min-w-[96px] sm:flex-none sm:min-w-[104px]" style="background:var(--lime)">
+                <button type="button" class="sticker stat-link sticker-tilt flex-1 min-w-[96px] sm:flex-none sm:min-w-[104px]" style="background:var(--lime)" onclick="jump('dayof')">
                     <div id="hdr-days" class="text-3xl sm:text-4xl font-serif font-bold leading-none num">—</div>
                     <div class="eyebrow mt-1.5" style="color:var(--ink)">Days to go</div>
-                </div>
-                <div class="sticker flex-1 min-w-[96px] sm:flex-none sm:min-w-[104px]">
+                </button>
+                <button type="button" class="sticker stat-link flex-1 min-w-[96px] sm:flex-none sm:min-w-[104px]" onclick="jump('guests','g-filter-rsvp','yes')">
                     <div id="hdr-guests" class="text-3xl sm:text-4xl font-serif font-bold leading-none num">0</div>
                     <div class="eyebrow mt-1.5" style="color:var(--ink-soft)">Confirmed</div>
-                </div>
-                <div class="sticker sticker-tilt-r flex-1 min-w-[116px] sm:flex-none sm:min-w-[124px]">
+                </button>
+                <button type="button" class="sticker stat-link sticker-tilt-r flex-1 min-w-[116px] sm:flex-none sm:min-w-[124px]" onclick="jump('budget')">
                     <div id="hdr-budget" class="text-3xl sm:text-4xl font-serif font-bold leading-none num">$0</div>
                     <div class="eyebrow mt-1.5" style="color:var(--ink-soft)">Projected</div>
-                </div>
+                </button>
             </div>
         </div>
     </div>
@@ -1559,6 +1567,37 @@ function guestCounts() {
 }
 
 /* =========================================================
+   KPI TILES
+   ========================================================= */
+/* Every tile is a shortcut: it lands on the section that owns the number
+   and sets the filter that shows exactly the rows behind it. */
+function statCard(label, value, sub, color, action) {
+    const inner =
+        '<div class="eyebrow" style="color:var(--ink-soft)">' + esc(label) + '</div>' +
+        '<div class="font-serif text-3xl mt-1 num ' + (color || '') + '">' + value + '</div>' +
+        (sub ? '<div class="text-[11px] mt-1" style="color:var(--ink-soft)">' + sub + '</div>' : '');
+    return action
+        ? '<button type="button" class="stat stat-link" onclick="' + action + '">' + inner + '</button>'
+        : '<div class="stat">' + inner + '</div>';
+}
+
+function jump(view, filterId, filterValue) {
+    switchView(view);
+    if (!filterId) return;
+    const el = document.getElementById(filterId);
+    if (!el) return;
+    el.value = filterValue;
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+function focusOn(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const smooth = !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+    el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+}
+
+/* =========================================================
    CELEBRATION
    ========================================================= */
 /* Fires when a whole planning stage is finished — earned, not ambient.
@@ -1707,34 +1746,31 @@ function renderDashboard() {
     const done = S.tasks.filter(x => x.done).length;
     const budget = num(S.settings.budget);
 
-    const stat = (label, value, sub, color) =>
-        '<div class="stat">' +
-            '<div class="eyebrow" style="color:var(--ink-soft)">' + esc(label) + '</div>' +
-            '<div class="font-serif text-3xl mt-1 num ' + (color || '') + '">' + value + '</div>' +
-            '<div class="text-[11px] mt-1" style="color:var(--ink-soft)">' + sub + '</div>' +
-        '</div>';
+    const stat = (label, value, sub, color, action) => statCard(label, value, sub, color, action);
 
     let tiles =
-        stat('Attending', g.yes, g.pending + ' still pending') +
-        stat('Invited', g.invited, g.parties + ' parties') +
-        stat('Projected spend', money(t.projected), 'of ' + money(budget) + ' budget') +
-        stat('Tasks done', done + '/' + S.tasks.length, (S.tasks.length - done) + ' to go', 'text-brand-teal');
+        stat('Attending', g.yes, g.pending + ' still pending', '', "jump('guests','g-filter-rsvp','yes')") +
+        stat('Invited', g.invited, g.parties + ' parties', '', "jump('guests','g-filter-rsvp','')") +
+        stat('Projected spend', money(t.projected), 'of ' + money(budget) + ' budget', '', "jump('budget')") +
+        stat('Tasks done', done + '/' + S.tasks.length, (S.tasks.length - done) + ' to go', 'text-brand-teal', "jump('checklist')");
     if (moduleOn('gifts') && S.gifts.length) {
         const owed = S.gifts.filter(x => !x.thanked).length;
         tiles += stat('Thank-yous', (S.gifts.length - owed) + '/' + S.gifts.length,
-            owed ? owed + ' still to write' : 'all written', owed ? 'text-brand-coral' : 'text-brand-teal');
+            owed ? owed + ' still to write' : 'all written', owed ? 'text-brand-coral' : 'text-brand-teal',
+            "jump('gifts','gf-filter','" + (owed ? 'unthanked' : '') + "')");
     }
     if (moduleOn('payments') && S.payments.length) {
         const pb = paymentBuckets();
         const owed = S.payments.filter(p => !p.paid).reduce((n, p) => n + num(p.amount), 0);
         tiles += stat('Still to pay', money(owed),
             pb.overdue.length ? pb.overdue.length + ' overdue' : pb.soon.length + ' due within 30 days',
-            pb.overdue.length ? 'text-brand-coral' : '');
+            pb.overdue.length ? 'text-brand-coral' : '', "jump('payments')");
     }
     if (moduleOn('inventory') && S.inventory.length) {
         const packed = S.inventory.filter(x => x.packed).length;
         tiles += stat('Packed', packed + '/' + S.inventory.length,
-            S.inventory.filter(x => x.status === 'To buy').length + ' still to buy');
+            S.inventory.filter(x => x.status === 'To buy').length + ' still to buy', '',
+            "jump('inventory','inv-filter','unpacked')");
     }
     document.getElementById('dash-stats').innerHTML = tiles;
 
@@ -2083,13 +2119,12 @@ function renderGuests() {
     fillSelect('g-filter-side', S.settings.sides, document.getElementById('g-filter-side').value, 'All sides');
 
     const c = guestCounts();
-    const stat = (label, val, color) =>
-        '<div class="stat"><div class="eyebrow" style="color:var(--ink-soft)">' + label +
-        '</div><div class="font-serif text-3xl mt-1 num ' + (color || '') + '">' + val + '</div></div>';
+    const stat = (label, val, color, action) => statCard(label, val, '', color, action);
+    const byRsvp = v => "jump('guests','g-filter-rsvp','" + v + "')";
     document.getElementById('guest-stats').innerHTML =
-        stat('Parties', c.parties) + stat('Invited', c.invited) +
-        stat('Attending', c.yes, 'text-brand-teal') + stat('Pending', c.pending) +
-        stat('Maybe', c.maybe, 'text-brand-gold') + stat('Declined', c.no, 'text-brand-coral');
+        stat('Parties', c.parties, '', byRsvp('')) + stat('Invited', c.invited, '', byRsvp('')) +
+        stat('Attending', c.yes, 'text-brand-teal', byRsvp('yes')) + stat('Pending', c.pending, '', byRsvp('pending')) +
+        stat('Maybe', c.maybe, 'text-brand-gold', byRsvp('maybe')) + stat('Declined', c.no, 'text-brand-coral', byRsvp('no'));
 
     const q = (document.getElementById('g-search').value || '').toLowerCase();
     const fSide = document.getElementById('g-filter-side').value;
@@ -2242,12 +2277,12 @@ function renderSeating() {
     const capacity = S.tables.reduce((n, t) => n + t.seats, 0);
     const seated = S.tables.reduce((n, t) => n + seatsUsed(t.id), 0);
 
-    const stat = (label, val, color) =>
-        '<div class="stat"><div class="eyebrow" style="color:var(--ink-soft)">' + label +
-        '</div><div class="font-serif text-3xl mt-1 num ' + (color || '') + '">' + val + '</div></div>';
+    const stat = (label, val, color, action) => statCard(label, val, '', color, action);
     document.getElementById('seating-summary').innerHTML =
-        stat('Attending', heads) + stat('Seats available', capacity, capacity < heads ? 'text-brand-coral' : '') +
-        stat('Seated', seated, 'text-brand-teal') + stat('Still to seat', heads - seated, heads - seated > 0 ? 'text-brand-gold' : '');
+        stat('Attending', heads, '', "jump('guests','g-filter-rsvp','yes')") +
+        stat('Seats available', capacity, capacity < heads ? 'text-brand-coral' : '', "focusOn('tables-wrap')") +
+        stat('Seated', seated, 'text-brand-teal', "focusOn('floorplan-wrap')") +
+        stat('Still to seat', heads - seated, heads - seated > 0 ? 'text-brand-gold' : '', "focusOn('unseated')");
 
     const unseated = attending.filter(g => !tableOf(g));
     document.getElementById('unseated').innerHTML = unseated.length
@@ -2474,15 +2509,12 @@ function renderPayments() {
     const outstanding = S.payments.filter(p => !p.paid).reduce((n, p) => n + num(p.amount), 0);
     const paid = S.payments.filter(p => p.paid).reduce((n, p) => n + num(p.amount), 0);
     const b = paymentBuckets();
-    const stat = (label, val, sub, color) =>
-        '<div class="stat"><div class="eyebrow" style="color:var(--ink-soft)">' + label +
-        '</div><div class="font-serif text-3xl mt-1 num ' + (color || '') + '">' + val + '</div>' +
-        '<div class="text-[11px] mt-1" style="color:var(--ink-soft)">' + sub + '</div></div>';
+    const stat = (label, val, sub, color, action) => statCard(label, val, sub, color, action);
     document.getElementById('pay-stats').innerHTML =
-        stat('Outstanding', money(outstanding), S.payments.filter(x => !x.paid).length + ' payments') +
-        stat('Paid', money(paid), S.payments.filter(x => x.paid).length + ' settled', 'text-brand-teal') +
-        stat('Due within 30 days', money(b.soon.reduce((n, p) => n + num(p.amount), 0)), b.soon.length + ' payments', 'text-brand-gold') +
-        stat('Overdue', money(b.overdue.reduce((n, p) => n + num(p.amount), 0)), b.overdue.length + ' payments', b.overdue.length ? 'text-brand-coral' : '');
+        stat('Outstanding', money(outstanding), S.payments.filter(x => !x.paid).length + ' payments', '', "focusOn('pay-groups')") +
+        stat('Paid', money(paid), S.payments.filter(x => x.paid).length + ' settled', 'text-brand-teal', "focusOn('pay-group-paid')") +
+        stat('Due within 30 days', money(b.soon.reduce((n, p) => n + num(p.amount), 0)), b.soon.length + ' payments', 'text-brand-gold', "focusOn('pay-group-soon')") +
+        stat('Overdue', money(b.overdue.reduce((n, p) => n + num(p.amount), 0)), b.overdue.length + ' payments', b.overdue.length ? 'text-brand-coral' : '', "focusOn('pay-group-overdue')");
 
     const row = (p) => {
         const d = p.due ? daysUntil(p.due) : null;
@@ -2503,8 +2535,8 @@ function renderPayments() {
         '</tr>';
     };
 
-    const group = (title, list, tone) => !list.length ? '' :
-        '<div class="card p-6">' +
+    const group = (title, list, tone, id) => !list.length ? '' :
+        '<div class="card p-6"' + (id ? ' id="' + id + '"' : '') + '>' +
             '<div class="flex items-center justify-between mb-4">' +
                 '<h4 class="font-bold ' + (tone || '') + '">' + title + '</h4>' +
                 '<span class="chip bg-gray-100 text-gray-500">' + money(list.reduce((n, p) => n + num(p.amount), 0)) + '</span>' +
@@ -2518,11 +2550,11 @@ function renderPayments() {
         '</div>';
 
     const html =
-        group('Overdue', b.overdue, 'text-brand-coral') +
-        group('Due in the next 30 days', b.soon) +
-        group('Later', b.later) +
-        group('No date yet', b.undated) +
-        group('Paid', b.paid, 'text-brand-teal');
+        group('Overdue', b.overdue, 'text-brand-coral', 'pay-group-overdue') +
+        group('Due in the next 30 days', b.soon, '', 'pay-group-soon') +
+        group('Later', b.later, '', 'pay-group-later') +
+        group('No date yet', b.undated, '', 'pay-group-undated') +
+        group('Paid', b.paid, 'text-brand-teal', 'pay-group-paid');
     document.getElementById('pay-groups').innerHTML = html ||
         '<div class="card p-8 text-center text-sm text-gray-400">Nothing scheduled yet — add a payment above, or build the schedule from your vendors.</div>';
 }
@@ -2541,15 +2573,12 @@ function renderTravel() {
     const away = S.guests.filter(g => g.away);
     const heads = (list) => list.reduce((n, g) => n + Math.max(1, parseInt(g.party) || 1), 0);
     const lifts = S.guests.filter(g => g.lift);
-    const stat = (label, val, sub, color) =>
-        '<div class="stat"><div class="eyebrow" style="color:var(--ink-soft)">' + label +
-        '</div><div class="font-serif text-3xl mt-1 num ' + (color || '') + '">' + val + '</div>' +
-        '<div class="text-[11px] mt-1" style="color:var(--ink-soft)">' + sub + '</div></div>';
+    const stat = (label, val, sub, color, action) => statCard(label, val, sub, color, action);
     document.getElementById('travel-stats').innerHTML =
-        stat('Travelling', heads(away), away.length + ' parties from away') +
-        stat('Need a bed', heads(away.filter(g => g.staying)), 'with a stay noted') +
-        stat('Need a lift', heads(lifts), lifts.length + ' parties', lifts.length ? 'text-brand-gold' : '') +
-        stat('Arrivals dated', away.filter(g => g.arrive).length, 'of ' + away.length + ' parties');
+        stat('Travelling', heads(away), away.length + ' parties from away', '', "jump('travel','tv-filter','away')") +
+        stat('Need a bed', heads(away.filter(g => g.staying)), 'with a stay noted', '', "focusOn('travel-stays')") +
+        stat('Need a lift', heads(lifts), lifts.length + ' parties', lifts.length ? 'text-brand-gold' : '', "jump('travel','tv-filter','lift')") +
+        stat('Arrivals dated', away.filter(g => g.arrive).length, 'of ' + away.length + ' parties', '', "jump('travel','tv-filter','away')");
 
     const f = document.getElementById('tv-filter').value;
     const list = S.guests.filter(g => {
@@ -2648,14 +2677,13 @@ function renderGifts() {
 
     const total = S.gifts.reduce((n, g) => n + num(g.value), 0);
     const thanked = S.gifts.filter(g => g.thanked).length;
-    const stat = (label, val, color) =>
-        '<div class="stat"><div class="eyebrow" style="color:var(--ink-soft)">' + label +
-        '</div><div class="font-serif text-3xl mt-1 num ' + (color || '') + '">' + val + '</div></div>';
+    const stat = (label, val, color, action) => statCard(label, val, '', color, action);
+    const byGift = v => "jump('gifts','gf-filter','" + v + "')";
     document.getElementById('gift-stats').innerHTML =
-        stat('Gifts logged', S.gifts.length) +
-        stat('Declared value', money(total)) +
-        stat('Thank-yous sent', thanked, 'text-brand-teal') +
-        stat('Still to write', S.gifts.length - thanked, S.gifts.length - thanked ? 'text-brand-coral' : '');
+        stat('Gifts logged', S.gifts.length, '', byGift('')) +
+        stat('Declared value', money(total), '', byGift('')) +
+        stat('Thank-yous sent', thanked, 'text-brand-teal', byGift('thanked')) +
+        stat('Still to write', S.gifts.length - thanked, S.gifts.length - thanked ? 'text-brand-coral' : '', byGift('unthanked'));
 
     const q = (document.getElementById('gf-search').value || '').toLowerCase();
     const f = document.getElementById('gf-filter').value;
@@ -2743,15 +2771,13 @@ function renderInventory() {
     const toReturn = items.filter(needsReturn).length;
     const spend = items.reduce((n, i) => n + num(i.cost), 0);
 
-    const stat = (label, val, sub, color) =>
-        '<div class="stat"><div class="eyebrow" style="color:var(--ink-soft)">' + label +
-        '</div><div class="font-serif text-3xl mt-1 num ' + (color || '') + '">' + val + '</div>' +
-        '<div class="text-[11px] mt-1" style="color:var(--ink-soft)">' + sub + '</div></div>';
+    const stat = (label, val, sub, color, action) => statCard(label, val, sub, color, action);
+    const byInv = v => "jump('inventory','inv-filter','" + v + "')";
     document.getElementById('inv-stats').innerHTML =
-        stat('Items', items.length, units + ' units · ' + money(spend) + ' costed') +
-        stat('Still to buy', toBuy, toBuy ? 'not sourced yet' : 'all sourced', toBuy ? 'text-brand-coral' : 'text-brand-teal') +
-        stat('Packed', packed + '/' + items.length, (items.length - packed) + ' to go', 'text-brand-teal') +
-        stat('To return', toReturn, 'rented or borrowed', toReturn ? 'text-brand-gold' : '') ;
+        stat('Items', items.length, units + ' units · ' + money(spend) + ' costed', '', byInv('')) +
+        stat('Still to buy', toBuy, toBuy ? 'not sourced yet' : 'all sourced', toBuy ? 'text-brand-coral' : 'text-brand-teal', byInv('tobuy')) +
+        stat('Packed', packed + '/' + items.length, (items.length - packed) + ' to go', 'text-brand-teal', byInv('unpacked')) +
+        stat('To return', toReturn, 'rented or borrowed', toReturn ? 'text-brand-gold' : '', byInv('return'));
 
     const q = (document.getElementById('inv-search').value || '').toLowerCase();
     const f = document.getElementById('inv-filter').value;
