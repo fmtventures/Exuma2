@@ -126,9 +126,12 @@ if (window.tailwind) tailwind.config = {
     <button class="tab-btn active" data-tab="tree"      onclick="switchTab('tree')">🌳 Tree &amp; Branches</button>
     <button class="tab-btn"        data-tab="person"    onclick="switchTab('person')">👤 Person Record</button>
     <button class="tab-btn"        data-tab="search"    onclick="switchTab('search')">🔎 Find Records</button>
+    <button class="tab-btn"        data-tab="kinship"   onclick="switchTab('kinship')">🧬 Kinship &amp; DNA</button>
+    <button class="tab-btn"        data-tab="census"    onclick="switchTab('census')">📊 Census</button>
     <button class="tab-btn"        data-tab="research"  onclick="switchTab('research')">🔍 Research Log</button>
     <button class="tab-btn"        data-tab="directory" onclick="switchTab('directory')">🏛️ Archives &amp; Museums</button>
     <button class="tab-btn"        data-tab="timeline"  onclick="switchTab('timeline')">📜 Timeline</button>
+    <button class="tab-btn"        data-tab="phrasebook" onclick="switchTab('phrasebook')">📖 Phrasebook</button>
     <button class="tab-btn"        data-tab="checks"    onclick="switchTab('checks')">✅ Consistency</button>
     <button class="tab-btn"        data-tab="data"      onclick="switchTab('data')">💾 Data</button>
   </nav>
@@ -222,6 +225,45 @@ if (window.tailwind) tailwind.config = {
   </div>
 </section>
 
+<!-- ══════════════════════ TAB: KINSHIP & DNA ══════════════════════ -->
+<section id="tab-kinship" class="tab-panel hidden">
+  <div class="p-4 lg:p-6 space-y-4">
+    <div>
+      <h2 class="text-2xl font-bold text-brand-navy">Kinship &amp; DNA</h2>
+      <p class="text-sm text-gray-600 max-w-2xl">Work out how any two people in the tree are related, and check whether
+        a DNA match is consistent with the paper trail.</p>
+    </div>
+    <div id="kinshipBody"></div>
+  </div>
+</section>
+
+<!-- ══════════════════════ TAB: CENSUS ══════════════════════ -->
+<section id="tab-census" class="tab-panel hidden">
+  <div class="p-4 lg:p-6">
+    <div class="mb-4">
+      <h2 class="text-2xl font-bold text-brand-navy">Census Tracker</h2>
+      <p class="text-sm text-gray-600 max-w-2xl">Every person against every enumeration they should appear in. The empty
+        cells are the work.</p>
+    </div>
+    <div id="censusBody"></div>
+  </div>
+</section>
+
+<!-- ══════════════════════ TAB: PHRASEBOOK ══════════════════════ -->
+<section id="tab-phrasebook" class="tab-panel hidden">
+  <div class="p-4 lg:p-6">
+    <div class="flex flex-wrap items-end gap-3 mb-4">
+      <div>
+        <h2 class="text-2xl font-bold text-brand-navy">Latin &amp; French Phrasebook</h2>
+        <p class="text-sm text-gray-600 max-w-2xl">The formulas parish registers are written in, and what they tell you.</p>
+      </div>
+      <input class="fld !w-56 ml-auto" placeholder="Search a word or phrase…"
+             oninput="phraseFilter=this.value; renderPhrasebook()">
+    </div>
+    <div id="phrasebookBody"></div>
+  </div>
+</section>
+
 <!-- ══════════════════════ TAB: RESEARCH LOG ══════════════════════ -->
 <section id="tab-research" class="tab-panel hidden">
   <div class="p-4 lg:p-6 space-y-4">
@@ -296,6 +338,10 @@ if (window.tailwind) tailwind.config = {
         conclusions still resting on no source at all.</p>
     </div>
     <div id="checksSummary" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+    <div class="card p-4">
+      <h3 class="font-bold text-brand-navy mb-1">Place names</h3>
+      <div id="placesBody"></div>
+    </div>
     <div id="checksBody" class="space-y-3"></div>
   </div>
 </section>
@@ -315,7 +361,22 @@ if (window.tailwind) tailwind.config = {
         <button onclick="exportJson()"   class="btn btn-ghost">⬇ Full backup (.json)</button>
         <button onclick="exportCsv()"    class="btn btn-ghost">⬇ People (.csv)</button>
         <button onclick="exportSourcesCsv()" class="btn btn-ghost">⬇ Sources (.csv)</button>
+        <button onclick="exportPacket()" class="btn btn-ghost">⬇ Shareable branch (.html)</button>
+        <button onclick="openReportsModal()" class="btn btn-ghost">🖨 Print a report</button>
       </div>
+      <p class="text-[11px] text-gray-500 mt-3">The shareable branch is a single self-contained page — four generations
+        back and three forward from whoever is selected, sources included — for emailing a relative who will not open a
+        GEDCOM.</p>
+    </div>
+
+    <div class="card p-5">
+      <div class="flex items-center justify-between mb-1">
+        <h3 class="text-lg font-bold text-brand-navy">Version history</h3>
+        <button onclick="snapshot('manual snapshot'); renderHistory(); toast('Snapshot taken.')" class="btn btn-ghost btn-sm">Take snapshot</button>
+      </div>
+      <p class="text-xs text-gray-600 mb-3">A snapshot is taken automatically before every merge, import, restore or
+        erase. The last 8 are kept in this browser.</p>
+      <div id="historyBody"></div>
     </div>
 
     <div class="card p-5">
@@ -357,6 +418,7 @@ if (window.tailwind) tailwind.config = {
   </div>
 </footer>
 
+<datalist id="placeList"></datalist>
 <div id="modalHost"></div>
 <div id="toastHost" class="fixed bottom-4 right-4 z-[200] space-y-2"></div>
 
@@ -1177,7 +1239,7 @@ function branchAdd(kind, anchorId){
         </select></div>
       <div><label class="lbl">Birth date</label><input id="qBirth" class="fld" placeholder="1802 · abt 1802 · 14 Mar 1802"></div>
       <div class="col-span-2"><label class="lbl">Birth place</label>
-        <input id="qPlace" class="fld" placeholder="Miscouche, Prince County, Prince Edward Island"></div>
+        <input id="qPlace" class="fld" list="placeList" placeholder="Miscouche, Prince County, Prince Edward Island"></div>
       ${famChoices.length>1 ? `<div class="col-span-2"><label class="lbl">Which union?</label>
         <select id="qFam" class="fld">${famChoices.map(f=>{
           const other = f.husb===anchorId ? f.wife : f.husb;
@@ -1285,6 +1347,7 @@ const TASK_STATUS = {
 };
 
 function renderPersonEditor(){
+  setTimeout(()=>{ const id = UI.editingPerson || UI.selected; if(id && P(id)) renderMedia(id); }, 0);
   const host = document.getElementById('personEditor');
   const id = UI.editingPerson || UI.selected;
   const p = P(id);
@@ -1313,6 +1376,7 @@ function renderPersonEditor(){
       <button onclick="switchTab('tree')" class="btn btn-ghost btn-sm">← Back to chart</button>
       <button onclick="openSearchFor('${p.id}')" class="btn btn-primary btn-sm">🔎 Find records</button>
       <button onclick="setAsRoot('${p.id}')" class="btn btn-ghost btn-sm">Centre chart here</button>
+      <button onclick="openMergeModal('${p.id}')" class="btn btn-ghost btn-sm">Merge duplicate</button>
       <button onclick="confirmDeletePerson('${p.id}')" class="btn btn-danger btn-sm">Delete person</button>
     </div>
   </div>
@@ -1359,7 +1423,7 @@ function renderPersonEditor(){
               <span class="text-xs font-bold text-brand-navy">${EVENT_TYPES[t]}</span>
               <input class="fld" value="${attr(ev(t).date)}" placeholder="date"
                      oninput="editEvent('${p.id}','${t}','date',this.value)">
-              <input class="fld" value="${attr(ev(t).place)}" placeholder="place"
+              <input class="fld" list="placeList" value="${attr(ev(t).place)}" placeholder="place"
                      oninput="editEvent('${p.id}','${t}','place',this.value)">
             </div>`).join('')}
           ${otherEvents.map(e=>`
@@ -1369,7 +1433,7 @@ function renderPersonEditor(){
                   .map(([k,v])=>`<option value="${k}" ${e.type===k?'selected':''}>${v}</option>`).join('')}
               </select>
               <input class="fld" value="${attr(e.date)}" placeholder="date" oninput="editOtherEvent('${p.id}','${e.id}','date',this.value)">
-              <input class="fld" value="${attr(e.place)}" placeholder="place / detail" oninput="editOtherEvent('${p.id}','${e.id}','place',this.value)">
+              <input class="fld" list="placeList" value="${attr(e.place)}" placeholder="place / detail" oninput="editOtherEvent('${p.id}','${e.id}','place',this.value)">
               <button onclick="removeOtherEvent('${p.id}','${e.id}')" class="text-brand-coral text-sm px-1">✕</button>
             </div>`).join('')}
         </div>
@@ -1490,6 +1554,18 @@ function renderPersonEditor(){
       </div>
 
       <div class="card p-4">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-bold text-brand-navy">Photos &amp; documents</h3>
+          <label class="btn btn-ghost btn-sm cursor-pointer">+ Attach
+            <input type="file" multiple accept="image/*,application/pdf" class="hidden"
+                   onchange="uploadMedia('${p.id}', this)"></label>
+        </div>
+        <p class="text-[11px] text-gray-500 mb-2">Register images, headstone photos, portraits. Stored in this browser
+          only — they are not in the JSON backup, so keep the originals somewhere safe.</p>
+        <div id="mediaGrid"></div>
+      </div>
+
+      <div class="card p-4">
         <h3 class="font-bold text-brand-navy mb-2">Notes</h3>
         <textarea class="fld h-40" placeholder="Family stories, contradictions between records, reasoning behind a conclusion…"
                   oninput="editField('${p.id}','notes',this.value)">${esc(p.notes)}</textarea>
@@ -1545,6 +1621,7 @@ function removeOtherEvent(id, evId){
 }
 function confirmDeletePerson(id){
   const n = displayName(id);
+  snapshot('before deleting a person');
   if(!confirm(`Delete ${n} permanently?\n\nRelationship links to this person are removed. Other people are kept.`)) return;
   deletePerson(id); save(); switchTab('tree'); renderAll();
   toast(`${n} deleted.`);
@@ -2176,8 +2253,9 @@ function runChecks(){
     (byKey[k] = byKey[k] || []).push(p);
   });
   Object.values(byKey).filter(g=>g.length>1).forEach(g=>{
-    add('warn', g[0].id, `Possible duplicate: ${displayName(g[0])}`,
-        `${g.length} people share this name and birth year (${g.map(x=>x.id).join(', ')}). If they are one person, merge them by relinking and deleting the spare.`);
+    out.push({ sev:'warn', personId:g[0].id, title:`Possible duplicate: ${displayName(g[0])}`,
+      detail:`${g.length} people share this name and birth year. If they are one person, merge them — everything from the second record moves onto the first.`,
+      dupIds:[g[0].id, g[1].id] });
   });
 
   // families missing a spouse
@@ -2230,7 +2308,10 @@ function renderChecks(){
             <div class="text-sm font-semibold text-brand-navy">${esc(r.title)}</div>
             <div class="text-[12px] text-gray-600 mt-.5">${esc(r.detail)}</div>
           </div>
-          <button onclick="openPerson('${r.personId}')" class="btn btn-ghost btn-sm shrink-0">${esc(truncate(displayName(r.personId),22))} →</button>
+          <div class="flex gap-1 shrink-0">
+            ${r.dupIds ? `<button onclick="openMergeModal('${r.dupIds[0]}','${r.dupIds[1]}')" class="btn btn-primary btn-sm">Merge</button>` : ''}
+            <button onclick="openPerson('${r.personId}')" class="btn btn-ghost btn-sm">${esc(truncate(displayName(r.personId),22))} →</button>
+          </div>
         </div>`).join('')}
       </div></div>`;
   }).join('');
@@ -2356,6 +2437,7 @@ function importGedcomFile(input){
 }
 function parseGedcom(text){
   if(!confirm('Importing replaces the tree currently open. Continue?')) throw new Error('cancelled');
+  snapshot('before importing a GEDCOM');
   const lines = text.split(/\r?\n/);
   const fresh = blankDB();
   const idMap = {}, famMap = {};
@@ -2487,6 +2569,7 @@ function importJsonFile(input){
       const data = JSON.parse(String(e.target.result));
       if(!data.people) throw new Error('not a tree backup');
       if(!confirm('Restoring replaces the tree currently open. Continue?')){ input.value=''; return; }
+      snapshot('before restoring a JSON backup');
       DB = data; normalizeDB(); save();
       UI.selected = DB.settings.rootId; UI.editingPerson = DB.settings.rootId;
       renderAll(); switchTab('tree'); setTimeout(fitTree,60);
@@ -2558,6 +2641,7 @@ function maxDepth(id, seen){
 function wipeAll(){
   if(!confirm('Erase every person, source and research note in this tree?\n\nThis cannot be undone. Export a backup first if you need one.')) return;
   if(!confirm('Really erase everything?')) return;
+  snapshot('before erasing the tree');
   DB = blankDB(); save(); UI.selected=null; UI.editingPerson=null;
   renderAll(); switchTab('tree');
   toast('Tree erased.');
@@ -2567,8 +2651,8 @@ function wipeAll(){
    BRANCH REPORT (printable, ahnentafel-numbered)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-function printBranchReport(){
-  const rootId = UI.selected || DB.settings.rootId;
+function printBranchReport(explicitId){
+  const rootId = explicitId || UI.selected || DB.settings.rootId;
   if(!rootId || !P(rootId)){ toast('Select a person first.', 'warn'); return; }
 
   const ahnen = [];
@@ -3237,6 +3321,8 @@ function renderSearch(){
       </div>
 
       <div class="space-y-4">
+        ${sweepPanel()}
+
         <div class="card p-4">
           <h3 class="font-bold text-brand-navy mb-1">What to search next</h3>
           <p class="text-[11px] text-gray-500 mb-3">Worked out from this person’s own dates and places — and from what
@@ -3334,6 +3420,1216 @@ function addAllPlanTasks(personId){
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   KINSHIP — how two people in the tree are related, and whether the DNA agrees
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Every ancestor of `id`, mapped to the shortest number of generations up. */
+function ancestorMap(id, maxGen){
+  maxGen = maxGen || 25;
+  const map = new Map();
+  const queue = [[id, 0]];
+  while(queue.length){
+    const [cur, g] = queue.shift();
+    if(g > maxGen) continue;
+    if(map.has(cur) && map.get(cur) <= g) continue;
+    map.set(cur, g);
+    parentsOf(cur).forEach(p => queue.push([p, g + 1]));
+  }
+  return map;
+}
+const ORDINALS = ['','first','second','third','fourth','fifth','sixth','seventh','eighth','ninth','tenth'];
+const ordinal = n => ORDINALS[n] || `${n}th`;
+function greatPrefix(n){            // n = generations beyond grand-
+  if(n <= 0) return '';
+  if(n === 1) return 'great-';
+  return `${n}× great-`;
+}
+function ancestorTerm(gen, sex){
+  const parent = sex==='M' ? 'father' : sex==='F' ? 'mother' : 'parent';
+  const grand  = sex==='M' ? 'grandfather' : sex==='F' ? 'grandmother' : 'grandparent';
+  if(gen === 1) return parent;
+  if(gen === 2) return grand;
+  return greatPrefix(gen - 2) + grand;
+}
+function descendantTerm(gen, sex){
+  const child = sex==='M' ? 'son' : sex==='F' ? 'daughter' : 'child';
+  const grand = sex==='M' ? 'grandson' : sex==='F' ? 'granddaughter' : 'grandchild';
+  if(gen === 1) return child;
+  if(gen === 2) return grand;
+  return greatPrefix(gen - 2) + grand;
+}
+
+/* Relationship of A to B, expressed as "A is the ___ of B". */
+function kinship(aId, bId){
+  if(!P(aId) || !P(bId)) return { label:'—' };
+  if(aId === bId) return { label:'the same person', kind:'self' };
+
+  if(spousesOf(aId).includes(bId)){
+    const a = P(aId);
+    return { label: a.sex==='M' ? 'husband' : a.sex==='F' ? 'wife' : 'spouse', kind:'spouse' };
+  }
+
+  const A = ancestorMap(aId), B = ancestorMap(bId);
+  let best = null;
+  A.forEach((ga, id) => {
+    if(!B.has(id)) return;
+    const gb = B.get(id), tot = ga + gb;
+    if(!best || tot < best.tot || (tot === best.tot && Math.abs(ga-gb) < Math.abs(best.ga-best.gb)))
+      best = { id, ga, gb, tot };
+  });
+  if(!best) return { label:'no blood relationship recorded in this tree', kind:'none' };
+
+  const a = P(aId), { ga, gb } = best;
+  const via = P(best.id);
+
+  if(ga === 0) return { label: ancestorTerm(gb, a.sex), kind:'direct', ...best, via };
+  if(gb === 0) return { label: descendantTerm(ga, a.sex), kind:'direct', ...best, via };
+
+  if(ga === 1 && gb === 1){
+    const fa = famcOf(aId), fb = famcOf(bId);
+    const full = fa && fb && fa.id === fb.id && fa.husb && fa.wife;
+    const term = a.sex==='M' ? 'brother' : a.sex==='F' ? 'sister' : 'sibling';
+    return { label: full ? term : `half-${term}`, kind:'sibling', ...best, via };
+  }
+  if(ga === 1){   // A is one generation from the common ancestor, B is further
+    const term = a.sex==='M' ? 'uncle' : a.sex==='F' ? 'aunt' : 'aunt or uncle';
+    return { label: (gb > 2 ? greatPrefix(gb - 2) : '') + term, kind:'avuncular', ...best, via };
+  }
+  if(gb === 1){
+    const term = a.sex==='M' ? 'nephew' : a.sex==='F' ? 'niece' : 'nephew or niece';
+    return { label: (ga > 2 ? greatPrefix(ga - 2) : '') + term, kind:'avuncular', ...best, via };
+  }
+  const degree = Math.min(ga, gb) - 1;
+  const removed = Math.abs(ga - gb);
+  let label = `${ordinal(degree)} cousin`;
+  if(removed === 1) label += ' once removed';
+  else if(removed === 2) label += ' twice removed';
+  else if(removed > 2) label += ` ${removed}× removed`;
+  return { label, kind:'cousin', degree, removed, ...best, via };
+}
+
+/* Path from a person up to the common ancestor, for showing the working. */
+function pathUp(fromId, ancestorId, gens){
+  const path = [fromId];
+  let cur = fromId;
+  for(let i = 0; i < gens; i++){
+    const next = parentsOf(cur).find(p => {
+      const m = ancestorMap(p);
+      return p === ancestorId || m.has(ancestorId);
+    });
+    if(!next) break;
+    path.push(next);
+    cur = next;
+    if(cur === ancestorId) break;
+  }
+  return path;
+}
+
+/* ---------- shared DNA ----------
+   Ranges are the Shared cM Project's published figures (v4), rounded. They are
+   observed ranges, not rules: autosomal inheritance is random, and the ranges
+   overlap heavily below about 200 cM. */
+const CM_TABLE = [
+  { rel:'Parent / child',                          min:3330, max:3720, avg:3485 },
+  { rel:'Full sibling',                            min:2209, max:3384, avg:2613 },
+  { rel:'Half sibling, grandparent/grandchild, aunt/uncle, niece/nephew',
+                                                   min:1160, max:2436, avg:1759 },
+  { rel:'First cousin',                            min:396,  max:1397, avg:866 },
+  { rel:'Half first cousin, first cousin once removed, great-grandparent',
+                                                   min:102,  max:980,  avg:433 },
+  { rel:'Second cousin',                           min:41,   max:592,  avg:229 },
+  { rel:'Half second cousin, second cousin once removed',
+                                                   min:14,   max:353,  avg:122 },
+  { rel:'Third cousin',                            min:21,   max:217,  avg:73 },
+  { rel:'Third cousin once removed',               min:0,    max:173,  avg:48 },
+  { rel:'Fourth cousin',                           min:0,    max:139,  avg:35 },
+  { rel:'Fourth cousin once removed',              min:0,    max:110,  avg:28 },
+  { rel:'Fifth cousin or more distant',            min:0,    max:117,  avg:25 }
+];
+function predictFromCm(cm){
+  const n = parseFloat(cm);
+  if(isNaN(n) || n < 0) return null;
+  const hits = CM_TABLE.filter(r => n >= r.min && n <= r.max)
+                       .map(r => Object.assign({}, r, { distance: Math.abs(n - r.avg) }))
+                       .sort((a,b) => a.distance - b.distance);
+  return { cm:n, hits };
+}
+/* Rough expected cM for a computed kinship, to sanity-check a paper trail. */
+function expectedCm(k){
+  if(!k) return null;
+  if(k.kind === 'direct' && (k.ga === 1 || k.gb === 1)) return CM_TABLE[0];
+  if(k.kind === 'sibling') return /half/.test(k.label) ? CM_TABLE[2] : CM_TABLE[1];
+  if(k.kind === 'avuncular') return CM_TABLE[2];
+  if(k.kind === 'direct' && (k.ga === 2 || k.gb === 2)) return CM_TABLE[2];
+  if(k.kind === 'cousin'){
+    const d = k.degree, r = k.removed;
+    if(d === 1 && r === 0) return CM_TABLE[3];
+    if(d === 1 && r === 1) return CM_TABLE[4];
+    if(d === 2 && r === 0) return CM_TABLE[5];
+    if(d === 2 && r === 1) return CM_TABLE[6];
+    if(d === 3 && r === 0) return CM_TABLE[7];
+    if(d === 3 && r === 1) return CM_TABLE[8];
+    if(d === 4 && r === 0) return CM_TABLE[9];
+    if(d === 4 && r === 1) return CM_TABLE[10];
+    return CM_TABLE[11];
+  }
+  return null;
+}
+
+let kinState = { a:null, b:null, cm:'' };
+function renderKinship(){
+  const people = allPeople().sort((x,y)=>displayName(x).localeCompare(displayName(y)));
+  const host = document.getElementById('kinshipBody');
+  if(people.length < 1){
+    host.innerHTML = `<div class="card p-8 text-center text-sm text-gray-600">Add people to the tree first.</div>`;
+    return;
+  }
+  if(!kinState.a || !P(kinState.a)) kinState.a = UI.selected && P(UI.selected) ? UI.selected : people[0].id;
+  if(!kinState.b || !P(kinState.b)) kinState.b = people[1] ? people[1].id : people[0].id;
+
+  const k = kinship(kinState.a, kinState.b);
+  const opts = sel => people.map(p=>`<option value="${p.id}" ${p.id===sel?'selected':''}>${esc(displayName(p))} ${esc(lifeSpan(p)?'('+lifeSpan(p)+')':'')}</option>`).join('');
+
+  let working = '';
+  if(k.via){
+    const up1 = pathUp(kinState.a, k.id, k.ga), up2 = pathUp(kinState.b, k.id, k.gb);
+    const chain = list => list.map((id,i)=>`${i?' → ':''}<button onclick="openPerson('${id}')" class="text-brand-teal hover:underline">${esc(displayName(id))}</button>`).join('');
+    working = `<div class="mt-3 pt-3 border-t border-brand-beige text-[12px] text-gray-600 space-y-1">
+      <div><span class="lbl !inline">Common ancestor</span> <strong class="text-brand-navy">${esc(displayName(k.via))}</strong></div>
+      <div>${chain(up1)}</div>
+      <div>${chain(up2)}</div>
+    </div>`;
+  }
+
+  const exp = expectedCm(k);
+  const pred = kinState.cm ? predictFromCm(kinState.cm) : null;
+  let dnaVerdict = '';
+  if(pred && exp){
+    const inRange = pred.cm >= exp.min && pred.cm <= exp.max;
+    dnaVerdict = `<div class="mt-2 text-[12px] ${inRange?'text-brand-darkteal':'text-brand-coral'}">
+      ${pred.cm} cM is ${inRange?'consistent with':'outside the observed range for'} <strong>${esc(exp.rel)}</strong>
+      (${exp.min}–${exp.max} cM, average ${exp.avg}).
+      ${inRange?'That supports the paper trail without proving it.':'Either the paper trail is wrong somewhere, or this is one of the outliers the ranges are built from.'}</div>`;
+  }
+
+  host.innerHTML = `
+    <div class="grid gap-4 lg:grid-cols-2">
+      <div class="card p-4">
+        <h3 class="font-bold text-brand-navy mb-3">How are they related?</h3>
+        <div class="space-y-2">
+          <div><label class="lbl">Person</label><select class="fld" onchange="kinState.a=this.value; renderKinship()">${opts(kinState.a)}</select></div>
+          <div><label class="lbl">is the … of</label><select class="fld" onchange="kinState.b=this.value; renderKinship()">${opts(kinState.b)}</select></div>
+        </div>
+        <div class="mt-3 p-3 rounded-md bg-brand-sand/60 border border-brand-beige">
+          <p class="text-[13px] text-gray-600">${esc(displayName(kinState.a))} is the</p>
+          <p class="text-xl font-bold text-brand-navy">${esc(k.label)}</p>
+          <p class="text-[13px] text-gray-600">of ${esc(displayName(kinState.b))}</p>
+          ${working}
+        </div>
+      </div>
+
+      <div class="card p-4">
+        <h3 class="font-bold text-brand-navy mb-1">What does the DNA allow?</h3>
+        <p class="text-[11px] text-gray-500 mb-3">Enter the shared centimorgans from a match. Ranges are the Shared cM
+          Project's observed figures — overlapping heavily below ~200 cM, and stretched further by Acadian and Québécois
+          endogamy, where distant cousins share more DNA than the tables predict.</p>
+        <label class="lbl">Shared cM</label>
+        <input class="fld" value="${attr(kinState.cm)}" placeholder="e.g. 214"
+               oninput="kinState.cm=this.value; renderKinship()">
+        ${dnaVerdict}
+        ${pred ? (pred.hits.length ? `
+          <div class="mt-3 space-y-1.5">
+            <div class="lbl">Possible relationships, closest fit first</div>
+            ${pred.hits.map(h=>`<div class="flex items-baseline gap-2 text-[13px] border-b border-brand-beige/60 pb-1">
+              <span class="text-brand-navy flex-1">${esc(h.rel)}</span>
+              <span class="text-gray-500 text-[11px] tabular-nums">${h.min}–${h.max} · avg ${h.avg}</span>
+            </div>`).join('')}
+          </div>` : `<p class="text-[13px] text-brand-coral mt-3">No published range covers ${esc(String(pred.cm))} cM.
+             Above ~3720 cM suggests identical twins or a sample problem.</p>`) : ''}
+      </div>
+    </div>
+
+    <div class="card p-4 mt-4">
+      <h3 class="font-bold text-brand-navy mb-2">DNA matches recorded across the tree</h3>
+      ${allPeople().flatMap(p=>(p.dna||[]).map(d=>({p,d}))).length ? `
+        <table class="w-full text-sm">
+          <thead class="bg-brand-sand/60 text-[11px] uppercase tracking-wide text-gray-600">
+            <tr><th class="text-left px-2 py-1.5">Match</th><th class="text-left px-2 py-1.5">Tested against</th>
+                <th class="text-left px-2 py-1.5">cM</th><th class="text-left px-2 py-1.5">Suggests</th></tr></thead>
+          <tbody>
+          ${allPeople().flatMap(p=>(p.dna||[]).map(d=>{
+            const pr = predictFromCm(d.cm);
+            return `<tr class="border-t border-brand-beige row-hover">
+              <td class="px-2 py-1.5">${esc(d.match)}${d.rel?`<div class="text-[11px] text-gray-500">${esc(d.rel)}</div>`:''}</td>
+              <td class="px-2 py-1.5"><button onclick="openPerson('${p.id}')" class="text-brand-teal hover:underline">${esc(displayName(p))}</button></td>
+              <td class="px-2 py-1.5 tabular-nums">${esc(d.cm||'—')}</td>
+              <td class="px-2 py-1.5 text-[12px] text-gray-600">${pr && pr.hits.length ? esc(pr.hits[0].rel) : '—'}</td>
+            </tr>`;
+          })).join('')}
+          </tbody></table>`
+        : '<p class="text-[13px] text-gray-500">No DNA matches recorded yet. Add them from a person record.</p>'}
+    </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MERGE — fold a duplicate into the person you are keeping
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const MERGE_FIELDS = [
+  ['given','Given name(s)'], ['surname','Surname'], ['surnameVariants','Surname variants'],
+  ['sex','Sex'], ['occupation','Occupation'], ['religion','Religion'], ['origin','Origin / arrival']
+];
+function openMergeModal(keepId, dropId){
+  const people = allPeople().filter(p=>p.id!==keepId).sort((a,b)=>displayName(a).localeCompare(displayName(b)));
+  if(!people.length){ toast('There is nobody else to merge with.', 'warn'); return; }
+  const keep = P(keepId);
+  const drop = dropId ? P(dropId) : people[0];
+  if(!keep || !drop) return;
+
+  const rows = MERGE_FIELDS.filter(([f]) => (keep[f]||'') !== (drop[f]||'') && (keep[f] || drop[f]))
+    .map(([f,label])=>`
+      <tr class="border-t border-brand-beige">
+        <td class="px-2 py-1.5 text-[12px] font-bold text-gray-600">${label}</td>
+        <td class="px-2 py-1.5"><label class="flex items-start gap-1.5 cursor-pointer">
+          <input type="radio" name="mf_${f}" value="keep" checked class="mt-1 accent-brand-teal">
+          <span class="text-[13px]">${esc(keep[f]||'—')}</span></label></td>
+        <td class="px-2 py-1.5"><label class="flex items-start gap-1.5 cursor-pointer">
+          <input type="radio" name="mf_${f}" value="drop" class="mt-1 accent-brand-teal">
+          <span class="text-[13px]">${esc(drop[f]||'—')}</span></label></td>
+      </tr>`).join('');
+
+  openModal('Merge two records', `
+    <p class="text-xs text-gray-600 mb-3">Everything from the second record moves onto the first: events, sources,
+      research tasks, DNA notes and family links. The second record is then deleted. Where the two disagree, choose
+      which value survives — the discarded one is written into the notes rather than lost.</p>
+    <div class="grid sm:grid-cols-2 gap-3 mb-3">
+      <div><label class="lbl">Keep this record</label>
+        <div class="fld bg-brand-sand/60 font-semibold">${esc(displayName(keep))} ${esc(lifeSpan(keep))}</div></div>
+      <div><label class="lbl">Merge in and delete</label>
+        <select id="mergeDrop" class="fld" onchange="openMergeModal('${keepId}', this.value)">
+          ${people.map(p=>`<option value="${p.id}" ${p.id===drop.id?'selected':''}>${esc(displayName(p))} ${esc(lifeSpan(p)?'('+lifeSpan(p)+')':'')}</option>`).join('')}
+        </select></div>
+    </div>
+    ${rows ? `<table class="w-full border border-brand-beige rounded-md">
+      <thead class="bg-brand-sand/60 text-[11px] uppercase tracking-wide text-gray-600">
+        <tr><th class="text-left px-2 py-1.5">Field</th><th class="text-left px-2 py-1.5">Keep</th><th class="text-left px-2 py-1.5">Incoming</th></tr>
+      </thead><tbody>${rows}</tbody></table>`
+      : '<p class="text-[13px] text-gray-500">No conflicting fields — everything merges cleanly.</p>'}
+    <div class="mt-3 text-[12px] text-gray-600">
+      Incoming: ${(drop.events||[]).length} event(s), ${(drop.sources||[]).length} source(s),
+      ${(drop.tasks||[]).length} task(s), ${(drop.dna||[]).length} DNA note(s).
+    </div>`,
+    `<button onclick="closeModal()" class="btn btn-ghost">Cancel</button>
+     <button onclick="commitMerge('${keepId}', document.getElementById('mergeDrop').value)" class="btn btn-primary">Merge records</button>`,
+    {wide:true});
+}
+function commitMerge(keepId, dropId){
+  const keep = P(keepId), drop = P(dropId);
+  if(!keep || !drop || keepId === dropId){ toast('Choose two different records.', 'warn'); return; }
+  if(isDescendantOf(keepId, dropId) || isDescendantOf(dropId, keepId)){
+    toast('These two are ancestor and descendant of each other — merging them would collapse a generation.', 'error');
+    return;
+  }
+  snapshot(`before merging ${displayName(drop)} into ${displayName(keep)}`);
+
+  const discarded = [];
+  MERGE_FIELDS.forEach(([f,label])=>{
+    const el = document.querySelector(`input[name="mf_${f}"]:checked`);
+    const choice = el ? el.value : 'keep';
+    const a = keep[f]||'', b = drop[f]||'';
+    if(!a && b){ keep[f] = b; return; }
+    if(a && b && a !== b){
+      if(choice === 'drop'){ keep[f] = b; discarded.push(`${label}: ${a}`); }
+      else discarded.push(`${label}: ${b}`);
+    }
+  });
+
+  // events — keep both unless they are the same type, date and place
+  (drop.events||[]).forEach(e=>{
+    const dup = (keep.events||[]).some(x => x.type===e.type && (x.date||'')===(e.date||'') && (x.place||'')===(e.place||''));
+    if(!dup) keep.events.push(Object.assign({}, e, { id:uid() }));
+  });
+  (drop.sources||[]).forEach(s => keep.sources.push(Object.assign({}, s, { id:uid() })));
+  (drop.tasks||[]).forEach(t => keep.tasks.push(Object.assign({}, t, { id:uid() })));
+  (drop.dna||[]).forEach(d => keep.dna.push(Object.assign({}, d, { id:uid() })));
+  if(drop.notes) keep.notes = [keep.notes, drop.notes].filter(Boolean).join('\n\n');
+  if(discarded.length)
+    keep.notes = [keep.notes, `Merged from a duplicate record on ${new Date().toISOString().slice(0,10)}. Values not carried forward — ${discarded.join('; ')}.`].filter(Boolean).join('\n\n');
+
+  // family links
+  allFamilies().forEach(f=>{
+    if(f.husb === dropId) f.husb = (keep.sex==='F' && !f.wife) ? f.husb : keepId;
+    if(f.wife === dropId) f.wife = keepId;
+    if(f.husb === dropId) f.husb = keepId;
+    f.children = (f.children||[]).map(c => c === dropId ? keepId : c);
+    f.children = f.children.filter((c,i) => f.children.indexOf(c) === i);
+    if(f.husb === f.wife) f.wife = null;
+  });
+  // a person cannot be their own parent after the swap
+  allFamilies().forEach(f=>{
+    if((f.husb === keepId || f.wife === keepId) && f.children.includes(keepId))
+      f.children = f.children.filter(c => c !== keepId);
+  });
+  // collapse duplicate parent families
+  const famcs = allFamilies().filter(f => (f.children||[]).includes(keepId));
+  if(famcs.length > 1){
+    const primary = famcs.find(f => f.husb || f.wife) || famcs[0];
+    famcs.filter(f => f !== primary).forEach(f=>{
+      if(!primary.husb && f.husb) primary.husb = f.husb;
+      if(!primary.wife && f.wife) primary.wife = f.wife;
+      f.children = f.children.filter(c => c !== keepId);
+      if(!f.children.length && !f.husb && !f.wife) delete DB.families[f.id];
+    });
+  }
+  delete DB.people[dropId];
+  if(DB.settings.rootId === dropId) DB.settings.rootId = keepId;
+  if(UI.selected === dropId) UI.selected = keepId;
+  if(UI.editingPerson === dropId) UI.editingPerson = keepId;
+
+  save(); closeModal(); renderAll();
+  toast(`Merged into ${displayName(keep)}. Undo from the Data tab if that was wrong.`);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   VERSION HISTORY — a way back from a bad merge, import or deletion
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const SNAP_KEY = 'ftbc.snapshots.v1';
+const SNAP_MAX = 8;
+function loadSnaps(){
+  try { return JSON.parse(localStorage.getItem(SNAP_KEY)) || []; } catch(e){ return []; }
+}
+function snapshot(label){
+  const entry = { id:uid(), at:new Date().toISOString(), label: label || 'manual snapshot',
+                  people: Object.keys(DB.people).length, data: JSON.stringify(DB) };
+  let snaps = loadSnaps();
+  snaps.unshift(entry);
+  while(snaps.length > SNAP_MAX) snaps.pop();
+  for(;;){
+    try { localStorage.setItem(SNAP_KEY, JSON.stringify(snaps)); return true; }
+    catch(e){
+      snaps.pop();                                  // storage full — shed the oldest
+      if(snaps.length <= 1){
+        try { localStorage.removeItem(SNAP_KEY); } catch(_){}
+        return false;
+      }
+    }
+  }
+}
+function restoreSnapshot(id){
+  const snap = loadSnaps().find(s=>s.id===id);
+  if(!snap) return;
+  if(!confirm(`Restore the tree as it stood at ${new Date(snap.at).toLocaleString()}?\n\n"${snap.label}"\n\nThe current state is snapshotted first, so this is reversible.`)) return;
+  snapshot('before restoring an earlier version');
+  try {
+    DB = JSON.parse(snap.data);
+    normalizeDB(); save();
+    UI.selected = DB.settings.rootId; UI.editingPerson = DB.settings.rootId;
+    renderAll(); switchTab('tree'); setTimeout(fitTree, 60);
+    toast('Restored.');
+  } catch(e){ toast('That snapshot could not be read.', 'error'); }
+}
+function deleteSnapshot(id){
+  try { localStorage.setItem(SNAP_KEY, JSON.stringify(loadSnaps().filter(s=>s.id!==id))); } catch(e){}
+  renderStats();
+}
+function renderHistory(){
+  const host = document.getElementById('historyBody');
+  if(!host) return;
+  const snaps = loadSnaps();
+  host.innerHTML = snaps.length ? `<div class="space-y-1.5">
+    ${snaps.map(s=>`<div class="flex items-center gap-2 border-b border-brand-beige/60 pb-1.5">
+      <div class="min-w-0 flex-1">
+        <div class="text-[13px] text-brand-navy">${esc(s.label)}</div>
+        <div class="text-[11px] text-gray-500">${new Date(s.at).toLocaleString()} · ${s.people} people</div>
+      </div>
+      <button onclick="restoreSnapshot('${s.id}')" class="btn btn-ghost btn-sm">Restore</button>
+      <button onclick="deleteSnapshot('${s.id}')" class="text-brand-coral text-xs px-1">✕</button>
+    </div>`).join('')}</div>`
+    : '<p class="text-[13px] text-gray-500">No snapshots yet. One is taken automatically before any merge, import or erase.</p>';
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CENSUS TRACKER — which enumerations each person should appear in
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const CENSUS_YEARS = [
+  { y:1841, note:'PEI colonial census — heads of household only' },
+  { y:1861, note:'PEI colonial census' },
+  { y:1871, note:'First census after Confederation (not PEI — it joined in 1873)' },
+  { y:1881, note:'First Dominion census to include PEI' },
+  { y:1891, note:'Dominion census' },
+  { y:1901, note:'Dominion census — gives birth dates' },
+  { y:1911, note:'Dominion census' },
+  { y:1921, note:'Dominion census — latest publicly released' }
+];
+const CENSUS_STATE = {
+  found    : { mark:'✓', cls:'bg-brand-teal text-white',        label:'Found' },
+  notfound : { mark:'✕', cls:'bg-brand-coral/20 text-brand-coral', label:'Searched, not found' },
+  gap      : { mark:'',  cls:'bg-white border border-brand-beige', label:'Not searched' },
+  na       : { mark:'·', cls:'bg-gray-100 text-gray-300',        label:'Not alive' },
+  unknown  : { mark:'?', cls:'bg-brand-gold/20 text-brand-navy', label:'Dates unknown' }
+};
+function censusState(p, year){
+  const rec = (p.census || {})[year];
+  if(rec) return rec;
+  const by = yearOf(birthOf(p)?.date), dy = yearOf(deathOf(p)?.date);
+  if(!by && !dy) return 'unknown';
+  if(by && year < by - 1) return 'na';
+  if(dy && year > dy + 1) return 'na';
+  if(!dy && by && year > by + 110) return 'na';   // no death recorded, but nobody was enumerated at 111
+  return 'gap';
+}
+function cycleCensus(personId, year){
+  const p = P(personId); if(!p) return;
+  p.census = p.census || {};
+  const cur = p.census[year] || '';
+  p.census[year] = cur === '' ? 'found' : cur === 'found' ? 'notfound' : '';
+  if(!p.census[year]) delete p.census[year];
+  save(); renderCensus();
+}
+function censusTask(personId, year){
+  const p = P(personId); if(!p) return;
+  const today = new Date().toISOString().slice(0,10);
+  const text = `Find ${displayName(p)} in the ${year} census`;
+  if((p.tasks||[]).some(t=>t.text===text)){ toast('Already in the research log.', 'warn'); return; }
+  p.tasks.push({ id:uid(), text, repo: year<1871 ? 'PARO Collections Database' : 'Library and Archives Canada',
+                 status:'todo', created:today, updated:today, result:'' });
+  save(); renderAll();
+  toast('Added to the research log.');
+}
+function renderCensus(){
+  const host = document.getElementById('censusBody');
+  const people = allPeople().sort((a,b)=>(a.surname||'').localeCompare(b.surname||'') || (a.given||'').localeCompare(b.given||''));
+  if(!people.length){
+    host.innerHTML = `<div class="card p-8 text-center text-sm text-gray-600">Add people to the tree first.</div>`;
+    return;
+  }
+  let gaps = 0, found = 0;
+  people.forEach(p=>CENSUS_YEARS.forEach(c=>{
+    const s = censusState(p, c.y);
+    if(s === 'gap') gaps++; if(s === 'found') found++;
+  }));
+
+  host.innerHTML = `
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+      <div class="card p-3"><div class="text-2xl font-bold text-brand-teal">${found}</div>
+        <div class="text-[11px] uppercase tracking-wide text-gray-500 font-bold">Found</div></div>
+      <div class="card p-3"><div class="text-2xl font-bold text-brand-navy">${gaps}</div>
+        <div class="text-[11px] uppercase tracking-wide text-gray-500 font-bold">Not yet searched</div></div>
+      <div class="card p-3"><div class="text-2xl font-bold text-brand-navy">${people.length}</div>
+        <div class="text-[11px] uppercase tracking-wide text-gray-500 font-bold">People</div></div>
+      <div class="card p-3"><div class="text-2xl font-bold text-brand-navy">${CENSUS_YEARS.length}</div>
+        <div class="text-[11px] uppercase tracking-wide text-gray-500 font-bold">Enumerations</div></div>
+    </div>
+    <div class="card overflow-x-auto scroll-thin">
+      <table class="w-full text-sm border-collapse">
+        <thead class="bg-brand-sand/60">
+          <tr>
+            <th class="text-left px-3 py-2 text-[11px] uppercase tracking-wide text-gray-600 sticky left-0 bg-brand-sand z-10">Person</th>
+            ${CENSUS_YEARS.map(c=>`<th class="px-2 py-2 text-[11px] font-bold text-brand-navy tabular-nums" title="${attr(c.note)}">${c.y}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${people.map(p=>`<tr class="border-t border-brand-beige row-hover">
+            <td class="px-3 py-1.5 sticky left-0 bg-white z-10 whitespace-nowrap">
+              <button onclick="openPerson('${p.id}')" class="text-brand-navy hover:text-brand-teal text-[13px] font-medium">${esc(truncate(displayName(p),26))}</button>
+              <div class="text-[11px] text-gray-400">${esc(lifeSpan(p)||'no dates')}</div>
+            </td>
+            ${CENSUS_YEARS.map(c=>{
+              const st = censusState(p, c.y), v = CENSUS_STATE[st];
+              const clickable = st !== 'na';
+              return `<td class="px-1 py-1.5 text-center">
+                <button ${clickable?`onclick="cycleCensus('${p.id}',${c.y})"`:'disabled'}
+                  oncontextmenu="event.preventDefault(); censusTask('${p.id}',${c.y})"
+                  title="${v.label}${clickable?' — click to change, right-click to log a search':''}"
+                  class="w-7 h-7 rounded ${v.cls} text-xs font-bold ${clickable?'cursor-pointer hover:opacity-80':'cursor-default'}">${v.mark}</button>
+              </td>`;
+            }).join('')}
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="flex flex-wrap gap-3 mt-3 text-[11px] text-gray-600">
+      ${Object.entries(CENSUS_STATE).map(([k,v])=>`<span class="flex items-center gap-1">
+        <span class="inline-flex items-center justify-center w-5 h-5 rounded ${v.cls} text-[10px] font-bold">${v.mark||' '}</span>${v.label}</span>`).join('')}
+      <span class="ml-auto">Click a cell to cycle it · right-click to log a search task</span>
+    </div>
+    <div class="card p-4 mt-4">
+      <h3 class="font-bold text-brand-navy mb-2">What each enumeration gives you</h3>
+      <ul class="text-[12px] text-gray-700 space-y-1 list-disc pl-4">
+        ${CENSUS_YEARS.map(c=>`<li><strong class="tabular-nums">${c.y}</strong> — ${esc(c.note)}</li>`).join('')}
+      </ul>
+      <p class="text-[11px] text-gray-500 mt-2">A census fixes an entire household in one entry, which is why it is
+        usually the cheapest way to confirm parents, siblings and ages at once.</p>
+    </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PLACE NAMES — one place, written six ways, searches as six places
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Trailing \b would leave the final full stop behind ("P.E.I." → "Prince Edward Island."),
+   so each pattern ends with a lookahead for a non-letter instead. */
+const NOTL = '(?![a-zà-ÿ])';
+const PLACE_ABBREV = [
+  [new RegExp('\\bp\\.?\\s?e\\.?\\s?i\\.?'+NOTL,'gi'), 'Prince Edward Island'],
+  [new RegExp('\\bn\\.\\s?s\\.?'+NOTL,'gi'),                 'Nova Scotia'],
+  [new RegExp('\\bn\\.\\s?b\\.?'+NOTL,'gi'),                 'New Brunswick'],
+  [new RegExp('\\bque\\.?'+NOTL,'gi'),                        'Québec'],
+  [new RegExp('\\bqc\\.?'+NOTL,'gi'),                         'Québec'],
+  [new RegExp('\\bont\\.?'+NOTL,'gi'),                        'Ontario'],
+  [new RegExp('\\bco\\.'+NOTL,'gi'),                          'County'],
+  [new RegExp('\\bcty\\.?'+NOTL,'gi'),                        'County'],
+  [new RegExp('\\bste\\.?'+NOTL,'gi'),                        'Sainte'],
+  [new RegExp('\\bst\\.?'+NOTL,'gi'),                         'Saint'],
+  [new RegExp('\\bcan\\.?'+NOTL,'gi'),                        'Canada']
+];
+const KNOWN_PLACES = [
+  'Miscouche, Prince County, Prince Edward Island','Tignish, Prince County, Prince Edward Island',
+  'Summerside, Prince County, Prince Edward Island','Rustico, Queens County, Prince Edward Island',
+  'Charlottetown, Queens County, Prince Edward Island','Malpeque, Prince County, Prince Edward Island',
+  'Egmont Bay, Prince County, Prince Edward Island','Kinkora, Prince County, Prince Edward Island',
+  'Souris, Kings County, Prince Edward Island','Georgetown, Kings County, Prince Edward Island',
+  'Mont-Carmel, Prince County, Prince Edward Island','Wellington, Prince County, Prince Edward Island',
+  'Port-la-Joye, Île Saint-Jean','Stratford, Queens County, Prince Edward Island',
+  'Halifax, Halifax County, Nova Scotia','Yarmouth, Yarmouth County, Nova Scotia',
+  'Church Point, Digby County, Nova Scotia','Pubnico, Yarmouth County, Nova Scotia',
+  'Chéticamp, Inverness County, Nova Scotia','Grand-Pré, Kings County, Nova Scotia',
+  'Port-Royal, Nova Scotia','Louisbourg, Cape Breton, Nova Scotia',
+  'Moncton, Westmorland County, New Brunswick','Memramcook, Westmorland County, New Brunswick',
+  'Bouctouche, Kent County, New Brunswick','Caraquet, Gloucester County, New Brunswick',
+  'Shediac, Westmorland County, New Brunswick','Québec, Québec','Montréal, Québec','Trois-Rivières, Québec'
+];
+function placeKey(s){
+  let t = ' ' + String(s||'').toLowerCase() + ' ';
+  PLACE_ABBREV.forEach(([re,full]) => { t = t.replace(re, full.toLowerCase()); });
+  return t.replace(/[.,;]/g,' ').replace(/[^a-zà-ÿ0-9 ]/g,'')
+          .normalize('NFD').replace(/[̀-ͯ]/g,'')
+          .replace(/\s+/g,' ').trim();
+}
+function expandPlace(s){
+  let t = String(s||'');
+  PLACE_ABBREV.forEach(([re,full]) => { t = t.replace(re, full); });
+  return t.replace(/\s+/g,' ').replace(/\s+,/g,',').trim();
+}
+function allPlaceUses(){
+  const uses = [];
+  allPeople().forEach(p => (p.events||[]).forEach(e => { if(e.place) uses.push({ kind:'person', obj:p, ev:e }); }));
+  allFamilies().forEach(f => (f.events||[]).forEach(e => { if(e.place) uses.push({ kind:'family', obj:f, ev:e }); }));
+  return uses;
+}
+function placeGroups(){
+  const groups = {};
+  allPlaceUses().forEach(u=>{
+    const k = placeKey(u.ev.place);
+    if(!k) return;
+    groups[k] = groups[k] || { key:k, forms:{}, count:0 };
+    groups[k].forms[u.ev.place] = (groups[k].forms[u.ev.place] || 0) + 1;
+    groups[k].count++;
+  });
+  return Object.values(groups)
+    .map(g => Object.assign(g, { variants:Object.keys(g.forms) }))
+    .sort((a,b)=> b.variants.length - a.variants.length || b.count - a.count);
+}
+function applyPlace(key, canonical){
+  snapshot('before standardising a place name');
+  let n = 0;
+  allPlaceUses().forEach(u=>{
+    if(placeKey(u.ev.place) === key && u.ev.place !== canonical){ u.ev.place = canonical; n++; }
+  });
+  save(); renderAll();
+  toast(n ? `${n} record${n===1?'':'s'} updated to “${canonical}”.` : 'Nothing needed changing.');
+}
+function renderPlaces(){
+  const host = document.getElementById('placesBody');
+  if(!host) return;
+  const groups = placeGroups();
+  const inconsistent = groups.filter(g => g.variants.length > 1);
+  const abbreviated = groups.filter(g => g.variants.length === 1 && expandPlace(g.variants[0]) !== g.variants[0]);
+
+  host.innerHTML = `
+    <p class="text-[12px] text-gray-600 mb-3">${groups.length} distinct place${groups.length===1?'':'s'} recorded.
+      ${inconsistent.length ? `<strong class="text-brand-coral">${inconsistent.length}</strong> written more than one way —
+      each spelling searches as a different place.` : 'All spellings are consistent.'}</p>
+    ${inconsistent.length ? `<div class="space-y-2 mb-4">
+      ${inconsistent.map(g=>{
+        const best = g.variants.slice().sort((a,b)=> b.length - a.length)[0];
+        return `<div class="border border-brand-beige rounded-md p-3">
+          <div class="lbl">Same place, ${g.variants.length} spellings</div>
+          <ul class="text-[13px] text-brand-navy mb-2">
+            ${g.variants.map(v=>`<li>${esc(v)} <span class="text-gray-400 text-[11px]">×${g.forms[v]}</span></li>`).join('')}
+          </ul>
+          <div class="flex flex-wrap gap-1.5">
+            ${g.variants.concat(expandPlace(best)!==best?[expandPlace(best)]:[]).filter((v,i,a)=>a.indexOf(v)===i).map(v=>
+              `<button onclick="applyPlace('${attr(g.key)}','${attr(v)}')" class="btn ${v===expandPlace(best)?'btn-primary':'btn-ghost'} btn-sm">Use “${esc(truncate(v,40))}”</button>`).join('')}
+          </div></div>`;
+      }).join('')}</div>` : ''}
+    ${abbreviated.length ? `<div class="border border-brand-beige rounded-md p-3">
+      <div class="lbl mb-1">Abbreviated — expanding these helps every search</div>
+      <div class="space-y-1.5">
+        ${abbreviated.slice(0,12).map(g=>`<div class="flex items-center gap-2 text-[13px]">
+          <span class="flex-1 min-w-0 truncate">${esc(g.variants[0])} → <strong>${esc(expandPlace(g.variants[0]))}</strong></span>
+          <button onclick="applyPlace('${attr(g.key)}','${attr(expandPlace(g.variants[0]))}')" class="btn btn-ghost btn-sm">Expand</button>
+        </div>`).join('')}
+      </div></div>` : ''}
+    ${!inconsistent.length && !abbreviated.length && groups.length ?
+      '<p class="text-[13px] text-brand-darkteal">Nothing to tidy — every place is written one way and written out in full.</p>' : ''}
+    ${!groups.length ? '<p class="text-[13px] text-gray-500">No places recorded yet.</p>' : ''}`;
+}
+function refreshPlaceList(){
+  const el = document.getElementById('placeList');
+  if(!el) return;
+  const used = [...new Set(allPlaceUses().map(u=>u.ev.place))];
+  const all = [...new Set(KNOWN_PLACES.concat(used))].sort();
+  el.innerHTML = all.map(p=>`<option value="${attr(p)}">`).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PHRASEBOOK — reading the register once you have found it
+   Catholic registers across Acadia and New France were kept in Latin and in
+   French, in a small set of repeated formulas. Learn the formula and the entry
+   opens up, however bad the handwriting.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const PHRASEBOOK = [
+  { group:'Baptism', items:[
+    ['baptizavi','I baptised','The priest writing in the first person. Usually opens the entry.'],
+    ['baptizatus / baptizata est','was baptised (m / f)','The -us / -a ending tells you the sex even when the name is unfamiliar.'],
+    ['natus / nata est','was born (m / f)','Often given as "natus heri" — born yesterday — or "hac nocte", last night.'],
+    ['hodie / heri','today / yesterday','Birth is dated relative to the baptism, which is the date at the head of the entry.'],
+    ['filius / filia legitimus','legitimate son / daughter','"filius naturalis" or "illegitimus" marks a birth outside marriage.'],
+    ['ex legitimo matrimonio','of lawful marriage','Confirms the parents were married — worth noting when you cannot find the marriage.'],
+    ['patrini / susceptores','godparents','Almost always close kin. The best free evidence of family structure in the entry.'],
+    ['ondoyé','privately baptised','French. An emergency baptism at birth, with the church ceremony supplied later.'],
+    ['sub conditione','conditionally','Baptism repeated because the first was doubtful — not a second child.']
+  ]},
+  { group:'Marriage', items:[
+    ['matrimonio junxi','I joined in marriage','The priest\'s formula opening a marriage entry.'],
+    ['contraxerunt matrimonium','contracted marriage',''],
+    ['sponsus / sponsa','groom / bride',''],
+    ['praemissis tribus bannis','the three banns having been published','The standard formula. Its absence usually means a dispensation was granted.'],
+    ['dispensatio in ... gradu consanguinitatis','dispensation in the ... degree of kinship',
+     'The single most valuable phrase in Acadian research. It states that the couple were blood relatives and how closely — third degree means roughly third cousins. It hands you a relationship you would otherwise have to prove.'],
+    ['affinitatis','of affinity','Related by marriage rather than blood.'],
+    ['testes / témoins','witnesses','Named witnesses are usually brothers, fathers or brothers-in-law.'],
+    ['vidua / viduus','widow / widower','Tells you a previous marriage exists to be found.'],
+    ['de parochia','of the parish of','Names the other parish — where the rest of that family\'s records will be.']
+  ]},
+  { group:'Burial', items:[
+    ['sepultus / sepulta est','was buried (m / f)',''],
+    ['obiit','died','Often with "hesterna die" — died yesterday.'],
+    ['defunctus / défunt','deceased','Also used of a parent already dead when a child marries.'],
+    ['aetatis suae ... annorum','aged ... years','Ages in burial entries are estimates by the survivors. Treat them as approximate.'],
+    ['circiter','about','Attached to an age or a date — the priest is telling you he is guessing.'],
+    ['munitus sacramentis','fortified by the sacraments','Formulaic; carries no genealogical information.'],
+    ['in coemeterio hujus parochiae','in the cemetery of this parish','']
+  ]},
+  { group:'Kin and status', items:[
+    ['pater / mater','father / mother',''],
+    ['avus / avia','grandfather / grandmother',''],
+    ['frater / soror','brother / sister',''],
+    ['uxor','wife','"uxor eius" — his wife.'],
+    ['conjuges','married couple',''],
+    ['nepos / neptis','grandson or nephew / granddaughter or niece','Genuinely ambiguous in Latin. Do not assume which.'],
+    ['gener / nurus','son-in-law / daughter-in-law',''],
+    ['épouse de / veuve de','wife of / widow of','French. A woman keeps her maiden name throughout Québécois and Acadian records — which is a gift.'],
+    ['dit / dite','called','An alias attached to a family line: "Thériault dit Loisel". Search both names.']
+  ]},
+  { group:'Occupations', items:[
+    ['cultivateur / habitant','farmer','The commonest occupation in these registers by a wide margin.'],
+    ['journalier','day labourer','Landless — expect fewer land and probate records.'],
+    ['navigateur / pêcheur','sailor / fisherman',''],
+    ['forgeron','blacksmith',''],
+    ['charpentier / menuisier','carpenter / joiner',''],
+    ['meunier','miller',''],
+    ['marchand','merchant','More likely to appear in notarial and court records.'],
+    ['agricola','farmer','Latin form.'],
+    ['faber lignarius','carpenter','Latin form.']
+  ]},
+  { group:'Latin given names', items:[
+    ['Joannes / Ioannes','Jean',''], ['Jacobus','Jacques',''], ['Petrus','Pierre',''],
+    ['Ludovicus','Louis',''], ['Guillelmus','Guillaume',''], ['Franciscus','François',''],
+    ['Carolus','Charles',''], ['Michael','Michel',''], ['Josephus','Joseph',''],
+    ['Stephanus','Étienne',''], ['Aegidius','Gilles',''], ['Dionysius','Denis',''],
+    ['Nicolaus','Nicolas',''], ['Antonius','Antoine',''], ['Andreas','André',''],
+    ['Bartholomaeus','Barthélemy',''], ['Maria','Marie',''], ['Anna','Anne',''],
+    ['Margarita','Marguerite',''], ['Catharina','Catherine',''], ['Elisabetha','Élisabeth',''],
+    ['Genoveva','Geneviève',''], ['Magdalena','Madeleine',''], ['Ursula','Ursule','']
+  ]},
+  { group:'Dates and numbers', items:[
+    ['anno Domini','in the year of the Lord',''],
+    ['die ... mensis ...','on the ... day of the month of ...',''],
+    ['primo / secundo / tertio','first / second / third','Days of the month are written as ordinals.'],
+    ['quarto / quinto / sexto','fourth / fifth / sixth',''],
+    ['decimo / vigesimo / trigesimo','tenth / twentieth / thirtieth','Combined: "vigesimo primo" = twenty-first.'],
+    ['eodem die','on the same day','Refers back to the previous entry\'s date — so read the entry above.'],
+    ['ejusdem mensis','of the same month','']
+  ]}
+];
+let phraseFilter = '';
+function renderPhrasebook(){
+  const q = phraseFilter.toLowerCase().trim();
+  const groups = PHRASEBOOK.map(g => ({
+    group: g.group,
+    items: g.items.filter(([term, meaning, note]) =>
+      !q || (term+' '+meaning+' '+(note||'')).toLowerCase().includes(q))
+  })).filter(g => g.items.length);
+
+  document.getElementById('phrasebookBody').innerHTML = `
+    <div class="card p-4 mb-4 bg-brand-sand/40">
+      <p class="text-[13px] text-gray-700">Registers before about 1900 are in Latin or French, written to a formula.
+        The words below are most of what you need; the handwriting is the harder half. Where an ending changes with sex
+        (<em>-us</em> / <em>-a</em>), it tells you whether the entry is for a boy or a girl even when the given name is
+        one you have never seen.</p>
+    </div>
+    ${groups.length ? groups.map(g=>`
+      <div class="card p-4 mb-3">
+        <h3 class="font-bold text-brand-navy mb-2">${esc(g.group)}</h3>
+        <div class="space-y-1.5">
+          ${g.items.map(([term, meaning, note])=>`
+            <div class="grid sm:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] gap-x-3 gap-y-.5 border-b border-brand-beige/60 pb-1.5">
+              <div class="text-[13px] font-semibold text-brand-navy italic">${esc(term)}</div>
+              <div class="text-[13px] text-gray-700">${esc(meaning)}</div>
+              ${note ? `<div class="sm:col-span-2 text-[11px] text-gray-500">${esc(note)}</div>` : ''}
+            </div>`).join('')}
+        </div>
+      </div>`).join('')
+      : '<div class="card p-6 text-sm text-gray-500">Nothing matches that search.</div>'}`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   REPORTS — the formats relatives and societies actually expect
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function printHtml(html){
+  let area = document.getElementById('printArea');
+  if(!area){ area = document.createElement('div'); area.id = 'printArea'; document.body.appendChild(area); }
+  area.innerHTML = html;
+  document.body.classList.add('printing');
+  window.print();
+  setTimeout(()=>document.body.classList.remove('printing'), 500);
+}
+const reportShell = (title, subtitle, body) => `
+  <div style="font-family:Inter,Arial,sans-serif;font-size:13px;color:#222;padding:24px;max-width:900px">
+    <h1 style="font-family:Georgia,serif;font-size:22px;margin:0 0 2px">${title}</h1>
+    <p style="color:#888;font-size:11px;margin:0 0 16px">${subtitle}</p>
+    ${body}
+    <p style="margin-top:22px;font-size:10px;color:#999;border-top:1px solid #ddd;padding-top:6px">
+      Produced with the Family Tree Branch Creator. Conclusions shown without a cited source are working hypotheses.</p>
+  </div>`;
+
+function personBlock(p, label){
+  if(!p) return `<p style="margin:2px 0"><strong>${label}:</strong> <span style="color:#999">unknown</span></p>`;
+  const b = birthOf(p), d = deathOf(p);
+  const line = (t, e) => e && (e.date||e.place)
+    ? `<div style="margin-left:12px;font-size:12px">${t}: ${esc([e.date, e.place].filter(Boolean).join(', '))}</div>` : '';
+  const par = parentsOf(p.id).map(x=>displayName(x));
+  return `<div style="margin:0 0 8px">
+    <p style="margin:2px 0"><strong>${label}:</strong> ${esc(displayName(p))}</p>
+    ${line('Born', b)}${line('Died', d)}
+    ${p.occupation ? `<div style="margin-left:12px;font-size:12px">Occupation: ${esc(p.occupation)}</div>` : ''}
+    ${par.length ? `<div style="margin-left:12px;font-size:12px">Parents: ${esc(par.join(' and '))}</div>` : ''}
+    ${(p.sources||[]).length
+      ? `<div style="margin-left:12px;font-size:11px;color:#444">Sources: ${p.sources.map(s=>esc([s.title,s.repository].filter(Boolean).join(' — '))).join(' | ')}</div>`
+      : `<div style="margin-left:12px;font-size:11px;color:#B04A2F">No source cited.</div>`}
+  </div>`;
+}
+function printFamilyGroupSheet(famId){
+  const f = F(famId); if(!f){ toast('No family selected.', 'warn'); return; }
+  const marr = (f.events||[]).find(e=>e.type==='MARR');
+  const kids = (f.children||[]).map(P).filter(Boolean);
+  const body = `
+    ${personBlock(P(f.husb), 'Husband')}
+    ${personBlock(P(f.wife), 'Wife')}
+    <p style="margin:8px 0 4px"><strong>Married:</strong> ${marr ? esc([marr.date, marr.place].filter(Boolean).join(', ')) : '<span style="color:#B04A2F">not recorded</span>'}</p>
+    <h3 style="font-family:Georgia,serif;margin:16px 0 6px;border-bottom:1px solid #ccc;padding-bottom:3px">Children</h3>
+    ${kids.length ? `<table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="background:#f4f1ea">
+        <th style="text-align:left;padding:4px;border:1px solid #ddd">#</th>
+        <th style="text-align:left;padding:4px;border:1px solid #ddd">Name</th>
+        <th style="text-align:left;padding:4px;border:1px solid #ddd">Born</th>
+        <th style="text-align:left;padding:4px;border:1px solid #ddd">Died</th>
+        <th style="text-align:left;padding:4px;border:1px solid #ddd">Married</th>
+      </tr></thead><tbody>
+      ${kids.map((c,i)=>{
+        const sp = spousesOf(c.id).map(x=>displayName(x)).join(', ');
+        return `<tr>
+          <td style="padding:4px;border:1px solid #ddd">${i+1}</td>
+          <td style="padding:4px;border:1px solid #ddd">${esc(displayName(c))}</td>
+          <td style="padding:4px;border:1px solid #ddd">${esc([birthOf(c)?.date, birthOf(c)?.place].filter(Boolean).join(', ')||'—')}</td>
+          <td style="padding:4px;border:1px solid #ddd">${esc([deathOf(c)?.date, deathOf(c)?.place].filter(Boolean).join(', ')||'—')}</td>
+          <td style="padding:4px;border:1px solid #ddd">${esc(sp||'—')}</td>
+        </tr>`;
+      }).join('')}</tbody></table>`
+      : '<p style="color:#999">No children recorded.</p>'}`;
+  printHtml(reportShell('Family group sheet',
+    `${esc(displayName(f.husb)||'unknown')} and ${esc(displayName(f.wife)||'unknown')} · generated ${new Date().toLocaleDateString()}`, body));
+}
+/* Register-style descendant report: numbered individuals, children as roman numerals. */
+function printDescendantReport(rootId){
+  const root = P(rootId); if(!root){ toast('Select a person first.', 'warn'); return; }
+  const numbers = new Map();
+  let counter = 0;
+  const generations = [];
+  const roman = n => ['','i','ii','iii','iv','v','vi','vii','viii','ix','x','xi','xii','xiii','xiv','xv','xvi'][n] || String(n);
+
+  let frontier = [rootId];
+  const seen = new Set();
+  for(let gen = 1; gen <= 8 && frontier.length; gen++){
+    const rows = [];
+    const next = [];
+    frontier.forEach(id=>{
+      if(seen.has(id)) return;
+      seen.add(id);
+      const p = P(id); if(!p) return;
+      numbers.set(id, ++counter);
+      const kids = childrenOf(id).map(P).filter(Boolean);
+      rows.push({ p, kids });
+      kids.forEach(k => { if(childrenOf(k.id).length) next.push(k.id); });
+    });
+    if(rows.length) generations.push({ gen, rows });
+    frontier = next;
+  }
+
+  const body = generations.map(g=>`
+    <h3 style="font-family:Georgia,serif;margin:18px 0 6px;border-bottom:1px solid #ccc;padding-bottom:3px">
+      Generation ${g.gen}</h3>
+    ${g.rows.map(({p, kids})=>{
+      const b = birthOf(p), d = deathOf(p);
+      const sp = spousesOf(p.id).map(x=>{
+        const fam = famsOf(p.id).find(f=> f.husb===x || f.wife===x);
+        const m = fam && (fam.events||[]).find(e=>e.type==='MARR');
+        return `${esc(displayName(x))}${m && m.date ? `, married ${esc(m.date)}` : ''}${m && m.place ? ` at ${esc(m.place)}` : ''}`;
+      });
+      return `<div style="margin:0 0 10px">
+        <p style="margin:2px 0"><strong>${numbers.get(p.id)}. ${esc(displayName(p))}</strong>
+          ${b && b.date ? `was born ${esc(b.date)}` : ''}${b && b.place ? ` at ${esc(b.place)}` : ''}${d && d.date ? `, and died ${esc(d.date)}` : ''}${d && d.place ? ` at ${esc(d.place)}` : ''}.</p>
+        ${sp.length ? `<p style="margin:2px 0;font-size:12px">Married ${sp.join('; ')}.</p>` : ''}
+        ${(p.sources||[]).length
+          ? `<p style="margin:2px 0;font-size:11px;color:#444">Sources: ${p.sources.map(s=>esc([s.title,s.repository].filter(Boolean).join(' — '))).join(' | ')}</p>`
+          : `<p style="margin:2px 0;font-size:11px;color:#B04A2F">No source cited.</p>`}
+        ${kids.length ? `<p style="margin:4px 0 2px;font-size:12px"><em>Children:</em></p>
+          <ol style="margin:0;padding-left:26px;font-size:12px;list-style:none">
+            ${kids.map((k,i)=>`<li style="margin:1px 0">${roman(i+1)}. ${esc(displayName(k))}${
+              birthOf(k)?.date ? `, born ${esc(birthOf(k).date)}` : ''}${
+              numbers.has(k.id) ? ` <strong>[${numbers.get(k.id)}]</strong>` : ''}</li>`).join('')}
+          </ol>` : ''}
+      </div>`;
+    }).join('')}`).join('');
+
+  printHtml(reportShell(`Descendants of ${esc(displayName(root))}`,
+    `Register format — a bracketed number means that child is carried forward to the next generation · generated ${new Date().toLocaleDateString()} · ${counter} individuals`,
+    body || '<p>No descendants recorded.</p>'));
+}
+function openReportsModal(){
+  const people = allPeople().sort((a,b)=>displayName(a).localeCompare(displayName(b)));
+  if(!people.length){ toast('Add people first.', 'warn'); return; }
+  const fams = allFamilies().filter(f=>f.husb||f.wife);
+  const cur = UI.selected || DB.settings.rootId;
+  openModal('Print a report', `
+    <div class="space-y-4">
+      <div>
+        <label class="lbl">Ancestral branch (ahnentafel)</label>
+        <p class="text-[11px] text-gray-500 mb-1">Every known ancestor of one person, numbered so each father is 2n and each mother 2n+1, with the nearest gaps listed.</p>
+        <select id="rpAnc" class="fld mb-1">${people.map(p=>`<option value="${p.id}" ${p.id===cur?'selected':''}>${esc(displayName(p))}</option>`).join('')}</select>
+        <button onclick="closeModal(); printBranchReport(document.getElementById('rpAnc')?.value)" class="btn btn-ghost btn-sm">Print ancestors</button>
+      </div>
+      <div class="border-t border-brand-beige pt-3">
+        <label class="lbl">Descendants (Register format)</label>
+        <p class="text-[11px] text-gray-500 mb-1">The narrative format genealogical societies expect, generation by generation.</p>
+        <select id="rpDesc" class="fld mb-1">${people.map(p=>`<option value="${p.id}" ${p.id===cur?'selected':''}>${esc(displayName(p))}</option>`).join('')}</select>
+        <button onclick="closeModal(); printDescendantReport(document.getElementById('rpDesc')?.value)" class="btn btn-ghost btn-sm">Print descendants</button>
+      </div>
+      <div class="border-t border-brand-beige pt-3">
+        <label class="lbl">Family group sheet</label>
+        <p class="text-[11px] text-gray-500 mb-1">One couple, their marriage, and every child with dates and spouses — the standard working form.</p>
+        ${fams.length ? `<select id="rpFam" class="fld mb-1">${fams.map(f=>`<option value="${f.id}">${esc(displayName(f.husb)||'unknown')} &amp; ${esc(displayName(f.wife)||'unknown')}</option>`).join('')}</select>
+        <button onclick="closeModal(); printFamilyGroupSheet(document.getElementById('rpFam')?.value)" class="btn btn-ghost btn-sm">Print group sheet</button>`
+        : '<p class="text-[13px] text-gray-500">No couples recorded yet.</p>'}
+      </div>
+    </div>`,
+    `<button onclick="closeModal()" class="btn btn-ghost">Close</button>`);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PHOTOS AND DOCUMENTS — stored in IndexedDB, because scans do not fit in
+   localStorage. They live in this browser only and are not in the JSON backup.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const MEDIA_DB = 'ftbc-media', MEDIA_STORE = 'files';
+let mediaUrls = [];
+function idb(){
+  return new Promise((resolve, reject)=>{
+    if(!window.indexedDB) return reject(new Error('no indexeddb'));
+    const req = indexedDB.open(MEDIA_DB, 1);
+    req.onupgradeneeded = ()=>{
+      const db = req.result;
+      if(!db.objectStoreNames.contains(MEDIA_STORE)){
+        const store = db.createObjectStore(MEDIA_STORE, { keyPath:'id' });
+        store.createIndex('personId', 'personId', { unique:false });
+      }
+    };
+    req.onsuccess = ()=>resolve(req.result);
+    req.onerror   = ()=>reject(req.error);
+  });
+}
+function idbRun(mode, fn){
+  return idb().then(db => new Promise((resolve, reject)=>{
+    const tx = db.transaction(MEDIA_STORE, mode);
+    const store = tx.objectStore(MEDIA_STORE);
+    const req = fn(store);
+    tx.oncomplete = ()=> resolve(req && req.result);
+    tx.onerror = ()=> reject(tx.error);
+  }));
+}
+const mediaPut    = rec => idbRun('readwrite', s => s.put(rec));
+const mediaDelete = id  => idbRun('readwrite', s => s.delete(id));
+const mediaAll    = ()  => idbRun('readonly',  s => s.getAll());
+async function mediaFor(personId){
+  const all = await mediaAll();
+  return (all || []).filter(m => m.personId === personId);
+}
+async function uploadMedia(personId, input){
+  const files = [...(input.files||[])];
+  input.value = '';
+  if(!files.length) return;
+  let added = 0, skipped = 0;
+  for(const file of files){
+    if(file.size > 8 * 1024 * 1024){ skipped++; continue; }
+    try {
+      await mediaPut({ id:uid(), personId, name:file.name, type:file.type,
+                       size:file.size, caption:'', added:new Date().toISOString(), blob:file });
+      added++;
+    } catch(e){ skipped++; }
+  }
+  await renderMedia(personId);
+  toast(added
+    ? `${added} file${added===1?'':'s'} attached${skipped?`, ${skipped} skipped (over 8 MB or unreadable)`:''}.`
+    : 'Nothing was attached — files must be under 8 MB.', added ? undefined : 'warn');
+}
+async function setMediaCaption(id, personId, caption){
+  const all = await mediaAll();
+  const rec = (all||[]).find(m=>m.id===id);
+  if(!rec) return;
+  rec.caption = caption;
+  await mediaPut(rec);
+}
+async function removeMedia(id, personId){
+  if(!confirm('Remove this file? It is deleted from this browser permanently.')) return;
+  await mediaDelete(id);
+  await renderMedia(personId);
+}
+async function renderMedia(personId){
+  const host = document.getElementById('mediaGrid');
+  if(!host) return;
+  mediaUrls.forEach(u=>URL.revokeObjectURL(u));
+  mediaUrls = [];
+  let files;
+  try { files = await mediaFor(personId); }
+  catch(e){
+    host.innerHTML = `<p class="text-[13px] text-brand-coral">This browser will not allow local file storage, so photos are unavailable here.</p>`;
+    return;
+  }
+  if(!files.length){
+    host.innerHTML = `<p class="text-[13px] text-gray-500">No photos or scans attached yet.</p>`;
+    return;
+  }
+  host.innerHTML = `<div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+    ${files.map(f=>{
+      const url = URL.createObjectURL(f.blob);
+      mediaUrls.push(url);
+      const isImg = /^image\//.test(f.type||'');
+      return `<div class="border border-brand-beige rounded-md overflow-hidden">
+        <div class="aspect-[4/3] bg-brand-sand/60 flex items-center justify-center cursor-pointer"
+             onclick="openLightbox('${url}','${attr(f.name)}',${isImg})">
+          ${isImg ? `<img src="${url}" alt="${attr(f.caption||f.name)}" class="w-full h-full object-cover">`
+                  : `<div class="text-center p-2"><div class="text-2xl">📄</div><div class="text-[10px] text-gray-600 break-all">${esc(truncate(f.name,28))}</div></div>`}
+        </div>
+        <div class="p-1.5">
+          <input class="fld !py-1 !text-[11px]" value="${attr(f.caption)}" placeholder="caption"
+                 onchange="setMediaCaption('${f.id}','${personId}',this.value)">
+          <div class="flex items-center justify-between mt-1">
+            <span class="text-[10px] text-gray-400">${Math.round((f.size||0)/1024)} KB</span>
+            <button onclick="removeMedia('${f.id}','${personId}')" class="text-brand-coral text-xs">✕</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('')}</div>`;
+}
+function openLightbox(url, name, isImg){
+  openModal(name, isImg
+    ? `<img src="${url}" alt="${attr(name)}" class="max-w-full max-h-[70vh] mx-auto">`
+    : `<p class="text-sm text-gray-600 mb-3">This file cannot be previewed here.</p>
+       <a href="${url}" target="_blank" rel="noopener" class="btn btn-primary">Open in a new tab</a>`,
+    `<button onclick="closeModal()" class="btn btn-ghost">Close</button>`, {wide:true});
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   WHOLE-TREE SWEEP — the research plan and the WikiTree search, for everyone
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+let sweep = { running:false, cancel:false, done:0, total:0, added:0, hits:[], mode:'' };
+
+async function wikitreeQuery(p, tolerance){
+  const params = new URLSearchParams({ action:'searchPerson', appId:'ftbc-familytree', fields:WT_FIELDS, limit:'10' });
+  if(p.given)   params.set('FirstName', p.given.split(/\s+/)[0]);
+  if(p.surname) params.set('LastName', p.surname);
+  const by = yearOf(birthOf(p)?.date);
+  if(by){ params.set('BirthDate', `${by}-00-00`); params.set('dateSpread', String(tolerance || 5)); }
+  const res = await fetch(`${WT_ENDPOINT}?${params.toString()}`);
+  if(!res.ok) throw Object.assign(new Error('http'), { http:res.status });
+  const raw = await res.json();
+  const data = Array.isArray(raw) ? (raw[0] || {}) : (raw || {});
+  return data.matches || [];
+}
+function stopSweep(){ sweep.cancel = true; }
+async function runSweep(mode){
+  if(sweep.running) return;
+  const people = allPeople();
+  if(!people.length){ toast('Add people first.', 'warn'); return; }
+  sweep = { running:true, cancel:false, done:0, total:people.length, added:0, hits:[], mode };
+  renderSearch();
+
+  const today = new Date().toISOString().slice(0,10);
+  for(const p of people){
+    if(sweep.cancel) break;
+    if(mode === 'plan'){
+      searchPlan(p).filter(s => s.priority <= 2).forEach(s=>{
+        if((p.tasks||[]).some(t => t.text === s.text)) return;
+        p.tasks.push({ id:uid(), text:s.text, repo:s.repo, status:'todo', created:today, updated:today, result:'' });
+        sweep.added++;
+      });
+    } else {
+      try {
+        const matches = await wikitreeQuery(p, searchState.tolerance);
+        if(matches.length) sweep.hits.push({ id:p.id, name:displayName(p), n:matches.length, top:matches[0] });
+      } catch(e){
+        sweep.error = 'WikiTree could not be reached — the sweep stopped early.';
+        sweep.done++; break;
+      }
+      await new Promise(r => setTimeout(r, 1100));      // stay well inside their rate limits
+    }
+    sweep.done++;
+    if(sweep.done % 3 === 0 || mode === 'wikitree') renderSearch();
+  }
+  sweep.running = false;
+  if(mode === 'plan'){ save(); renderAll(); }
+  else renderSearch();
+  toast(sweep.cancel ? 'Sweep stopped.'
+      : mode === 'plan' ? `${sweep.added} task${sweep.added===1?'':'s'} added across ${sweep.done} people.`
+      : `Swept ${sweep.done} people — ${sweep.hits.length} with WikiTree matches.`);
+}
+function sweepPanel(){
+  const s = sweep;
+  const pct = s.total ? Math.round(100 * s.done / s.total) : 0;
+  return `<div class="card p-4">
+    <h3 class="font-bold text-brand-navy mb-1">Sweep the whole tree</h3>
+    <p class="text-[11px] text-gray-500 mb-3">Runs across every person rather than one at a time. The WikiTree sweep is
+      paced to stay inside their rate limits, so it takes about a second per person.</p>
+    ${s.running ? `
+      <div class="mb-2">
+        <div class="h-2 bg-brand-beige rounded-full overflow-hidden">
+          <div class="h-full bg-brand-teal transition-all" style="width:${pct}%"></div>
+        </div>
+        <p class="text-[12px] text-gray-600 mt-1">${s.done} of ${s.total}${s.mode==='plan'?` · ${s.added} tasks added`:` · ${s.hits.length} with matches`}</p>
+      </div>
+      <button onclick="stopSweep()" class="btn btn-danger btn-sm w-full justify-center">Stop</button>`
+    : `<div class="flex flex-wrap gap-1.5">
+        <button onclick="runSweep('plan')" class="btn btn-primary btn-sm">Build the worklist</button>
+        <button onclick="runSweep('wikitree')" class="btn btn-ghost btn-sm">Search WikiTree for everyone</button>
+      </div>`}
+    ${s.error ? `<p class="text-[12px] text-brand-coral mt-2">${esc(s.error)}</p>` : ''}
+    ${!s.running && s.hits.length ? `
+      <div class="mt-3">
+        <div class="lbl">People with WikiTree matches</div>
+        <div class="space-y-1">
+          ${s.hits.map(h=>`<div class="flex items-center gap-2 text-[13px] border-b border-brand-beige/60 pb-1">
+            <button onclick="setSearchPerson('${h.id}')" class="flex-1 text-left text-brand-teal hover:underline truncate">${esc(h.name)}</button>
+            <span class="chip bg-brand-teal/15 text-brand-darkteal">${h.n}</span>
+          </div>`).join('')}
+        </div>
+      </div>` : ''}
+  </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SHAREABLE PACKET — one branch, self-contained, for a relative who does not
+   want a GEDCOM and will not install anything
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+function branchMembers(rootId, up, down){
+  const ids = new Set([rootId]);
+  (function ancestors(id, g){
+    if(g >= up) return;
+    parentsOf(id).forEach(p => { if(!ids.has(p)){ ids.add(p); ancestors(p, g+1); } });
+  })(rootId, 0);
+  (function descendants(id, g){
+    if(g >= down) return;
+    childrenOf(id).forEach(c => { if(!ids.has(c)){ ids.add(c); descendants(c, g+1); } });
+  })(rootId, 0);
+  [...ids].forEach(id => spousesOf(id).forEach(s => ids.add(s)));
+  return [...ids].map(P).filter(Boolean);
+}
+function exportPacket(){
+  const rootId = UI.selected || DB.settings.rootId;
+  const root = P(rootId);
+  if(!root){ toast('Select a person first.', 'warn'); return; }
+  const people = branchMembers(rootId, 4, 3)
+    .sort((a,b)=>(a.surname||'').localeCompare(b.surname||'') || (a.given||'').localeCompare(b.given||''));
+
+  const card = p => {
+    const b = birthOf(p), d = deathOf(p);
+    const rel = (label, list) => list.length
+      ? `<div class="rel"><span>${label}</span> ${list.map(x=>esc(displayName(x))).join(', ')}</div>` : '';
+    return `<div class="person">
+      <h3>${esc(displayName(p))} <small>${esc(lifeSpan(p)||'')}</small></h3>
+      ${b && (b.date||b.place) ? `<div class="ev"><span>Born</span> ${esc([b.date,b.place].filter(Boolean).join(', '))}</div>` : ''}
+      ${d && (d.date||d.place) ? `<div class="ev"><span>Died</span> ${esc([d.date,d.place].filter(Boolean).join(', '))}</div>` : ''}
+      ${p.occupation ? `<div class="ev"><span>Work</span> ${esc(p.occupation)}</div>` : ''}
+      ${rel('Parents', parentsOf(p.id).map(P).filter(Boolean))}
+      ${rel('Spouse', spousesOf(p.id).map(P).filter(Boolean))}
+      ${rel('Children', childrenOf(p.id).map(P).filter(Boolean))}
+      ${p.notes ? `<p class="note">${esc(p.notes)}</p>` : ''}
+      ${(p.sources||[]).length
+        ? `<div class="src"><strong>Sources</strong><ul>${p.sources.map(s=>`<li>${esc([s.title,s.repository,s.citation].filter(Boolean).join(' — '))}${s.url?` <a href="${attr(s.url)}">link</a>`:''}</li>`).join('')}</ul></div>`
+        : `<div class="nosrc">No source cited — treat everything above as unconfirmed.</div>`}
+    </div>`;
+  };
+
+  const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The family of ${esc(displayName(root))}</title>
+<style>
+  body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#F5F2EA;color:#264653;margin:0;padding:24px;line-height:1.5}
+  .wrap{max-width:900px;margin:0 auto}
+  h1{font-family:Georgia,serif;font-size:26px;margin:0 0 4px}
+  .lede{color:#6B7280;font-size:13px;margin:0 0 20px}
+  .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+  .person{background:#fff;border:1px solid #E6E2D6;border-radius:8px;padding:14px}
+  .person h3{font-family:Georgia,serif;font-size:16px;margin:0 0 6px}
+  .person small{color:#6B7280;font-weight:400;font-size:12px}
+  .ev,.rel{font-size:13px;margin:2px 0}
+  .ev span,.rel span{display:inline-block;min-width:62px;color:#6B7280;font-size:11px;text-transform:uppercase;letter-spacing:.04em;font-weight:700}
+  .note{font-size:12px;color:#4B5563;background:#F5F2EA;padding:8px;border-radius:4px;margin:8px 0 0;white-space:pre-wrap}
+  .src{font-size:11px;color:#374151;margin-top:8px;border-top:1px solid #E6E2D6;padding-top:6px}
+  .src ul{margin:4px 0 0;padding-left:16px}
+  .nosrc{font-size:11px;color:#B04A2F;margin-top:8px;border-top:1px solid #E6E2D6;padding-top:6px}
+  footer{margin-top:24px;font-size:11px;color:#9CA3AF;border-top:1px solid #E6E2D6;padding-top:8px}
+  a{color:#2A9D8F}
+</style></head><body><div class="wrap">
+<h1>The family of ${esc(displayName(root))}</h1>
+<p class="lede">${people.length} people — four generations back, three forward. Shared ${new Date().toLocaleDateString()}.
+  Anything without a cited source is a working conclusion, not an established fact.</p>
+<div class="grid">${people.map(card).join('')}</div>
+<footer>Produced with the Family Tree Branch Creator. Corrections and additions are welcome — especially the ones that
+  contradict what is written here.</footer>
+</div></body></html>`;
+
+  download(`family-of-${(displayName(root)||'branch').toLowerCase().replace(/[^a-z0-9]+/g,'-')}.html`, html, 'text/html;charset=utf-8');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    TABS, RENDER ORCHESTRATION, INIT
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -3345,11 +4641,14 @@ function switchTab(tab){
   if(tab==='tree')      { renderTree(); renderBranchPanel(); renderPeopleList(); }
   if(tab==='person')    renderPersonEditor();
   if(tab==='search')    renderSearch();
+  if(tab==='kinship')   renderKinship();
+  if(tab==='census')    renderCensus();
+  if(tab==='phrasebook')renderPhrasebook();
   if(tab==='research')  renderResearchLog();
   if(tab==='directory') renderDirectory();
   if(tab==='timeline')  renderTimeline();
-  if(tab==='checks')    renderChecks();
-  if(tab==='data')      renderStats();
+  if(tab==='checks')  { renderChecks(); renderPlaces(); }
+  if(tab==='data')    { renderStats(); renderHistory(); }
   window.scrollTo(0,0);
 }
 function setViewMode(mode){
@@ -3369,10 +4668,13 @@ function renderAll(){
   renderBranchPanel();
   if(UI.tab==='person')    renderPersonEditor();
   if(UI.tab==='search')    renderSearch();
+  if(UI.tab==='kinship')   renderKinship();
+  if(UI.tab==='census')    renderCensus();
   if(UI.tab==='research')  renderResearchLog();
   if(UI.tab==='timeline')  renderTimeline();
-  if(UI.tab==='checks')    renderChecks();
-  if(UI.tab==='data')      renderStats();
+  if(UI.tab==='checks')  { renderChecks(); renderPlaces(); }
+  if(UI.tab==='data')    { renderStats(); renderHistory(); }
+  refreshPlaceList();
   if(UI.tab==='directory') renderDirectory();
 }
 
@@ -3392,6 +4694,7 @@ function init(){
   initCanvasInteractions();
   setViewMode('ancestors');
   renderDirectory();
+  refreshPlaceList();
   renderAll();
   if(had && allPeople().length) setTimeout(fitTree, 100);
 
