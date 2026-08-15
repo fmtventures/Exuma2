@@ -2965,6 +2965,156 @@ function searchPlan(p){
   return out.sort((a,b)=>a.priority-b.priority);
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   LIVE DATABASE SEARCH — WikiTree
+
+   The one genealogy database with a free, keyless, read-only API that a page
+   like this can query directly. Parameters and response shape follow WikiTree's
+   published API documentation. Everything else in the Find Records tab hands
+   the search to you because those archives have no API at all.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const WT_ENDPOINT = 'https://api.wikitree.com/api.php';
+const WT_FIELDS = 'Id,Name,FirstName,MiddleName,LastNameAtBirth,LastNameCurrent,BirthDate,DeathDate,BirthLocation,DeathLocation,Gender';
+let wtState = { status:'idle', results:[], error:'', query:'', total:0 };
+
+function wtProfileUrl(m){ return 'https://www.wikitree.com/wiki/' + encodeURIComponent(m.Name || ''); }
+function wtName(m){
+  return [m.FirstName, m.MiddleName, m.LastNameAtBirth || m.LastNameCurrent].filter(Boolean).join(' ').trim() || (m.Name||'Unnamed');
+}
+/* WikiTree returns 0000-00-00 for unknown components. */
+function wtDate(d){
+  if(!d || d === '0000-00-00') return '';
+  const [y,mo,da] = String(d).split('-');
+  if(y === '0000') return '';
+  if(mo === '00') return y;
+  if(da === '00') return `${y}-${mo}`;
+  return d;
+}
+
+async function searchWikiTree(surnameOverride){
+  const p = P(searchState.personId);
+  if(!p){ toast('Choose a person first.', 'warn'); return; }
+  const surname = surnameOverride || p.surname || '';
+  if(!surname && !p.given){ toast('This person needs a name before anything can be searched.', 'warn'); return; }
+
+  const by = yearOf(birthOf(p)?.date);
+  const place = birthOf(p)?.place || '';
+  const params = new URLSearchParams({ action:'searchPerson', appId:'ftbc-familytree', fields:WT_FIELDS, limit:'20' });
+  if(p.given)  params.set('FirstName', p.given.split(/\s+/)[0]);
+  if(surname)  params.set('LastName', surname);
+  if(by){ params.set('BirthDate', `${by}-00-00`); params.set('dateSpread', String(searchState.tolerance || 5)); }
+  if(place) params.set('BirthLocation', place.split(',').slice(-2).join(',').trim() || place);
+  if(p.sex === 'M') params.set('Gender','Male');
+  if(p.sex === 'F') params.set('Gender','Female');
+
+  wtState = { status:'loading', results:[], error:'', query:`${p.given||''} ${surname}`.trim(), total:0 };
+  renderSearch();
+
+  try {
+    // A plain GET with no custom headers — anything else would trip a preflight.
+    const res = await fetch(`${WT_ENDPOINT}?${params.toString()}`);
+    if(!res.ok) throw Object.assign(new Error('http'), { http:res.status });
+    const raw = await res.json();
+    const data = Array.isArray(raw) ? (raw[0] || {}) : (raw || {});
+    const matches = data.matches || data.Matches || [];
+    if(data.status && data.status !== 0 && data.status !== '0' && !matches.length)
+      throw Object.assign(new Error('api'), { api:String(data.status) });
+    wtState = { status:'done', results:matches, error:'', query:wtState.query, total: data.total || matches.length };
+    if(!matches.length) toast('No WikiTree profiles matched — try another spelling, or widen the year tolerance.');
+  } catch(err){
+    let msg;
+    if(err.http === 429)      msg = 'WikiTree is rate-limiting this search. Wait a moment and try again.';
+    else if(err.http)         msg = `WikiTree returned an error (HTTP ${err.http}). Try again shortly.`;
+    else if(err.api)          msg = `WikiTree rejected the search: ${err.api}`;
+    else                      msg = 'Could not reach WikiTree from this page. The links below still work — they open the search in a new tab.';
+    wtState = { status:'error', results:[], error:msg, query:wtState.query, total:0 };
+  }
+  renderSearch();
+}
+
+/* Pull a match into the tree — as a hypothesis, with the profile cited. */
+function importWikiTree(idx, mode){
+  const m = wtState.results[idx]; if(!m) return;
+  const anchor = P(searchState.personId);
+  const today = new Date().toISOString().slice(0,10);
+  const cite = {
+    id:uid(), title:`WikiTree profile ${m.Name||''}`.trim(), repository:'WikiTree',
+    citation:`WikiTree collaborative profile ${m.Name||''} — ${wtName(m)}`,
+    url:wtProfileUrl(m), confidence:'possible', eventType:'BIRT',
+    transcript:'Collaborative tree profile, not an original record. Follow the sources cited on the profile and confirm each fact against them.',
+    added:today
+  };
+
+  if(mode === 'attach'){
+    anchor.sources.push(cite);
+    anchor.tasks.push({ id:uid(), text:`Verify ${displayName(anchor)} against the sources cited on WikiTree profile ${m.Name||''}`,
+                        repo:'WikiTree', status:'todo', created:today, updated:today, result:'' });
+    save(); renderAll();
+    toast(`Profile attached to ${displayName(anchor)} as a lead to verify.`);
+    return;
+  }
+
+  const person = makePerson({
+    given:[m.FirstName, m.MiddleName].filter(Boolean).join(' '),
+    surname:m.LastNameAtBirth || m.LastNameCurrent || '',
+    sex: m.Gender === 'Male' ? 'M' : m.Gender === 'Female' ? 'F' : 'U'
+  });
+  setEvent(person, 'BIRT', wtDate(m.BirthDate), m.BirthLocation || '');
+  setEvent(person, 'DEAT', wtDate(m.DeathDate), m.DeathLocation || '');
+  person.sources.push(cite);
+  person.tasks.push({ id:uid(), text:`Confirm this person is the right ${wtName(m)} — imported from WikiTree, unverified`,
+                      repo:'WikiTree', status:'todo', created:today, updated:today, result:'' });
+  save(); renderAll();
+  toast(`${displayName(person)} added, unconnected — link them from the chart once you are satisfied it is the same person.`);
+}
+
+function wikitreePanel(){
+  const p = P(searchState.personId);
+  const s = wtState;
+  const body =
+    s.status === 'loading' ? `<p class="text-sm text-gray-500">Searching WikiTree…</p>`
+  : s.status === 'error'   ? `<div class="text-[13px] bg-brand-coral/5 border border-brand-coral/25 rounded-md p-3 text-brand-navy">${esc(s.error)}</div>`
+  : s.status === 'done' && !s.results.length
+                           ? `<p class="text-sm text-gray-600">No profiles matched <strong>${esc(s.query)}</strong>.
+                              A blank is not proof of absence — try a variant spelling above, or widen the year tolerance.</p>`
+  : s.status === 'done'    ? `
+      <p class="text-[12px] text-gray-500 mb-2">${s.total} match${s.total===1?'':'es'} for <strong>${esc(s.query)}</strong>${s.total>s.results.length?`, showing ${s.results.length}`:''}.
+        These are collaborative profiles — leads to verify, never evidence in themselves.</p>
+      <div class="space-y-2">
+        ${s.results.map((m,i)=>{
+          const b = wtDate(m.BirthDate), d = wtDate(m.DeathDate);
+          return `<div class="border border-brand-beige rounded-md p-3">
+            <div class="flex flex-wrap items-baseline gap-2">
+              <strong class="text-sm text-brand-navy">${esc(wtName(m))}</strong>
+              <span class="text-[12px] text-gray-500">${esc([b,d].filter(Boolean).join(' – ') || 'no dates')}</span>
+              <span class="chip bg-gray-100 text-gray-600">${esc(m.Name||'')}</span>
+            </div>
+            ${(m.BirthLocation||m.DeathLocation) ? `<div class="text-[12px] text-gray-500 mt-.5">
+              ${esc([m.BirthLocation, m.DeathLocation].filter(Boolean).join(' → '))}</div>` : ''}
+            <div class="flex flex-wrap gap-1.5 mt-2">
+              <a href="${attr(wtProfileUrl(m))}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">Open profile ↗</a>
+              <button onclick="importWikiTree(${i},'attach')" class="btn btn-ghost btn-sm">Cite on ${esc(truncate(displayName(p),16))}</button>
+              <button onclick="importWikiTree(${i},'new')" class="btn btn-ghost btn-sm">+ Add as new person</button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`
+  : `<p class="text-[13px] text-gray-600">WikiTree is the one database here that answers directly. Its Acadian project
+       applies real sourcing standards, so it is a good first sweep before the archives.</p>`;
+
+  return `<div class="card p-4">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+      <h3 class="font-bold text-brand-navy">Search WikiTree now</h3>
+      <button onclick="searchWikiTree()" class="btn btn-primary btn-sm" ${s.status==='loading'?'disabled style="opacity:.6"':''}>
+        ${s.status==='loading' ? 'Searching…' : 'Search'}</button>
+    </div>
+    <p class="text-[11px] text-gray-500 mb-3">Queries WikiTree's public API and shows results here. Every other
+      repository below has no API to query, so those hand you the search instead.</p>
+    ${body}
+  </div>`;
+}
+
 /* ---------- rendering ---------- */
 let searchState = { personId:null, tolerance:5, variants:{} };
 
@@ -3016,6 +3166,8 @@ function renderSearch(){
   document.getElementById('searchBody').innerHTML = `
     <div class="grid gap-4 xl:grid-cols-3">
       <div class="xl:col-span-2 space-y-4">
+
+        ${wikitreePanel()}
 
         <div class="card p-4">
           <h3 class="font-bold text-brand-navy mb-1">What will be searched</h3>
@@ -3132,7 +3284,9 @@ function toggleAllVariants(on){
   nameVariants(P(id)).forEach(v=> searchState.variants[id][v.name] = on);
   renderSearch();
 }
-function setSearchPerson(id){ searchState.personId = id; UI.selected = id; renderSearch(); }
+function setSearchPerson(id){ searchState.personId = id; UI.selected = id;
+  wtState = { status:'idle', results:[], error:'', query:'', total:0 };
+  renderSearch(); }
 function openSearchFor(id){ searchState.personId = id; switchTab('search'); }
 function noteSearch(){ /* opening a link is not evidence of a search having been done */ }
 function copyTerms(text){
