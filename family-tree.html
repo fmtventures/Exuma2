@@ -15,14 +15,14 @@ if (window.tailwind) tailwind.config = {
     extend: {
       colors: {
         brand: {
-          sand: '#F5F2EA',
-          beige: '#E6E2D6',
-          teal: '#2A9D8F',
-          darkteal: '#20756B',
-          navy: '#264653',
-          gold: '#E9C46A',
-          coral: '#E76F51',
-          plum: '#6D597A'
+          sand:     'rgb(var(--c-sand) / <alpha-value>)',
+          beige:    'rgb(var(--c-beige) / <alpha-value>)',
+          teal:     'rgb(var(--c-teal) / <alpha-value>)',
+          darkteal: 'rgb(var(--c-darkteal) / <alpha-value>)',
+          navy:     'rgb(var(--c-navy) / <alpha-value>)',
+          gold:     'rgb(var(--c-gold) / <alpha-value>)',
+          coral:    'rgb(var(--c-coral) / <alpha-value>)',
+          plum:     'rgb(var(--c-plum) / <alpha-value>)'
         }
       },
       fontFamily: {
@@ -35,37 +35,151 @@ if (window.tailwind) tailwind.config = {
 </script>
 
 <style>
-  body { font-family:'Inter',sans-serif; background-color:#F5F2EA; color:#264653; }
-  h1,h2,h3,h4,h5 { font-family:'Playfair Display',serif; }
+/* ═══════════════════════════════════════════════════════════════════════════
+   SKINS — two complete art directions. Every colour below is a channel triple,
+   so switching skin repaints the entire application, canvas included.
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-  .tab-btn { padding:.7rem 1rem; font-size:.8125rem; font-weight:500; color:#6B7280;
-             transition:all .2s; border-bottom-width:3px; border-color:transparent; white-space:nowrap; }
-  .tab-btn:hover { color:#2A9D8F; }
-  .tab-btn.active { color:#264653; border-color:#2A9D8F; font-weight:700; background:#fff; }
+/* ── FICHES · the finding-aid drawer: manila cards, typewriter, rubber stamp ── */
+:root, [data-skin="fiches"] {
+  --c-sand:185 155 109;   --c-beige:120 100 72;  --c-teal:163 43 28;
+  --c-darkteal:130 34 22; --c-navy:51 41 29;     --c-gold:176 132 46;
+  --c-coral:122 30 24;    --c-plum:107 98 85;
+  --sex-m:60 84 96; --sex-f:138 74 92; --sex-u:130 122 108;
+  --skin-page:#b99b6d;      --skin-card:#f3ece0;   --skin-card-2:#e8dcc7;
+  --skin-line:rgba(51,41,29,.24);
+  --skin-radius:2px;        --skin-shadow:2px 3px 0 rgba(0,0,0,.14);
+  --skin-font:"Courier New",Courier,monospace;
+  --skin-display:"Courier New",Courier,monospace;
+  --skin-display-weight:700; --skin-display-tracking:.06em; --skin-display-case:uppercase;
+  --skin-canvas:#c6ab80;    --skin-canvas-dot:rgba(51,41,29,.16);
+  --skin-node:#f3ece0;      --skin-node-line:rgba(51,41,29,.45);
+  --skin-header:#a8865a;    --skin-header-ink:#2a2118;
+}
 
-  .fld { width:100%; background:#F9FAFB; border:1px solid #D1D5DB; border-radius:.375rem;
-         padding:.4rem .6rem; font-size:.875rem; color:#264653; transition:all .15s; }
-  .fld:focus { outline:none; border-color:#2A9D8F; background:#fff; box-shadow:0 0 0 3px rgba(42,157,143,.12); }
+/* ── STELLA MARIS · the 1884 flag as flat modernism ── */
+[data-skin="stella"] {
+  --c-sand:251 251 249;   --c-beige:24 27 33;    --c-teal:18 67 155;
+  --c-darkteal:12 48 115; --c-navy:12 14 18;     --c-gold:245 197 24;
+  --c-coral:207 17 40;    --c-plum:71 85 105;
+  --sex-m:18 67 155; --sex-f:207 17 40; --sex-u:120 128 140;
+  --skin-page:#fbfbf9;      --skin-card:#ffffff;   --skin-card-2:#f1f1ee;
+  --skin-line:rgba(12,14,18,.88);
+  --skin-radius:0px;        --skin-shadow:none;
+  --skin-font:"Helvetica Neue",Helvetica,Arial,sans-serif;
+  --skin-display:"Helvetica Neue",Helvetica,Arial,sans-serif;
+  --skin-display-weight:800; --skin-display-tracking:-.03em; --skin-display-case:none;
+  --skin-canvas:#f1f1ee;    --skin-canvas-dot:rgba(12,14,18,.14);
+  --skin-node:#ffffff;      --skin-node-line:#0c0e12;
+  --skin-header:#0c0e12;    --skin-header-ink:#ffffff;
+}
+
+  body { font-family:var(--skin-font); background-color:var(--skin-page); color:rgb(var(--c-navy)); }
+  h1,h2,h3,h4,h5 { font-family:var(--skin-display); font-weight:var(--skin-display-weight);
+                   letter-spacing:var(--skin-display-tracking); }
+  h1,h2 { text-transform:var(--skin-display-case); text-wrap:balance; }
+  [data-skin="fiches"] body { background-image:radial-gradient(rgba(0,0,0,.055) 1px,transparent 1px);
+                              background-size:4px 4px; }
+
+  .tab-btn { padding:.7rem 1rem; font-size:.8125rem; font-weight:600; transition:all .2s;
+             border-bottom-width:3px; border-color:transparent; white-space:nowrap;
+             font-family:var(--skin-font); color:rgb(var(--c-navy) / .55); }
+  .tab-btn:hover { color:rgb(var(--c-teal)); }
+  .tab-btn.active { color:rgb(var(--c-navy)); border-color:rgb(var(--c-teal));
+                    font-weight:800; background:var(--skin-card); }
+  [data-skin="fiches"] .tab-btn { text-transform:uppercase; letter-spacing:.11em; font-size:.68rem;
+                                  background:var(--skin-card-2); border:1px solid var(--skin-line);
+                                  border-bottom:none; border-radius:3px 3px 0 0; margin-right:3px; }
+  [data-skin="fiches"] .tab-btn.active { background:var(--skin-card);
+                                         box-shadow:0 -3px 0 rgb(var(--c-teal)) inset; }
+  [data-skin="stella"] nav { background:var(--skin-header); }
+  [data-skin="stella"] .tab-btn { text-transform:uppercase; letter-spacing:.12em; font-size:.66rem;
+                                  color:rgb(255 255 255 / .58); border-bottom-width:0; }
+  [data-skin="stella"] .tab-btn:hover { color:#fff; }
+  [data-skin="stella"] .tab-btn.active { color:#fff; background:transparent;
+                                         box-shadow:0 -4px 0 rgb(var(--c-gold)) inset; }
+
+  .fld { width:100%; background:var(--skin-card-2); border:1px solid var(--skin-line);
+         border-radius:var(--skin-radius); font-family:var(--skin-font);
+         padding:.4rem .6rem; font-size:.875rem; color:rgb(var(--c-navy)); transition:all .15s; }
+  .fld:focus { outline:none; border-color:rgb(var(--c-teal)); background:var(--skin-card);
+               box-shadow:0 0 0 3px rgb(var(--c-teal) / .18); }
   .lbl { display:block; font-size:.6875rem; font-weight:700; text-transform:uppercase;
          letter-spacing:.05em; color:#6B7280; margin-bottom:.2rem; }
 
-  .btn { display:inline-flex; align-items:center; gap:.4rem; padding:.45rem .85rem; border-radius:.375rem;
-         font-size:.8125rem; font-weight:600; transition:all .15s; cursor:pointer; border:1px solid transparent; }
-  .btn-primary { background:#2A9D8F; color:#fff; }
-  .btn-primary:hover { background:#20756B; }
-  .btn-ghost { background:#fff; color:#264653; border-color:#E6E2D6; }
-  .btn-ghost:hover { border-color:#2A9D8F; color:#2A9D8F; }
-  .btn-danger { background:#fff; color:#E76F51; border-color:#f3c7bb; }
-  .btn-danger:hover { background:#E76F51; color:#fff; }
+  .btn { display:inline-flex; align-items:center; gap:.4rem; padding:.45rem .85rem;
+         border-radius:var(--skin-radius); font-family:var(--skin-font);
+         font-size:.8125rem; font-weight:700; transition:all .15s; cursor:pointer;
+         border:1px solid transparent; }
+  .btn-primary { background:rgb(var(--c-teal)); color:#fff; }
+  .btn-primary:hover { background:rgb(var(--c-darkteal)); }
+  .btn-ghost { background:var(--skin-card); color:rgb(var(--c-navy)); border-color:var(--skin-line); }
+  .btn-ghost:hover { border-color:rgb(var(--c-teal)); color:rgb(var(--c-teal)); }
+  .btn-danger { background:var(--skin-card); color:rgb(var(--c-coral)); border-color:rgb(var(--c-coral) / .5); }
+  .btn-danger:hover { background:rgb(var(--c-coral)); color:#fff; }
+  [data-skin="fiches"] .btn { text-transform:uppercase; letter-spacing:.1em; font-size:.72rem; }
+  [data-skin="stella"] .btn { text-transform:uppercase; letter-spacing:.09em; font-weight:800;
+                              font-size:.7rem; border-width:2px; }
+  [data-skin="stella"] .btn-primary { border-color:rgb(var(--c-teal)); }
   .btn-sm { padding:.25rem .55rem; font-size:.75rem; }
 
-  .card { background:#fff; border:1px solid #E6E2D6; border-radius:.5rem; }
+  .card { background:var(--skin-card); border:1px solid var(--skin-line);
+          border-radius:var(--skin-radius); box-shadow:var(--skin-shadow); }
+  [data-skin="stella"] .card { border-width:2px; }
   .chip { display:inline-flex; align-items:center; gap:.3rem; padding:.15rem .5rem; border-radius:999px;
           font-size:.6875rem; font-weight:700; letter-spacing:.02em; }
+  [data-skin="fiches"] .chip { border-radius:2px; text-transform:uppercase; letter-spacing:.11em;
+                               font-size:.62rem; border:1px solid currentColor; }
+  [data-skin="stella"] .chip { border-radius:0; text-transform:uppercase; letter-spacing:.13em;
+                               font-size:.62rem; font-weight:800; }
 
   /* Tree canvas */
   #treeWrap { background:
-      radial-gradient(circle at 1px 1px, rgba(38,70,83,.10) 1px, transparent 0) 0 0/22px 22px, #FBFAF6; }
+      radial-gradient(circle at 1px 1px, var(--skin-canvas-dot) 1px, transparent 0) 0 0/22px 22px,
+      var(--skin-canvas); }
+  /* Canvas nodes are styled from CSS, not inline attributes, so a skin reaches them too. */
+  .node-box rect.bg { fill:var(--skin-node); stroke:var(--skin-node-line); }
+  [data-skin="stella"] .node-box rect.bg { stroke-width:2; }
+  .node-box text.n-name  { fill:rgb(var(--c-navy)); font-family:var(--skin-font); font-weight:700; }
+  .node-box text.n-span  { fill:rgb(var(--c-navy) / .62); font-family:var(--skin-font); }
+  .node-box text.n-place { fill:rgb(var(--c-navy) / .42); font-family:var(--skin-font); }
+  [data-skin="stella"] .node-box text.n-name { font-weight:800; letter-spacing:-.02em; }
+  [data-skin="stella"] .node-box text.n-span { fill:rgb(var(--c-teal)); font-weight:600; }
+  [data-skin="fiches"] .node-box text.n-name { text-transform:uppercase; letter-spacing:.04em; }
+  .badge-on { fill:rgb(var(--c-teal)); } .badge-off { fill:var(--skin-card-2); stroke:var(--skin-line); }
+  .badge-task { fill:rgb(var(--c-gold)); }
+  .badge-num { fill:#fff; font-family:var(--skin-font); }
+  .badge-num.off { fill:rgb(var(--c-navy) / .45); }
+  .badge-task-t { fill:rgb(var(--c-navy)); font-family:var(--skin-font); }
+  .more-marker circle { fill:var(--skin-card); stroke:var(--skin-node-line); }
+  .more-marker text { fill:rgb(var(--c-navy)); font-family:var(--skin-font); }
+  .link { stroke:rgb(var(--c-navy) / .38); }
+  .link.union { stroke:rgb(var(--c-gold)); }
+  [data-skin="stella"] .link { stroke:rgb(var(--c-navy)); stroke-width:2; }
+  .sexbar.sex-M { fill:rgb(var(--sex-m)); }
+  .sexbar.sex-F { fill:rgb(var(--sex-f)); }
+  .sexbar.sex-U { fill:rgb(var(--sex-u)); }
+
+  header { background:var(--skin-header) !important; }
+  header h1 { color:var(--skin-header-ink) !important; }
+  header p  { color:var(--skin-header-ink) !important; opacity:.72; }
+  [data-skin="stella"] header { border-bottom:none; }
+  [data-skin="stella"] header h1 { letter-spacing:.22em; text-transform:uppercase; font-size:.95rem; }
+  [data-skin="fiches"] header h1 { letter-spacing:.1em; }
+
+  /* Structural panels are marked bg-white in the markup; let the skin own them. */
+  main aside.bg-white, main > section .bg-white, footer.bg-white,
+  td.bg-white, .row-hover.bg-white { background-color:var(--skin-card) !important; }
+  .row-hover:hover { background:var(--skin-card-2); }
+  .scroll-thin::-webkit-scrollbar-thumb { background:rgb(var(--c-navy) / .25); }
+  [data-skin="stella"] .modal-back { background:rgb(12 14 18 / .72); }
+
+  .skin-pick { display:inline-flex; border:1px solid var(--skin-line);
+               border-radius:var(--skin-radius); overflow:hidden; background:var(--skin-card); }
+  .skin-pick button { padding:.3rem .62rem; font-size:.64rem; font-weight:800; letter-spacing:.11em;
+                      text-transform:uppercase; color:rgb(var(--c-navy) / .55); cursor:pointer;
+                      font-family:var(--skin-font); background:transparent; border:0; }
+  .skin-pick button.on { background:rgb(var(--c-teal)); color:#fff; }
   #treeSvg { display:block; cursor:grab; touch-action:none; }
   #treeSvg.panning { cursor:grabbing; }
   .node-box { cursor:pointer; }
@@ -104,6 +218,14 @@ if (window.tailwind) tailwind.config = {
 </style>
 </head>
 <body class="min-h-screen flex flex-col">
+<script>
+  /* Set the skin before first paint, so no one sees the wrong art direction flash. */
+  (function(){
+    var s = 'stella';
+    try { s = localStorage.getItem('ftbc.skin') || 'stella'; } catch(e){}
+    document.documentElement.setAttribute('data-skin', s);
+  })();
+</script>
 
 <!-- ══════════════════════ HEADER ══════════════════════ -->
 <header class="bg-white border-b border-brand-beige sticky top-0 z-40 shadow-sm no-print">
@@ -116,6 +238,10 @@ if (window.tailwind) tailwind.config = {
       </div>
     </div>
     <div class="flex items-center gap-2">
+      <div class="skin-pick" role="group" aria-label="Visual style">
+        <button id="skin-fiches" onclick="setSkin('fiches')" title="Manila cards and typewriter — the archive drawer">Fiches</button>
+        <button id="skin-stella" onclick="setSkin('stella')" title="The 1884 Acadian flag as flat modernism">Stella</button>
+      </div>
       <a href="index.html" class="btn btn-ghost btn-sm" title="Back to the Sandy Palms portal">🌴&nbsp;<span class="hidden sm:inline">Portal</span></a>
       <span id="saveState" class="text-[11px] text-gray-400 hidden sm:inline">saved</span>
       <button onclick="quickAddPerson()" class="btn btn-primary btn-sm">+&nbsp;<span class="hidden sm:inline">Person</span></button>
@@ -571,8 +697,42 @@ function displayName(id){
   const n = [p.given, p.surname].filter(Boolean).join(' ').trim();
   return n || '(unnamed)';
 }
+let SKIN_RADIUS = 7;
+let _sexCache = {};
 function sexColor(sex){
-  return sex==='M' ? '#2A9D8F' : sex==='F' ? '#6D597A' : '#9CA3AF';
+  const key = sex==='M' ? '--sex-m' : sex==='F' ? '--sex-f' : '--sex-u';
+  if(_sexCache[key]) return _sexCache[key];
+  const v = getComputedStyle(document.documentElement).getPropertyValue(key).trim();
+  return (_sexCache[key] = v ? `rgb(${v})` : '#9CA3AF');
+}
+const SKINS = {
+  fiches: { label:'Fiches', radius:2 },
+  stella: { label:'Stella Maris', radius:0 }
+};
+function setSkin(name){
+  if(!SKINS[name]) return;
+  document.documentElement.setAttribute('data-skin', name);
+  try { localStorage.setItem('ftbc.skin', name); } catch(e){}
+  _sexCache = {};
+  SKIN_RADIUS = SKINS[name].radius;
+  Object.keys(SKINS).forEach(k=>{
+    const el = document.getElementById('skin-'+k);
+    if(el) el.classList.toggle('on', k===name);
+  });
+  renderAll();
+  toast(`${SKINS[name].label} applied.`);
+}
+function initSkin(){
+  let name = 'stella';
+  try { name = localStorage.getItem('ftbc.skin') || 'stella'; } catch(e){}
+  if(!SKINS[name]) name = 'stella';
+  document.documentElement.setAttribute('data-skin', name);
+  SKIN_RADIUS = SKINS[name].radius;
+  _sexCache = {};
+  Object.keys(SKINS).forEach(k=>{
+    const el = document.getElementById('skin-'+k);
+    if(el) el.classList.toggle('on', k===name);
+  });
 }
 function sexLabel(sex){ return sex==='M'?'Male':sex==='F'?'Female':'Unknown'; }
 
@@ -981,7 +1141,7 @@ function nodeSvg(n){
   const sel  = UI.selected===n.id;
   const root = DB.settings.rootId===n.id;
   const cls  = ['node-box', sel?'selected':'', root?'root':''].join(' ');
-  const bar  = sexColor(p.sex);
+  const sexCls = 'sex-' + (p.sex === 'M' || p.sex === 'F' ? p.sex : 'U');
   const full = displayName(p);
   const name = truncate(full, 21);
   const span = lifeSpan(p);
@@ -989,20 +1149,20 @@ function nodeSvg(n){
   const srcN = (p.sources||[]).length;
   const openTasks = (p.tasks||[]).filter(t=>t.status!=='done').length;
   const badges = [];
-  if(srcN)      badges.push(`<circle cx="${NODE_W-13}" cy="12" r="7" fill="#2A9D8F"/><text x="${NODE_W-13}" y="15.5" font-size="9" font-weight="700" fill="#fff" text-anchor="middle">${srcN>9?'9+':srcN}</text>`);
-  if(!srcN)     badges.push(`<circle cx="${NODE_W-13}" cy="12" r="7" fill="#F3F4F6" stroke="#D1D5DB"/><text x="${NODE_W-13}" y="15.5" font-size="9" font-weight="700" fill="#9CA3AF" text-anchor="middle">0</text>`);
-  if(openTasks) badges.push(`<circle cx="${NODE_W-29}" cy="12" r="6" fill="#E9C46A"/><text x="${NODE_W-29}" y="15" font-size="8" font-weight="700" fill="#264653" text-anchor="middle">?</text>`);
+  if(srcN)      badges.push(`<circle class="badge-on" cx="${NODE_W-13}" cy="12" r="7"/><text class="badge-num" x="${NODE_W-13}" y="15.5" font-size="9" font-weight="700" text-anchor="middle">${srcN>9?'9+':srcN}</text>`);
+  if(!srcN)     badges.push(`<circle class="badge-off" cx="${NODE_W-13}" cy="12" r="7"/><text class="badge-num off" x="${NODE_W-13}" y="15.5" font-size="9" font-weight="700" text-anchor="middle">0</text>`);
+  if(openTasks) badges.push(`<circle class="badge-task" cx="${NODE_W-29}" cy="12" r="6"/><text class="badge-task-t" x="${NODE_W-29}" y="15" font-size="8" font-weight="700" text-anchor="middle">?</text>`);
 
   const more = n.hiddenParents || n.hiddenMore
-    ? `<g class="more-marker"><circle cx="${NODE_W/2}" cy="${NODE_H+9}" r="7" fill="#fff" stroke="#A8B5B2"/><text x="${NODE_W/2}" y="${NODE_H+12.5}" font-size="10" font-weight="700" fill="#264653" text-anchor="middle">+</text></g>` : '';
+    ? `<g class="more-marker"><circle cx="${NODE_W/2}" cy="${NODE_H+9}" r="7"/><text x="${NODE_W/2}" y="${NODE_H+12.5}" font-size="10" font-weight="700" text-anchor="middle">+</text></g>` : '';
 
   return `<g class="${cls}" transform="translate(${n.x},${n.y})" onclick="selectPerson('${n.id}')" ondblclick="openPerson('${n.id}')">
     <title>${esc(full)}${span?` (${esc(span)})`:''}${place?` — ${esc(place)}`:''}</title>
-    <rect class="bg" width="${NODE_W}" height="${NODE_H}" rx="7" fill="#fff" stroke="#E6E2D6" stroke-width="1.4"/>
-    <rect width="4.5" height="${NODE_H}" rx="2" fill="${bar}"/>
-    <text x="12" y="20" font-size="12.5" font-weight="700" fill="#264653" font-family="Inter,sans-serif">${esc(name)}</text>
-    <text x="12" y="35" font-size="10.5" fill="#6B7280" font-family="Inter,sans-serif">${esc(span)}</text>
-    <text x="12" y="47" font-size="9.5" fill="#9CA3AF" font-family="Inter,sans-serif">${esc(place)}</text>
+    <rect class="bg" width="${NODE_W}" height="${NODE_H}" rx="${SKIN_RADIUS}" stroke-width="1.4"/>
+    <rect class="sexbar ${sexCls}" width="4.5" height="${NODE_H}" rx="2"/>
+    <text class="n-name"  x="12" y="20" font-size="12.5">${esc(name)}</text>
+    <text class="n-span"  x="12" y="35" font-size="10.5">${esc(span)}</text>
+    <text class="n-place" x="12" y="47" font-size="9.5">${esc(place)}</text>
     ${badges.join('')}
     ${more}
   </g>`;
@@ -5339,6 +5499,7 @@ function injectPrintStyles(){
 
 function init(){
   injectPrintStyles();
+  initSkin();
   const had = load();
   UI.selected     = DB.settings.rootId;
   UI.editingPerson = DB.settings.rootId;
