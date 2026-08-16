@@ -194,7 +194,7 @@ Implemented, tested, and typechecked (200 tests):
 | Site Assistant: deterministic + constrained model planning | complete |
 | Media: rights, smart crop, derivatives, duplicates, search | complete (deterministic half) |
 | Renderer, sanitizer, SEO/AEO, sitemap | complete |
-| Database schema and RLS policies | complete |
+| Database schema and RLS policies | complete, verified against a real Postgres |
 | Admin HTTP API | complete for the modules above |
 | Admin UI + visual editor | editor, import review, fact queue, brand kit, history, audit |
 

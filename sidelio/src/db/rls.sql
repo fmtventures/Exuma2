@@ -15,8 +15,21 @@
 -- `SET LOCAL` is transaction-scoped, so a pooled connection cannot leak one
 -- request's identity into the next.
 
-CREATE ROLE sidelio_app NOLOGIN;
-CREATE ROLE sidelio_migrator NOLOGIN;
+-- DROP POLICY IF EXISTS is noisy on a first apply; the notices carry no signal.
+SET client_min_messages = warning;
+
+-- Roles are cluster-wide, not per-database, so plain CREATE ROLE aborts this
+-- file on any second run — leaving policies and grants unapplied and the
+-- database half-configured. Every statement below is written to be re-runnable.
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'sidelio_app') THEN
+    CREATE ROLE sidelio_app NOLOGIN;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'sidelio_migrator') THEN
+    CREATE ROLE sidelio_migrator NOLOGIN;
+  END IF;
+END $$;
 
 -- ---------------------------------------------------------------------------
 -- Session helpers
@@ -60,6 +73,7 @@ BEGIN
   FOREACH t IN ARRAY site_scoped LOOP
     EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', t);
     EXECUTE format('ALTER TABLE %I FORCE ROW LEVEL SECURITY', t);
+    EXECUTE format('DROP POLICY IF EXISTS %1$I_tenant_isolation ON %1$I', t);
     EXECUTE format($p$
       CREATE POLICY %1$I_tenant_isolation ON %1$I
         FOR ALL
@@ -84,22 +98,26 @@ END $$;
 
 -- `sites` needs its own rule: the site-id restriction applies to `id`, not to
 -- a `site_id` column.
+DROP POLICY IF EXISTS sites_tenant_isolation ON sites;
 CREATE POLICY sites_tenant_isolation ON sites
   FOR ALL TO sidelio_app
   USING (org_id = current_org() AND can_reach_site(id))
   WITH CHECK (org_id = current_org() AND can_reach_site(id));
 
+DROP POLICY IF EXISTS memberships_tenant_isolation ON memberships;
 CREATE POLICY memberships_tenant_isolation ON memberships
   FOR ALL TO sidelio_app
   USING (org_id = current_org())
   WITH CHECK (org_id = current_org());
 
 -- Integrations may be org-wide (site_id IS NULL) or site-scoped.
+DROP POLICY IF EXISTS integrations_tenant_isolation ON integrations;
 CREATE POLICY integrations_tenant_isolation ON integrations
   FOR ALL TO sidelio_app
   USING (org_id = current_org() AND (site_id IS NULL OR can_reach_site(site_id)))
   WITH CHECK (org_id = current_org() AND (site_id IS NULL OR can_reach_site(site_id)));
 
+DROP POLICY IF EXISTS ai_usage_tenant_isolation ON ai_usage;
 CREATE POLICY ai_usage_tenant_isolation ON ai_usage
   FOR ALL TO sidelio_app
   USING (org_id = current_org())
@@ -109,10 +127,12 @@ CREATE POLICY ai_usage_tenant_isolation ON ai_usage
 -- Audit log: readable within the org, append-only for everyone
 -- ---------------------------------------------------------------------------
 
+DROP POLICY IF EXISTS audit_events_read ON audit_events;
 CREATE POLICY audit_events_read ON audit_events
   FOR SELECT TO sidelio_app
   USING (org_id = current_org());
 
+DROP POLICY IF EXISTS audit_events_append ON audit_events;
 CREATE POLICY audit_events_append ON audit_events
   FOR INSERT TO sidelio_app
   WITH CHECK (org_id = current_org());
@@ -130,6 +150,7 @@ ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE users FORCE ROW LEVEL SECURITY;
 
 -- A user can always see themselves, plus anyone sharing an org with them.
+DROP POLICY IF EXISTS users_self_and_colleagues ON users;
 CREATE POLICY users_self_and_colleagues ON users
   FOR SELECT TO sidelio_app
   USING (
@@ -140,6 +161,7 @@ CREATE POLICY users_self_and_colleagues ON users
     )
   );
 
+DROP POLICY IF EXISTS users_self_update ON users;
 CREATE POLICY users_self_update ON users
   FOR UPDATE TO sidelio_app
   USING (id = current_user_id())
@@ -148,6 +170,7 @@ CREATE POLICY users_self_update ON users
 ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE organizations FORCE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS organizations_own ON organizations;
 CREATE POLICY organizations_own ON organizations
   FOR ALL TO sidelio_app
   USING (id = current_org())
@@ -157,6 +180,7 @@ CREATE POLICY organizations_own ON organizations
 ALTER TABLE support_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE support_sessions FORCE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS support_sessions_own ON support_sessions;
 CREATE POLICY support_sessions_own ON support_sessions
   FOR ALL TO sidelio_app
   USING (user_id = current_user_id())

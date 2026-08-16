@@ -53,3 +53,26 @@ jobs:
           curl -sf http://localhost:4399/api/session > /dev/null
           curl -sf http://localhost:4399/ > /dev/null
           kill %1
+
+  # The schema and RLS policies are the second, independent tenancy layer, so
+  # they are verified against a real Postgres rather than reviewed by eye.
+  database:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Schema, RLS and tenancy isolation
+        run: npm run test:db

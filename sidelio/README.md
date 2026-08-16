@@ -19,6 +19,7 @@ npm run typecheck
 npm run dev       # admin + visual editor at http://localhost:4310
 npm run demo      # full pipeline against a fixture site
 npm run export:admin   # self-contained admin snapshot -> dist/demo/admin.html
+npm run test:db   # applies schema + RLS to a real Postgres and asserts isolation
 ```
 
 `npm run dev` starts the admin, seeded by actually running Smart Import against

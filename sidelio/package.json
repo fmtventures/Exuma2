@@ -14,7 +14,8 @@
     "test:watch": "vitest",
     "demo": "node --experimental-strip-types src/demo/rebuild.ts",
     "dev": "node --experimental-strip-types src/api/main.ts",
-    "export:admin": "node --experimental-strip-types src/demo/export-admin.ts"
+    "export:admin": "node --experimental-strip-types src/demo/export-admin.ts",
+    "test:db": "bash scripts/db-test.sh"
   },
   "dependencies": {
     "node-html-parser": "^6.1.13",

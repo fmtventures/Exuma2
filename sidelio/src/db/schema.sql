@@ -14,7 +14,13 @@
 --     the version tables carry the history.
 
 CREATE EXTENSION IF NOT EXISTS pg_trgm;      -- fuzzy search over content
-CREATE EXTENSION IF NOT EXISTS vector;       -- asset + content embeddings
+CREATE EXTENSION IF NOT EXISTS citext;       -- case-insensitive emails, slugs, hostnames
+
+-- Semantic asset search ("photos of the team outside") needs pgvector, which
+-- is not present in a stock Postgres. It is kept out of the core schema so a
+-- plain instance can run the platform; apply src/db/optional-pgvector.sql to
+-- switch it on. Without it, asset search falls back to tags and text, which
+-- `searchAssets` already handles.
 
 -- ---------------------------------------------------------------------------
 -- Tenancy
@@ -308,7 +314,6 @@ CREATE TABLE assets (
   subject_box          jsonb,
   rights               jsonb NOT NULL,
   phash                text,
-  embedding            vector(512),
   usage_count          integer NOT NULL DEFAULT 0,
   uploaded_by          text REFERENCES users(id),
   created_at           timestamptz NOT NULL DEFAULT now(),
@@ -316,8 +321,6 @@ CREATE TABLE assets (
 );
 CREATE INDEX assets_site_idx ON assets (site_id) WHERE archived_at IS NULL;
 CREATE INDEX assets_phash_idx ON assets (site_id, phash) WHERE phash IS NOT NULL;
--- Natural-language asset search ("photos of the team outside").
-CREATE INDEX assets_embedding_idx ON assets USING hnsw (embedding vector_cosine_ops);
 CREATE INDEX assets_text_idx ON assets USING gin (
   (coalesce(alt_text,'') || ' ' || coalesce(caption,'') || ' ' || filename) gin_trgm_ops
 );
@@ -520,18 +523,34 @@ CREATE TRIGGER kg_entities_touch BEFORE UPDATE ON kg_entities
 -- A child row must never point at a different tenant than its parent. Foreign
 -- keys alone cannot express this, and it is the failure mode that turns a bug
 -- into a cross-tenant data leak.
+-- SECURITY DEFINER matters here. The lookup below must see the parent row even
+-- when RLS would hide it from the calling role; as a plain SECURITY INVOKER
+-- function it returned NULL for any site outside the caller's tenant, so a
+-- cross-tenant insert was rejected with a misleading "does not match ... NULL"
+-- rather than by the RLS policy that should own that decision. Owning the two
+-- concerns separately keeps the error the user sees accurate: this trigger
+-- reports genuine org/site mismatches, RLS reports tenancy violations.
+--
+-- search_path is pinned because a SECURITY DEFINER function that resolves
+-- unqualified names through the caller's search_path is a privilege-escalation
+-- hole.
 CREATE OR REPLACE FUNCTION assert_site_org_match() RETURNS trigger AS $$
 DECLARE
   parent_org text;
 BEGIN
-  SELECT org_id INTO parent_org FROM sites WHERE id = NEW.site_id;
+  SELECT org_id INTO parent_org FROM public.sites WHERE id = NEW.site_id;
+  IF parent_org IS NULL THEN
+    RAISE EXCEPTION 'site % does not exist', NEW.site_id
+      USING ERRCODE = 'foreign_key_violation';
+  END IF;
   IF parent_org IS DISTINCT FROM NEW.org_id THEN
-    RAISE EXCEPTION 'org_id % does not match the owning org of site % (%)',
-      NEW.org_id, NEW.site_id, parent_org;
+    RAISE EXCEPTION 'org_id % does not own site % (owned by %)',
+      NEW.org_id, NEW.site_id, parent_org
+      USING ERRCODE = 'integrity_constraint_violation';
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
 CREATE TRIGGER pages_org_match BEFORE INSERT OR UPDATE ON pages
   FOR EACH ROW EXECUTE FUNCTION assert_site_org_match();
