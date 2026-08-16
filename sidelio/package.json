@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "demo": "node --experimental-strip-types src/demo/rebuild.ts",
-    "dev": "node --experimental-strip-types src/api/main.ts"
+    "dev": "node --experimental-strip-types src/api/main.ts",
+    "export:admin": "node --experimental-strip-types src/demo/export-admin.ts"
   },
   "dependencies": {
     "node-html-parser": "^6.1.13",

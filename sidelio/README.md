@@ -18,6 +18,7 @@ npm test          # 200 tests
 npm run typecheck
 npm run dev       # admin + visual editor at http://localhost:4310
 npm run demo      # full pipeline against a fixture site
+npm run export:admin   # self-contained admin snapshot -> dist/demo/admin.html
 ```
 
 `npm run dev` starts the admin, seeded by actually running Smart Import against
@@ -27,6 +28,11 @@ the fact queue, the brand kit, version history and the audit log.
 
 `npm run demo` runs the same pipeline headlessly, printing each stage and
 writing the generated homepage to `dist/demo/index.html`.
+
+`npm run export:admin` captures the running admin — every API response and all
+page previews — into one self-contained HTML file that opens with no server.
+It is read-only by design: editing needs the change-set engine, so writes
+return an honest 501 rather than pretending to save.
 
 ## The idea
 
