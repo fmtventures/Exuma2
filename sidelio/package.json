@@ -15,7 +15,8 @@
     "demo": "node --experimental-strip-types src/demo/rebuild.ts",
     "dev": "node --experimental-strip-types src/api/main.ts",
     "export:admin": "node --experimental-strip-types src/demo/export-admin.ts",
-    "test:db": "bash scripts/db-test.sh"
+    "test:db": "bash scripts/db-test.sh",
+    "gallery": "node --experimental-strip-types src/demo/build-gallery.ts"
   },
   "dependencies": {
     "node-html-parser": "^6.1.13",

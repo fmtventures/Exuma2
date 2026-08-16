@@ -16,6 +16,8 @@ import { auditLibrary, findDuplicates, planDerivatives, searchAssets } from '../
 import { CONCEPT_THEMES, themeFor, type ConceptDirection } from '../generate/concept-themes.ts';
 import { ALL_TAGS, templateById, templatesForIndustry, TEMPLATES } from '../generate/templates.ts';
 import { LAYOUT_LIST, layoutById } from '../render/layouts.ts';
+import { TREATMENTS, TREATMENT_LIST } from '../render/treatments.ts';
+import { fillForPreview } from '../generate/sample-content.ts';
 import { detectIndustry, generateSite, generateThreeConcepts } from '../generate/site-plan.ts';
 import { auditPageSeo, renderHead } from '../render/seo.ts';
 import { summaryLines } from '../import/review.ts';
@@ -687,6 +689,7 @@ route('GET', '/api/templates', ({ store }) => {
     industry,
     tags: ALL_TAGS,
     layouts: LAYOUT_LIST,
+    treatmentCatalog: TREATMENT_LIST,
     total: TEMPLATES.length,
     templates: ordered.map((template) => {
       const site = generateSite(SITE_ID, store.graph, {
@@ -713,12 +716,22 @@ route('GET', '/api/templates', ({ store }) => {
         layout: template.layout,
         layoutName: layoutById(template.layout).name,
         layoutDescription: layoutById(template.layout).description,
+        treatments: template.treatments.map((id) => ({
+          id, name: TREATMENTS[id].name, category: TREATMENTS[id].category,
+        })),
         pageCount: site.pages.length,
         sections: home?.blocks.map((b) => b.type) ?? [],
+        // Filled for display only. A design that composes seven sections
+        // cannot be judged from the three the crawler happened to find data
+        // for, but the filled copy is detached and never stored — applying
+        // the design later regenerates from the knowledge graph alone.
         previewHtml: home
           ? renderPage(
               {
-                page: home, brandKit, assets: store.assetMap(),
+                page: fillForPreview(home, brandKit, {
+                  wantSections: template.homeSections, fillImages: true,
+                }),
+                brandKit, assets: store.assetMap(),
                 origin: `https://${store.site.subdomain}.sidelio.site`, preview: true,
               },
               { head: '<meta name="robots" content="noindex">' },

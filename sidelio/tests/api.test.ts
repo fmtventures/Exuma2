@@ -442,14 +442,22 @@ describe('design library', () => {
     expect(sidebar.previewHtml).not.toContain('.sl-magazine');
   });
 
-  it('carries the layout onto the pages it generates', async () => {
+  it('carries the layout and treatments onto the pages it generates', async () => {
     await post('/api/templates/clinic/apply', {});
     const pages = await call('/api/pages');
     const page = (await call(`/api/pages/${pages.body.pages[0].id}`)).body.page;
     expect(page.layout).toBe('sidebar');
+    expect(page.treatments).toContain('reveal');
 
     const html = (await call(`/preview/${page.id}`)).raw;
-    expect(html).toContain('class="sl-layout sl-sidebar"');
+    expect(html).toContain('class="sl-layout sl-sidebar sl-tr ');
+    expect(html).toContain('sl-tr-reveal');
+    // The treatment must bring its CSS, not just its class name.
+    expect(html).toContain('@keyframes sl-rise');
+    // …and only its own: Clinic does not use grain, so the texture must not
+    // ship. (The print unwind names the grain selector in every sheet on
+    // purpose, so assert on the payload rather than the selector.)
+    expect(html).not.toContain('feTurbulence');
   });
 
   it('puts designs built for the detected industry first', async () => {

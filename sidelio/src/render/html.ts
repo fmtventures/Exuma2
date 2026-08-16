@@ -4,6 +4,7 @@ import { readableTextOn, toCssVariables, type BrandKit } from '../design/brand-k
 import type { Asset } from '../media/asset.ts';
 import { responsiveImage } from '../media/studio.ts';
 import { layoutClass, layoutCss, type LayoutId } from './layouts.ts';
+import { treatmentClasses, treatmentCss } from './treatments.ts';
 
 /**
  * Block renderer.
@@ -55,6 +56,28 @@ export function safeUrl(input: unknown): string {
   if (raw === '') return '';
   if (/^(https?:|mailto:|tel:|sms:|\/|#|\?)/i.test(raw)) return escapeAttr(raw);
   return '';
+}
+
+/**
+ * As `safeUrl`, but additionally permits inline image data URIs.
+ *
+ * `data:` is barred from `safeUrl` because `data:text/html` in an href is a
+ * same-origin script execution primitive. That reasoning does not extend to
+ * `<img src>`: an image data URI cannot navigate, and SVG loaded through `img`
+ * runs no script and issues no subrequests. Keeping the two rules separate is
+ * what lets inline artwork render without loosening link handling — using
+ * `safeUrl` here silently dropped every inline image instead.
+ *
+ * The media type is allow-listed rather than pattern-matched so a
+ * `data:text/html` cannot arrive by claiming to be an image.
+ */
+const IMAGE_DATA_URI = /^data:image\/(png|jpe?g|gif|webp|avif|svg\+xml);?[a-z0-9-]*,/i;
+
+export function safeImageUrl(input: unknown): string {
+  const raw = String(input ?? '').trim();
+  if (raw === '') return '';
+  if (IMAGE_DATA_URI.test(raw)) return escapeAttr(raw);
+  return safeUrl(raw);
 }
 
 const ALLOWED_TAGS = new Set([
@@ -163,7 +186,7 @@ function renderImage(
     }
   }
 
-  const url = safeUrl(image.url);
+  const url = safeImageUrl(image.url);
   if (!url) return '';
   // alt="" is correct for decorative images; a missing alt attribute is not.
   return `<img class="${cls}" src="${url}" alt="${escapeAttr(image.alt ?? '')}" loading="${opts.isHero ? 'eager' : 'lazy'}" decoding="async">`;
@@ -474,11 +497,39 @@ a{color:var(--sl-color-primary)}
 .sl-btn--secondary{background:transparent;color:var(--sl-color-primary);border:var(--sl-border-width) solid var(--sl-color-primary)}
 .sl-btn:focus-visible,a:focus-visible,summary:focus-visible,button:focus-visible{outline:3px solid var(--sl-color-primary);outline-offset:2px}
 .sl-buttons{display:flex;gap:var(--sl-space-4);flex-wrap:wrap;margin-top:var(--sl-space-6)}
-.sl-hero{position:relative}
-.sl-hero__overlay{position:absolute;inset:0}
-.sl-hero__overlay--dark{background:rgb(0 0 0/.45)}
-.sl-hero__overlay--gradient{background:linear-gradient(180deg,rgb(0 0 0/.15),rgb(0 0 0/.6))}
-.sl-hero__content{position:relative}
+/* The containing block for hero media and overlay is the section itself.
+   This selector was .sl-hero, which no element ever carries — so the overlay
+   positioned against the viewport and the image sat in normal flow, pushing
+   the headline below a full-bleed photograph instead of sitting behind it. */
+.sl-block--hero{position:relative;overflow:hidden}
+.sl-hero__image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.sl-hero__overlay{position:absolute;inset:0;z-index:1}
+.sl-hero__overlay--dark{background:rgb(0 0 0/.62)}
+.sl-hero__overlay--light{background:rgb(255 255 255/.55)}
+.sl-hero__overlay--gradient{background:linear-gradient(180deg,rgb(0 0 0/.38),rgb(0 0 0/.72))}/* Measured: at .15 the top of the gradient left a white headline over pale
+   artwork at 3.5:1 — passing only because the type happened to be large.
+   The scrim has to hold on its own, whatever image lands behind it. */
+/* An overlay decides the ground the headline sits on, so it must also decide
+   the ink. These were picked independently — a design with a dark palette and
+   a dark gradient rendered near-black text on near-black, which the palette
+   contrast audit cannot see because both values pass on their own. */
+.sl-block--hero:has(.sl-hero__overlay--dark) .sl-hero__content,.sl-block--hero:has(.sl-hero__overlay--gradient) .sl-hero__content{--sl-color-text:#fff;color:#fff}
+.sl-block--hero:has(.sl-hero__overlay--light) .sl-hero__content{--sl-color-text:#111;color:#111}
+.sl-block--hero:has(.sl-hero__overlay--dark) .sl-btn--secondary,.sl-block--hero:has(.sl-hero__overlay--gradient) .sl-btn--secondary{color:#fff;border-color:#fff}
+
+.sl-hero__content{position:relative;z-index:2}
+/* Text sitting straight on a photograph is legible by luck, not by design —
+   and the luck runs out the moment the customer swaps the image. Where a hero
+   carries media but the design chose no overlay, the words get a scrim mixed
+   from the page ground, so the audited text colour keeps its audited contrast
+   whatever the picture turns out to be. */
+.sl-block--hero:has(.sl-hero__image):not(:has(.sl-hero__overlay)) .sl-hero__content{background:color-mix(in oklab,var(--sl-color-background) 93%,transparent);padding:var(--sl-space-6);border-radius:var(--sl-radius-md);max-width:min(100%,58ch)}
+@supports not (color:color-mix(in oklab,red 50%,blue)){.sl-block--hero:has(.sl-hero__image):not(:has(.sl-hero__overlay)) .sl-hero__content{background:var(--sl-color-background)}}
+/* A split hero puts the media beside the words rather than behind them, so it
+   must leave the absolute model. */
+.sl-block--hero:has(.sl-hero__content--split){display:grid;grid-template-columns:1fr 1fr;gap:var(--sl-space-8);align-items:center}
+.sl-block--hero:has(.sl-hero__content--split) .sl-hero__image{position:relative;inset:auto;height:auto;aspect-ratio:4/3;order:2}
+@media(max-width:768px){.sl-block--hero:has(.sl-hero__content--split){grid-template-columns:1fr}}
 .sl-split{display:grid;grid-template-columns:1fr 1fr;gap:var(--sl-space-8);align-items:center}
 .sl-split--image-left .sl-split__media{order:-1}
 @media(max-width:768px){.sl-split{grid-template-columns:1fr}.sl-split--image-left .sl-split__media{order:0}}
@@ -511,6 +562,10 @@ a{color:var(--sl-color-primary)}
 export function renderPage(ctx: RenderContext, opts: { head?: string; navHtml?: string; footerHtml?: string } = {}): string {
   const lang = ctx.page.locale || 'en';
   const layout = (ctx.page.layout ?? 'stack') as LayoutId;
+  const treatments = ctx.page.treatments ?? [];
+  // Treatment CSS is emitted last so its reduced-motion and contrast unwinds
+  // beat the base sheet's blanket `animation:none` at equal specificity.
+  const bodyClass = [layoutClass(layout), treatmentClasses(treatments)].filter(Boolean).join(' ');
   return `<!doctype html>
 <html lang="${escapeAttr(lang)}">
 <head>
@@ -518,9 +573,10 @@ export function renderPage(ctx: RenderContext, opts: { head?: string; navHtml?: 
 <meta name="viewport" content="width=device-width,initial-scale=1">
 ${opts.head ?? ''}
 <style>${renderStyles(ctx.brandKit)}
-${layoutCss(layout)}</style>
+${layoutCss(layout)}
+${treatmentCss(treatments)}</style>
 </head>
-<body class="${layoutClass(layout)}">
+<body class="${escapeAttr(bodyClass)}">
 <a class="sl-skip-link" href="#main">Skip to content</a>
 ${opts.navHtml ?? ''}
 <main id="main">

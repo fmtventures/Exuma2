@@ -2,6 +2,7 @@ import type { BlockType } from '../blocks/schema.ts';
 import type { BrandKit } from '../design/brand-kit.ts';
 import type { IndustryKey } from './site-plan.ts';
 import type { LayoutId } from '../render/layouts.ts';
+import type { TreatmentId } from '../render/treatments.ts';
 
 /**
  * Design library.
@@ -29,6 +30,13 @@ export interface SiteTemplate {
   brand: (base: BrandKit) => BrandKit;
   /** Structural arrangement — the half of a design that is not colour. */
   layout: LayoutId;
+  /**
+   * Visual devices — the half of a design that is neither colour nor
+   * arrangement. Media handling, display type behaviour, ground texture,
+   * motion and hover detail. Without these two designs on the same layout
+   * still read as the same page.
+   */
+  treatments: TreatmentId[];
   hero: {
     layout: 'centered' | 'left' | 'split' | 'full_bleed';
     height: 'small' | 'medium' | 'large' | 'viewport';
@@ -89,6 +97,7 @@ export const TEMPLATES: SiteTemplate[] = [
   {
     id: 'ironclad',
     layout: 'canvas',
+    treatments: ['hard-edge', 'display-caps', 'grain', 'reveal', 'numbered'],
     name: 'Ironclad',
     tagline: 'Heavy, high-contrast and built to be remembered from a truck door.',
     industries: ['trades', 'automotive'],
@@ -113,6 +122,7 @@ export const TEMPLATES: SiteTemplate[] = [
   {
     id: 'harbour',
     layout: 'stack',
+    treatments: ['reveal', 'stagger', 'underline', 'gradient-wash'],
     name: 'Harbour',
     tagline: 'Established and trust-led. Reads as a firm with decades behind it.',
     industries: ['trades', 'professional_services', 'generic'],
@@ -137,6 +147,7 @@ export const TEMPLATES: SiteTemplate[] = [
   {
     id: 'seagrass',
     layout: 'split',
+    treatments: ['arch', 'reveal', 'underline', 'quote-marks'],
     name: 'Seagrass',
     tagline: 'Clean and current. Generous spacing, soft edges, easy on a phone.',
     industries: ['generic', 'health', 'professional_services'],
@@ -161,6 +172,7 @@ export const TEMPLATES: SiteTemplate[] = [
   {
     id: 'salt-cedar',
     layout: 'showcase',
+    treatments: ['duotone', 'parallax', 'display-tight', 'grain'],
     name: 'Salt & Cedar',
     tagline: 'Warm and hospitable, for places people stay and eat.',
     industries: ['hospitality', 'restaurant'],
@@ -185,6 +197,7 @@ export const TEMPLATES: SiteTemplate[] = [
   {
     id: 'blueprint',
     layout: 'offset',
+    treatments: ['ruled', 'display-caps', 'numbered', 'reveal'],
     name: 'Blueprint',
     tagline: 'Technical and precise, with a drawing-office feel.',
     industries: ['trades', 'professional_services', 'education'],
@@ -209,6 +222,7 @@ export const TEMPLATES: SiteTemplate[] = [
   {
     id: 'meridian',
     layout: 'showcase',
+    treatments: ['display-tight', 'parallax', 'gradient-wash', 'stagger'],
     name: 'Meridian',
     tagline: 'Quiet luxury for property and high-value services.',
     industries: ['real_estate', 'hospitality', 'professional_services'],
@@ -233,6 +247,7 @@ export const TEMPLATES: SiteTemplate[] = [
   {
     id: 'field-notes',
     layout: 'editorial',
+    treatments: ['drop-cap', 'underline', 'ruled', 'quote-marks'],
     name: 'Field Notes',
     tagline: 'Plain-spoken and text-forward, for writing that carries the site.',
     industries: ['professional_services', 'nonprofit', 'education', 'generic'],
@@ -257,6 +272,7 @@ export const TEMPLATES: SiteTemplate[] = [
   {
     id: 'signal',
     layout: 'cards',
+    treatments: ['stagger', 'offset-frame', 'display-tight', 'reveal'],
     name: 'Signal',
     tagline: 'Bright and energetic, built around a strong call to action.',
     industries: ['fitness', 'events', 'retail'],
@@ -281,6 +297,7 @@ export const TEMPLATES: SiteTemplate[] = [
   {
     id: 'nightshift',
     layout: 'split',
+    treatments: ['gradient-wash', 'display-tight', 'parallax', 'duotone'],
     name: 'Nightshift',
     tagline: 'Dark and modern, for studios and technical work.',
     industries: ['professional_services', 'automotive', 'generic'],
@@ -305,6 +322,7 @@ export const TEMPLATES: SiteTemplate[] = [
   {
     id: 'clinic',
     layout: 'sidebar',
+    treatments: ['reveal', 'underline', 'stagger'],
     name: 'Clinic',
     tagline: 'Calm and reassuring, designed to reduce anxiety before a visit.',
     industries: ['health', 'nonprofit'],
@@ -329,6 +347,7 @@ export const TEMPLATES: SiteTemplate[] = [
   {
     id: 'market-row',
     layout: 'compact',
+    treatments: ['stagger', 'marquee', 'underline', 'offset-frame'],
     name: 'Market Row',
     tagline: 'Product-forward, for shops with something to show.',
     industries: ['retail', 'restaurant'],
@@ -353,6 +372,7 @@ export const TEMPLATES: SiteTemplate[] = [
   {
     id: 'lighthouse',
     layout: 'cards',
+    treatments: ['offset-frame', 'reveal', 'quote-marks', 'display-caps'],
     name: 'Lighthouse',
     tagline: 'Community-minded and warm, for causes and member groups.',
     industries: ['nonprofit', 'education', 'events'],
@@ -377,6 +397,7 @@ export const TEMPLATES: SiteTemplate[] = [
   {
     id: 'atlas',
     layout: 'offset',
+    treatments: ['duotone', 'stagger', 'underline', 'gradient-wash'],
     name: 'Atlas',
     tagline: 'Corporate and dependable, for firms with a long client list.',
     industries: ['professional_services', 'education', 'generic'],
@@ -401,6 +422,7 @@ export const TEMPLATES: SiteTemplate[] = [
   {
     id: 'terminal',
     layout: 'magazine',
+    treatments: ['hard-edge', 'ruled', 'display-caps', 'marquee'],
     name: 'Terminal',
     tagline: 'Monospaced and deliberate, for people who like the machine visible.',
     industries: ['professional_services', 'generic'],
@@ -425,6 +447,7 @@ export const TEMPLATES: SiteTemplate[] = [
   {
     id: 'orchard',
     layout: 'editorial',
+    treatments: ['drop-cap', 'arch', 'reveal', 'grain'],
     name: 'Orchard',
     tagline: 'Soft and seasonal, for makers and small-batch producers.',
     industries: ['retail', 'restaurant', 'hospitality'],
@@ -449,6 +472,7 @@ export const TEMPLATES: SiteTemplate[] = [
   {
     id: 'switchback',
     layout: 'canvas',
+    treatments: ['duotone', 'display-tight', 'parallax', 'stagger', 'grain'],
     name: 'Switchback',
     tagline: 'Outdoor and hard-wearing, for work that happens in weather.',
     industries: ['trades', 'automotive', 'events'],
