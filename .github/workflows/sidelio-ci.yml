@@ -1,0 +1,42 @@
+name: Sidelio CI
+
+# Scoped to the sidelio/ directory so the existing GitHub Pages project in this
+# repository is unaffected.
+on:
+  push:
+    branches: [main]
+    paths: ['sidelio/**', '.github/workflows/sidelio-ci.yml']
+  pull_request:
+    paths: ['sidelio/**', '.github/workflows/sidelio-ci.yml']
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: sidelio
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: sidelio/package-lock.json
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      # The demo exercises every module end to end, so a break in composition
+      # fails here even when the unit tests still pass.
+      - name: Demo (end-to-end smoke)
+        run: npm run demo
