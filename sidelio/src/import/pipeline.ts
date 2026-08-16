@@ -4,7 +4,7 @@ import { KnowledgeGraph } from '../knowledge/graph.ts';
 import { assertCovers, type ImportAttestation } from './authorization.ts';
 import { crawlableLinks, extractPage, type ExtractedPage } from './extract/html.ts';
 import {
-  MAPPED_TYPES, readBusinessNode, readPostalAddress, type StructuredNode,
+  isBusinessType, MAPPED_TYPES, readBusinessNode, readPostalAddress, type StructuredNode,
 } from './extract/schema-org.ts';
 import type { Fetcher } from './fetcher.ts';
 import { isAllowed, parseRobots, PERMISSIVE_POLICY, type RobotsPolicy } from './robots.ts';
@@ -285,7 +285,7 @@ export function buildKnowledgeGraph(siteId: SiteId, job: ImportJob): KnowledgeGr
   let businessId: string | undefined;
   for (const page of pages) {
     for (const node of page.structuredData) {
-      const mapped = MAPPED_TYPES[node.type];
+      const mapped = MAPPED_TYPES[node.type] ?? (isBusinessType(node.type, node.data) ? 'Business' : undefined);
       if (!mapped) continue;
       const src = structuredSource(page.url);
 

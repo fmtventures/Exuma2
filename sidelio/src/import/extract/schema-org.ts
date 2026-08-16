@@ -12,6 +12,60 @@ export interface StructuredNode {
   data: Record<string, unknown>;
 }
 
+/**
+ * schema.org declares roughly a hundred LocalBusiness subtypes
+ * (RoofingContractor, Dentist, Plumber, BedAndBreakfast…). Enumerating them
+ * exhaustively is a losing game and missing one silently downgrades a
+ * high-confidence business record to a guess, so the common ones are listed
+ * here and `isBusinessType` catches the rest by shape.
+ */
+const BUSINESS_TYPE_SUFFIXES = [
+  'Business', 'Store', 'Shop', 'Contractor', 'Agency', 'Service', 'Services',
+  'Restaurant', 'Clinic', 'Practice', 'Company', 'Organization', 'Dealer',
+];
+
+const KNOWN_BUSINESS_TYPES = new Set([
+  'Organization', 'LocalBusiness', 'Corporation', 'ProfessionalService',
+  'Store', 'Restaurant', 'RealEstateAgent', 'HomeAndConstructionBusiness',
+  'Plumber', 'Electrician', 'RoofingContractor', 'HVACBusiness', 'Locksmith',
+  'MovingCompany', 'HousePainter', 'GeneralContractor', 'Dentist', 'Physician',
+  'MedicalClinic', 'VeterinaryCare', 'Optician', 'HealthAndBeautyBusiness',
+  'DaySpa', 'HairSalon', 'BeautySalon', 'NailSalon', 'SportsActivityLocation',
+  'ExerciseGym', 'HealthClub', 'Hotel', 'BedAndBreakfast', 'Resort', 'Motel',
+  'Campground', 'LodgingBusiness', 'FoodEstablishment', 'CafeOrCoffeeShop',
+  'Bakery', 'BarOrPub', 'Brewery', 'Winery', 'FastFoodRestaurant',
+  'AutomotiveBusiness', 'AutoRepair', 'AutoDealer', 'AutoBodyShop', 'GasStation',
+  'LegalService', 'Attorney', 'Notary', 'AccountingService', 'InsuranceAgency',
+  'FinancialService', 'RealEstateListing', 'TravelAgency', 'ChildCare',
+  'EducationalOrganization', 'School', 'Library', 'NGO', 'GovernmentOrganization',
+  'SportsTeam', 'EntertainmentBusiness', 'Florist', 'PetStore', 'GardenStore',
+  'HardwareStore', 'FurnitureStore', 'ClothingStore', 'JewelryStore',
+  'GroceryStore', 'ConvenienceStore', 'Pharmacy', 'LandscapingBusiness',
+  'SelfStorage', 'EmploymentAgency', 'AdvertisingAgency', 'ITService',
+]);
+
+/**
+ * Recognize a business node by name, by suffix, or by shape — a node carrying
+ * a postal address plus a telephone is a business regardless of its label.
+ */
+export function isBusinessType(type: string, data?: Record<string, unknown>): boolean {
+  if (KNOWN_BUSINESS_TYPES.has(type)) return true;
+  if (NON_BUSINESS_TYPES.has(type)) return false;
+  if (BUSINESS_TYPE_SUFFIXES.some((suffix) => type.endsWith(suffix))) return true;
+  if (data && 'address' in data && ('telephone' in data || 'openingHours' in data || 'openingHoursSpecification' in data)) {
+    return true;
+  }
+  return false;
+}
+
+/** Types that carry an address but are emphatically not the business itself. */
+const NON_BUSINESS_TYPES = new Set([
+  'Person', 'Product', 'Event', 'Article', 'BlogPosting', 'NewsArticle',
+  'Review', 'Question', 'FAQPage', 'BreadcrumbList', 'WebSite', 'WebPage',
+  'ImageObject', 'VideoObject', 'PostalAddress', 'ContactPoint', 'Offer',
+  'AggregateRating', 'Place', 'GeoCoordinates', 'OpeningHoursSpecification',
+]);
+
 /** Types we map into the knowledge graph; anything else is retained verbatim. */
 export const MAPPED_TYPES: Record<string, string> = {
   Organization: 'Business',

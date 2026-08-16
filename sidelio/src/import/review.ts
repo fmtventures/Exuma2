@@ -93,8 +93,15 @@ function recommendPage(page: ExtractedPage): { decision: PageDecision; reasons: 
     reasons.push('Legal pages are imported as-is so wording is preserved.');
     return { decision: 'import', reasons };
   }
-  if (page.wordCount < 60 && page.images.length === 0 && page.forms.length === 0) {
-    reasons.push(`Only ${page.wordCount} words and no media — likely an empty or placeholder page.`);
+  // A placeholder page: almost no copy, nothing interactive, and at most a
+  // single decorative image. Gallery pages are excluded by the image count —
+  // they are legitimately image-heavy and word-light.
+  if (page.wordCount < 60 && page.images.length <= 1 && page.forms.length === 0) {
+    reasons.push(
+      page.images.length === 0
+        ? `Only ${page.wordCount} words and no media — likely an empty or placeholder page.`
+        : `Only ${page.wordCount} words and a single image — likely a placeholder page.`,
+    );
     return { decision: 'ignore', reasons };
   }
   if (page.robotsMeta?.includes('noindex')) {
