@@ -692,7 +692,10 @@ loaders.designs = async () => {
 };
 
 function renderDesignFilters() {
-  const tags = ['all', ...(state.designTags ?? [])];
+  // Layouts filter alongside styles: "show me the sidebar ones" is at least as
+  // common a way to browse as "show me the dark ones".
+  const layoutIds = [...new Set(state.designs.map((d) => d.layout))].sort();
+  const tags = ['all', ...layoutIds, ...(state.designTags ?? [])];
   document.getElementById('design-filters').innerHTML = tags.map((t) => `
     <button type="button" class="btn btn-sm ${t === state.designFilter ? 'is-active' : ''}" data-design-tag="${esc(t)}">
       ${esc(t)}
@@ -702,7 +705,7 @@ function renderDesignFilters() {
 function renderDesigns() {
   const list = state.designFilter === 'all'
     ? state.designs
-    : state.designs.filter((d) => d.tags.includes(state.designFilter));
+    : state.designs.filter((d) => d.tags.includes(state.designFilter) || d.layout === state.designFilter);
 
   document.getElementById('design-grid').innerHTML = list.map((d) => `
     <article class="design">
@@ -715,6 +718,7 @@ function renderDesigns() {
           ${d.suitsThisBusiness ? '<span class="tag ok">suits your trade</span>' : ''}
         </div>
         <p class="muted small">${esc(d.tagline)}</p>
+        <p class="design-layout"><strong>${esc(d.layoutName)} layout</strong> — ${esc(d.layoutDescription)}</p>
         <div class="design-meta">
           <span class="sw" style="background:${esc(d.palette.background)}" title="background"></span>
           <span class="sw" style="background:${esc(d.palette.primary)}" title="primary"></span>

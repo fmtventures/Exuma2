@@ -413,3 +413,6 @@ textarea { font: inherit; padding: .45rem .55rem; border-radius: 6px; border: 1p
 }
 .design-meta .muted { margin-left: .35rem; }
 .tag.ok { background: var(--ok); color: #04220c; }
+
+.design-layout { margin: 0; font-size: .78rem; color: var(--muted); }
+.design-layout strong { color: var(--text); }

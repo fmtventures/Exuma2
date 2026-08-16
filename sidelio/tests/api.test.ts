@@ -419,6 +419,39 @@ describe('design library', () => {
     }
   });
 
+  it('spans at least ten distinct page layouts, not one recoloured', async () => {
+    const { body } = await call('/api/templates');
+
+    // The earlier library varied palette and type but shared a single
+    // arrangement, so every design read as the same page. Layout coverage is
+    // asserted directly rather than trusted.
+    const layouts = new Set(body.templates.map((t: { layout: string }) => t.layout));
+    expect(layouts.size).toBeGreaterThanOrEqual(10);
+    expect(body.layouts.length).toBeGreaterThanOrEqual(10);
+
+    for (const t of body.templates) {
+      expect(t.layoutName, t.name).toBeTruthy();
+      expect(t.layoutDescription, t.name).toBeTruthy();
+      // The layout must reach the markup, not just the metadata.
+      expect(t.previewHtml).toContain('sl-layout');
+    }
+
+    // Each layout ships only its own CSS.
+    const sidebar = body.templates.find((t: { layout: string }) => t.layout === 'sidebar');
+    expect(sidebar.previewHtml).toContain('sl-sidebar');
+    expect(sidebar.previewHtml).not.toContain('.sl-magazine');
+  });
+
+  it('carries the layout onto the pages it generates', async () => {
+    await post('/api/templates/clinic/apply', {});
+    const pages = await call('/api/pages');
+    const page = (await call(`/api/pages/${pages.body.pages[0].id}`)).body.page;
+    expect(page.layout).toBe('sidebar');
+
+    const html = (await call(`/preview/${page.id}`)).raw;
+    expect(html).toContain('class="sl-layout sl-sidebar"');
+  });
+
   it('puts designs built for the detected industry first', async () => {
     const { body } = await call('/api/templates');
     expect(body.industry).toBe('trades');

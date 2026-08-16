@@ -371,6 +371,7 @@ export function generateSite(
         noindex: false,
       },
       status: 'draft',
+      ...(template ? { layout: template.layout } : {}),
       order: order++,
       locale,
       updatedAt: new Date().toISOString(),

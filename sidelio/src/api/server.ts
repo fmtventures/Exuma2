@@ -15,6 +15,7 @@ import { isPublishable as assetPublishable } from '../media/asset.ts';
 import { auditLibrary, findDuplicates, planDerivatives, searchAssets } from '../media/studio.ts';
 import { CONCEPT_THEMES, themeFor, type ConceptDirection } from '../generate/concept-themes.ts';
 import { ALL_TAGS, templateById, templatesForIndustry, TEMPLATES } from '../generate/templates.ts';
+import { LAYOUT_LIST, layoutById } from '../render/layouts.ts';
 import { detectIndustry, generateSite, generateThreeConcepts } from '../generate/site-plan.ts';
 import { auditPageSeo, renderHead } from '../render/seo.ts';
 import { summaryLines } from '../import/review.ts';
@@ -685,6 +686,7 @@ route('GET', '/api/templates', ({ store }) => {
   return {
     industry,
     tags: ALL_TAGS,
+    layouts: LAYOUT_LIST,
     total: TEMPLATES.length,
     templates: ordered.map((template) => {
       const site = generateSite(SITE_ID, store.graph, {
@@ -708,6 +710,9 @@ route('GET', '/api/templates', ({ store }) => {
           surface: brandKit.colors.surface,
         },
         typeface: brandKit.typography.headingFamily.split(',')[0]?.replace(/["']/g, '') ?? '',
+        layout: template.layout,
+        layoutName: layoutById(template.layout).name,
+        layoutDescription: layoutById(template.layout).description,
         pageCount: site.pages.length,
         sections: home?.blocks.map((b) => b.type) ?? [],
         previewHtml: home

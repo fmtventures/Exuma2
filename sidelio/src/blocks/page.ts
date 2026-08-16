@@ -9,6 +9,8 @@ export interface Page {
   title: string;
   blocks: Block[];
   seo: PageSeo;
+  /** Structural arrangement; see src/render/layouts.ts. Defaults to 'stack'. */
+  layout?: string;
   status: 'draft' | 'published' | 'scheduled' | 'archived';
   /** Set when this page is generated from a CMS collection record. */
   collectionId?: string;

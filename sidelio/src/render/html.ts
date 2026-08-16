@@ -3,6 +3,7 @@ import { isVisibleAt, resolveResponsive, type Block, type Breakpoint } from '../
 import { readableTextOn, toCssVariables, type BrandKit } from '../design/brand-kit.ts';
 import type { Asset } from '../media/asset.ts';
 import { responsiveImage } from '../media/studio.ts';
+import { layoutClass, layoutCss, type LayoutId } from './layouts.ts';
 
 /**
  * Block renderer.
@@ -509,15 +510,17 @@ a{color:var(--sl-color-primary)}
 /** Full standalone document — what the publisher writes to storage. */
 export function renderPage(ctx: RenderContext, opts: { head?: string; navHtml?: string; footerHtml?: string } = {}): string {
   const lang = ctx.page.locale || 'en';
+  const layout = (ctx.page.layout ?? 'stack') as LayoutId;
   return `<!doctype html>
 <html lang="${escapeAttr(lang)}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 ${opts.head ?? ''}
-<style>${renderStyles(ctx.brandKit)}</style>
+<style>${renderStyles(ctx.brandKit)}
+${layoutCss(layout)}</style>
 </head>
-<body>
+<body class="${layoutClass(layout)}">
 <a class="sl-skip-link" href="#main">Skip to content</a>
 ${opts.navHtml ?? ''}
 <main id="main">

@@ -1,6 +1,7 @@
 import type { BlockType } from '../blocks/schema.ts';
 import type { BrandKit } from '../design/brand-kit.ts';
 import type { IndustryKey } from './site-plan.ts';
+import type { LayoutId } from '../render/layouts.ts';
 
 /**
  * Design library.
@@ -26,6 +27,8 @@ export interface SiteTemplate {
   /** Short descriptors for filtering by feel. */
   tags: string[];
   brand: (base: BrandKit) => BrandKit;
+  /** Structural arrangement — the half of a design that is not colour. */
+  layout: LayoutId;
   hero: {
     layout: 'centered' | 'left' | 'split' | 'full_bleed';
     height: 'small' | 'medium' | 'large' | 'viewport';
@@ -85,6 +88,7 @@ function kit(spec: {
 export const TEMPLATES: SiteTemplate[] = [
   {
     id: 'ironclad',
+    layout: 'canvas',
     name: 'Ironclad',
     tagline: 'Heavy, high-contrast and built to be remembered from a truck door.',
     industries: ['trades', 'automotive'],
@@ -108,6 +112,7 @@ export const TEMPLATES: SiteTemplate[] = [
   },
   {
     id: 'harbour',
+    layout: 'stack',
     name: 'Harbour',
     tagline: 'Established and trust-led. Reads as a firm with decades behind it.',
     industries: ['trades', 'professional_services', 'generic'],
@@ -131,6 +136,7 @@ export const TEMPLATES: SiteTemplate[] = [
   },
   {
     id: 'seagrass',
+    layout: 'split',
     name: 'Seagrass',
     tagline: 'Clean and current. Generous spacing, soft edges, easy on a phone.',
     industries: ['generic', 'health', 'professional_services'],
@@ -154,6 +160,7 @@ export const TEMPLATES: SiteTemplate[] = [
   },
   {
     id: 'salt-cedar',
+    layout: 'showcase',
     name: 'Salt & Cedar',
     tagline: 'Warm and hospitable, for places people stay and eat.',
     industries: ['hospitality', 'restaurant'],
@@ -177,6 +184,7 @@ export const TEMPLATES: SiteTemplate[] = [
   },
   {
     id: 'blueprint',
+    layout: 'offset',
     name: 'Blueprint',
     tagline: 'Technical and precise, with a drawing-office feel.',
     industries: ['trades', 'professional_services', 'education'],
@@ -200,6 +208,7 @@ export const TEMPLATES: SiteTemplate[] = [
   },
   {
     id: 'meridian',
+    layout: 'showcase',
     name: 'Meridian',
     tagline: 'Quiet luxury for property and high-value services.',
     industries: ['real_estate', 'hospitality', 'professional_services'],
@@ -223,6 +232,7 @@ export const TEMPLATES: SiteTemplate[] = [
   },
   {
     id: 'field-notes',
+    layout: 'editorial',
     name: 'Field Notes',
     tagline: 'Plain-spoken and text-forward, for writing that carries the site.',
     industries: ['professional_services', 'nonprofit', 'education', 'generic'],
@@ -246,6 +256,7 @@ export const TEMPLATES: SiteTemplate[] = [
   },
   {
     id: 'signal',
+    layout: 'cards',
     name: 'Signal',
     tagline: 'Bright and energetic, built around a strong call to action.',
     industries: ['fitness', 'events', 'retail'],
@@ -269,6 +280,7 @@ export const TEMPLATES: SiteTemplate[] = [
   },
   {
     id: 'nightshift',
+    layout: 'split',
     name: 'Nightshift',
     tagline: 'Dark and modern, for studios and technical work.',
     industries: ['professional_services', 'automotive', 'generic'],
@@ -292,6 +304,7 @@ export const TEMPLATES: SiteTemplate[] = [
   },
   {
     id: 'clinic',
+    layout: 'sidebar',
     name: 'Clinic',
     tagline: 'Calm and reassuring, designed to reduce anxiety before a visit.',
     industries: ['health', 'nonprofit'],
@@ -315,6 +328,7 @@ export const TEMPLATES: SiteTemplate[] = [
   },
   {
     id: 'market-row',
+    layout: 'compact',
     name: 'Market Row',
     tagline: 'Product-forward, for shops with something to show.',
     industries: ['retail', 'restaurant'],
@@ -338,6 +352,7 @@ export const TEMPLATES: SiteTemplate[] = [
   },
   {
     id: 'lighthouse',
+    layout: 'cards',
     name: 'Lighthouse',
     tagline: 'Community-minded and warm, for causes and member groups.',
     industries: ['nonprofit', 'education', 'events'],
@@ -361,6 +376,7 @@ export const TEMPLATES: SiteTemplate[] = [
   },
   {
     id: 'atlas',
+    layout: 'offset',
     name: 'Atlas',
     tagline: 'Corporate and dependable, for firms with a long client list.',
     industries: ['professional_services', 'education', 'generic'],
@@ -384,6 +400,7 @@ export const TEMPLATES: SiteTemplate[] = [
   },
   {
     id: 'terminal',
+    layout: 'magazine',
     name: 'Terminal',
     tagline: 'Monospaced and deliberate, for people who like the machine visible.',
     industries: ['professional_services', 'generic'],
@@ -407,6 +424,7 @@ export const TEMPLATES: SiteTemplate[] = [
   },
   {
     id: 'orchard',
+    layout: 'editorial',
     name: 'Orchard',
     tagline: 'Soft and seasonal, for makers and small-batch producers.',
     industries: ['retail', 'restaurant', 'hospitality'],
@@ -430,6 +448,7 @@ export const TEMPLATES: SiteTemplate[] = [
   },
   {
     id: 'switchback',
+    layout: 'canvas',
     name: 'Switchback',
     tagline: 'Outdoor and hard-wearing, for work that happens in weather.',
     industries: ['trades', 'automotive', 'events'],
