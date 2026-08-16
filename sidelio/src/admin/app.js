@@ -676,9 +676,18 @@ loaders.concepts = async () => {
     grid.innerHTML = concepts.map((c) => `
       <article class="concept">
         <header>
-          <h3>${esc(c.direction)}</h3>
-          <span class="muted small">${c.pageCount} pages</span>
+          <div>
+            <h3>${esc(c.direction)}</h3>
+            <span class="muted small">${esc(c.rationale)}</span>
+          </div>
         </header>
+        <div class="concept-swatches" aria-label="Palette and typeface">
+          <span class="sw" style="background:${esc(c.palette.background)}" title="background"></span>
+          <span class="sw" style="background:${esc(c.palette.primary)}" title="primary"></span>
+          <span class="sw" style="background:${esc(c.palette.accent)}" title="accent"></span>
+          <span class="sw" style="background:${esc(c.palette.text)}" title="text"></span>
+          <span class="muted small">${esc(c.typeface)} · ${c.pageCount} pages</span>
+        </div>
         <iframe class="concept-preview" title="${esc(c.direction)} concept preview" sandbox=""></iframe>
         <ul class="concept-pages">
           ${c.pages.map((p) => `<li><strong>${esc(p.path)}</strong> <span class="muted small">${esc(p.blocks.join(' → '))}</span></li>`).join('')}

@@ -406,9 +406,39 @@ describe('design concepts', () => {
       expect(c.previewHtml).toContain('<!doctype html>');
     }
 
-    // The directions must actually differ, or the picker is theatre.
-    const heroHeights = body.concepts.map((c: { previewHtml: string }) => c.previewHtml.length);
-    expect(new Set(heroHeights).size).toBeGreaterThan(1);
+    // The directions must differ as *designs*, not just in hero height. An
+    // earlier version varied layout flags while sharing one brand kit and
+    // produced three identical pages, so each axis is asserted separately.
+    const palettes = body.concepts.map((c: { palette: { primary: string } }) => c.palette.primary);
+    expect(new Set(palettes).size).toBe(3);
+
+    const grounds = body.concepts.map((c: { palette: { background: string } }) => c.palette.background);
+    expect(new Set(grounds).size).toBeGreaterThan(1);
+
+    const typefaces = body.concepts.map((c: { typeface: string }) => c.typeface);
+    expect(new Set(typefaces).size).toBe(3);
+
+    const structures = body.concepts.map((c: { pages: Array<{ blocks: string[] }> }) =>
+      c.pages[0]?.blocks.join('>'));
+    expect(new Set(structures).size).toBe(3);
+
+    for (const c of body.concepts) expect(c.rationale).toBeTruthy();
+  });
+
+  it('adopts the direction\'s design system when applied, not just its pages', async () => {
+    const before = (await call('/api/brand')).body.brandKit.colors.primary;
+    await post('/api/concepts/apply', { direction: 'bold' });
+
+    const after = (await call('/api/brand')).body.brandKit;
+    expect(after.colors.primary).not.toBe(before);
+    expect(after.colors.background).toBe('#111315');
+    expect(after.typography.headingFamily).toMatch(/Helvetica/);
+
+    // A dark ground must not also carry a dark per-block scheme: the renderer
+    // inverts for that flag, so applying both paints dark text on dark.
+    const pages = await call('/api/pages');
+    const page = (await call(`/api/pages/${pages.body.pages[0].id}`)).body.page;
+    expect(page.blocks.every((b: { style: { scheme: string } }) => b.style.scheme !== 'dark')).toBe(true);
   });
 
   it('applies a concept as a reversible change set', async () => {

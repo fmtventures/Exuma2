@@ -3,6 +3,7 @@ import type { Block, BlockType } from '../blocks/schema.ts';
 import { normalizePath, slugify, type Page, type Navigation, type NavigationItem } from '../blocks/page.ts';
 import type { KnowledgeGraph } from '../knowledge/graph.ts';
 import type { Entity } from '../knowledge/entities.ts';
+import { themeFor, schemeFor, type ConceptDirection } from './concept-themes.ts';
 
 /**
  * Site generation — the rebuild modes.
@@ -28,8 +29,6 @@ export type RebuildMode =
   | 'industry_optimized'
   /** Optimize for conversion, speed, SEO and accessibility above all. */
   | 'performance_first';
-
-export type ConceptDirection = 'conservative' | 'modern' | 'bold';
 
 export interface GenerateOptions {
   mode: RebuildMode;
@@ -197,6 +196,11 @@ export function detectIndustry(graph: KnowledgeGraph): IndustryKey {
 interface ModeProfile {
   /** Extra blocks appended to every page. */
   alwaysAppend: BlockType[];
+  /** Section order for the home page; overrides the industry default. */
+  homeSections?: BlockType[];
+  heroOverlay?: 'none' | 'dark' | 'light' | 'gradient';
+  /** Applied to every block, so a dark direction does not paint light-on-light. */
+  scheme?: 'light' | 'dark' | 'inherit';
   /** Blocks dropped for speed/simplicity. */
   suppress: BlockType[];
   heroHeight: 'small' | 'medium' | 'large' | 'viewport';
@@ -231,11 +235,23 @@ const MODE_PROFILES: Record<RebuildMode, ModeProfile> = {
   },
 };
 
-const DIRECTION_OVERRIDES: Record<ConceptDirection, Partial<ModeProfile>> = {
-  conservative: { heroHeight: 'medium', heroLayout: 'left', animation: 'none' },
-  modern: { heroHeight: 'large', heroLayout: 'split', animation: 'fade' },
-  bold: { heroHeight: 'viewport', heroLayout: 'full_bleed', animation: 'zoom' },
-};
+/**
+ * A concept direction overrides the whole profile — layout, motion and the
+ * section composition — and separately supplies its own brand kit. Varying
+ * only the hero produced three pages that were indistinguishable.
+ */
+function profileForDirection(direction: ConceptDirection): Partial<ModeProfile> {
+  const theme = themeFor(direction);
+  return {
+    heroHeight: theme.hero.height,
+    heroLayout: theme.hero.layout,
+    heroOverlay: theme.hero.overlay,
+    animation: theme.animation,
+    scheme: schemeFor(direction),
+    homeSections: theme.homeSections,
+    alwaysAppend: theme.interiorTail,
+  };
+}
 
 /* ------------------------------------------------------------------ */
 /* Generation                                                          */
@@ -249,7 +265,7 @@ export function generateSite(
   const industry = options.industry ?? detectIndustry(graph);
   const profile = {
     ...MODE_PROFILES[options.mode],
-    ...(options.direction ? DIRECTION_OVERRIDES[options.direction] : {}),
+    ...(options.direction ? profileForDirection(options.direction) : {}),
   };
   const locale = options.locale ?? 'en';
   const missing: MissingFact[] = [];
@@ -313,7 +329,11 @@ export function generateSite(
       continue;
     }
 
-    const blockTypes = [...plan.blocks, ...profile.alwaysAppend]
+    const planned = plan.kind === 'home' && profile.homeSections
+      ? profile.homeSections
+      : plan.blocks;
+
+    const blockTypes = [...planned, ...profile.alwaysAppend]
       .filter((t) => !profile.suppress.includes(t))
       .filter((t, i, arr) => arr.indexOf(t) === i);
 
@@ -414,7 +434,7 @@ function block(type: BlockType, props: Record<string, unknown>, ctx: BuildContex
     id: newId('page'),
     type,
     props,
-    style: { scheme: 'inherit', animation: ctx.profile.animation },
+    style: { scheme: ctx.profile.scheme ?? 'inherit', animation: ctx.profile.animation },
     visibility: { hiddenOn: [], requiresAuth: false },
     locked: false,
   };
@@ -429,7 +449,7 @@ function buildBlock(type: BlockType, ctx: BuildContext): Block | null {
       return block('hero', {
         heading: ctx.plan.kind === 'home' ? name : ctx.plan.title,
         ...(ctx.plan.kind === 'home' && description ? { subheading: truncate(description, 180) } : {}),
-        overlay: 'gradient',
+        overlay: ctx.profile.heroOverlay ?? 'gradient',
         layout: ctx.profile.heroLayout,
         height: ctx.plan.kind === 'home' ? ctx.profile.heroHeight : 'small',
         buttons: heroButtons(ctx),

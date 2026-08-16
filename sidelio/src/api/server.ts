@@ -13,7 +13,8 @@ import { auditContrast, auditTypography, FONT_STACKS, type BrandKit } from '../d
 import { renderPage, renderStyles } from '../render/html.ts';
 import { isPublishable as assetPublishable } from '../media/asset.ts';
 import { auditLibrary, findDuplicates, planDerivatives, searchAssets } from '../media/studio.ts';
-import { generateThreeConcepts, type ConceptDirection } from '../generate/site-plan.ts';
+import { generateThreeConcepts } from '../generate/site-plan.ts';
+import { CONCEPT_THEMES, themeFor, type ConceptDirection } from '../generate/concept-themes.ts';
 import { auditPageSeo, renderHead } from '../render/seo.ts';
 import { summaryLines } from '../import/review.ts';
 import { AppStore, DEV_ACTOR, ORG_ID, SITE_ID, USER_ID } from './store.ts';
@@ -676,11 +677,24 @@ route('GET', '/api/concepts', ({ store }) => {
     concepts: directions.map((direction) => {
       const site = concepts[direction];
       const home = site.pages.find((p) => p.path === '/') ?? site.pages[0];
+      const theme = themeFor(direction);
+      // Each direction renders with its own kit. Using the site's single kit
+      // for all three is what made them indistinguishable.
+      const brandKit = theme.brand(store.brandKit);
+
       return {
         direction,
+        rationale: theme.rationale,
         pageCount: site.pages.length,
         notes: site.notes,
         missing: site.missing,
+        palette: {
+          primary: brandKit.colors.primary,
+          background: brandKit.colors.background,
+          text: brandKit.colors.text,
+          accent: brandKit.colors.accent ?? brandKit.colors.primary,
+        },
+        typeface: brandKit.typography.headingFamily.split(',')[0]?.replace(/["']/g, '') ?? '',
         pages: site.pages.map((p) => ({
           path: p.path,
           title: p.title,
@@ -689,7 +703,7 @@ route('GET', '/api/concepts', ({ store }) => {
         previewHtml: home
           ? renderPage(
               {
-                page: home, brandKit: store.brandKit, assets: store.assetMap(),
+                page: home, brandKit, assets: store.assetMap(),
                 origin: `https://${store.site.subdomain}.sidelio.site`, preview: true,
               },
               { head: '<meta name="robots" content="noindex">' },
@@ -703,12 +717,15 @@ route('GET', '/api/concepts', ({ store }) => {
 route('POST', '/api/concepts/apply', async ({ store, body }) => {
   authorize('page:create');
   const { direction } = body as { direction?: ConceptDirection };
-  if (!direction || !['conservative', 'modern', 'bold'].includes(direction)) {
+  if (!direction || !(direction in CONCEPT_THEMES)) {
     throw err('VALIDATION_FAILED', 'pick conservative, modern or bold');
   }
 
   const chosen = generateThreeConcepts(SITE_ID, store.graph, { mode: 'redesign' })[direction];
   const current = store.pages();
+
+  // Adopting a direction means adopting its design system, not just its pages.
+  store.setBrandKit(themeFor(direction).brand(store.brandKit));
 
   // Replacing the page set goes through a change set rather than a store swap,
   // so switching concepts is undoable from History like any other edit.

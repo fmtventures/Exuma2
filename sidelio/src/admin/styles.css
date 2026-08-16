@@ -371,3 +371,11 @@ textarea { font: inherit; padding: .45rem .55rem; border-radius: 6px; border: 1p
 }
 .concept-pages { list-style: none; margin: 0; padding: 0; display: grid; gap: .2rem; font-size: .8rem; }
 .concept-pages li { overflow-wrap: anywhere; }
+
+.concept-swatches { display: flex; align-items: center; gap: .3rem; }
+.concept-swatches .sw {
+  width: 18px; height: 18px; border-radius: 3px;
+  border: 1px solid var(--line); display: inline-block;
+}
+.concept-swatches .muted { margin-left: .35rem; }
+.concept-preview { height: 420px; }
