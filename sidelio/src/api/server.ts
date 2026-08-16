@@ -13,8 +13,9 @@ import { auditContrast, auditTypography, FONT_STACKS, type BrandKit } from '../d
 import { renderPage, renderStyles } from '../render/html.ts';
 import { isPublishable as assetPublishable } from '../media/asset.ts';
 import { auditLibrary, findDuplicates, planDerivatives, searchAssets } from '../media/studio.ts';
-import { generateThreeConcepts } from '../generate/site-plan.ts';
 import { CONCEPT_THEMES, themeFor, type ConceptDirection } from '../generate/concept-themes.ts';
+import { ALL_TAGS, templateById, templatesForIndustry, TEMPLATES } from '../generate/templates.ts';
+import { detectIndustry, generateSite, generateThreeConcepts } from '../generate/site-plan.ts';
 import { auditPageSeo, renderHead } from '../render/seo.ts';
 import { summaryLines } from '../import/review.ts';
 import { AppStore, DEV_ACTOR, ORG_ID, SITE_ID, USER_ID } from './store.ts';
@@ -663,6 +664,116 @@ route('GET', '/cdn/sites/:siteId/:file', async ({ store, params, res }) => {
   });
   res.end(Buffer.from(stored.value.bytes));
   return undefined;
+});
+
+/* ------------------------------------------------------------------ */
+/* Design library                                                      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Every template rendered against this site's own content.
+ *
+ * The previews are not stock screenshots — each is the real renderer running
+ * the customer's own business facts through that template, so what the gallery
+ * shows is what applying it produces. That is only affordable because blocks
+ * are data and the renderer is a pure function.
+ */
+route('GET', '/api/templates', ({ store }) => {
+  const industry = detectIndustry(store.graph);
+  const ordered = templatesForIndustry(industry);
+
+  return {
+    industry,
+    tags: ALL_TAGS,
+    total: TEMPLATES.length,
+    templates: ordered.map((template) => {
+      const site = generateSite(SITE_ID, store.graph, {
+        mode: 'redesign', templateId: template.id, industry,
+      });
+      const home = site.pages.find((p) => p.path === '/') ?? site.pages[0];
+      const brandKit = template.brand(store.brandKit);
+
+      return {
+        id: template.id,
+        name: template.name,
+        tagline: template.tagline,
+        tags: template.tags,
+        industries: template.industries,
+        suitsThisBusiness: template.industries.includes(industry),
+        palette: {
+          background: brandKit.colors.background,
+          primary: brandKit.colors.primary,
+          accent: brandKit.colors.accent ?? brandKit.colors.primary,
+          text: brandKit.colors.text,
+          surface: brandKit.colors.surface,
+        },
+        typeface: brandKit.typography.headingFamily.split(',')[0]?.replace(/["']/g, '') ?? '',
+        pageCount: site.pages.length,
+        sections: home?.blocks.map((b) => b.type) ?? [],
+        previewHtml: home
+          ? renderPage(
+              {
+                page: home, brandKit, assets: store.assetMap(),
+                origin: `https://${store.site.subdomain}.sidelio.site`, preview: true,
+              },
+              { head: '<meta name="robots" content="noindex">' },
+            )
+          : '',
+      };
+    }),
+  };
+});
+
+route('POST', '/api/templates/:templateId/apply', async ({ store, params, body }) => {
+  authorize('page:create');
+  const template = templateById(params['templateId'] as string);
+  if (!template) throw err('NOT_FOUND', 'no such design');
+
+  const { keepContent } = body as { keepContent?: boolean };
+  const industry = detectIndustry(store.graph);
+  const generated = generateSite(SITE_ID, store.graph, {
+    mode: 'redesign', templateId: template.id, industry,
+  });
+  const current = store.pages();
+
+  // Adopting a design means adopting its whole system, not just its pages.
+  store.setBrandKit(template.brand(store.brandKit));
+
+  const operations: Operation[] = [
+    ...current.map((page) => ({
+      op: 'delete' as const,
+      resource: { type: 'page' as const, id: page.id, label: page.title },
+      before: page,
+    })),
+    ...generated.pages.map((page) => ({
+      op: 'create' as const,
+      resource: { type: 'page' as const, id: page.id, label: page.title },
+      after: page,
+    })),
+  ];
+
+  const applied = store.applyChanges(createChangeSet({
+    siteId: SITE_ID,
+    origin: 'bulk_admin',
+    title: `Apply the ${template.name} design`,
+    createdBy: USER_ID,
+    operations,
+    warnings: [{
+      severity: 'warning',
+      code: 'pages_replaced',
+      message: `Replaces all ${current.length} existing page(s) and the brand kit. Undo from History if this is not what you wanted.`,
+    }],
+  }));
+  if (!applied.ok) throw applied.error;
+
+  await store.auditor.record({
+    orgId: ORG_ID, siteId: SITE_ID, actorId: USER_ID, category: 'content',
+    action: 'template.apply', outcome: 'success', permission: 'page:create',
+    targetType: 'template', targetId: template.id,
+    metadata: { replaced: current.length, created: generated.pages.length, keepContent: Boolean(keepContent) },
+  });
+
+  return { changeSet: applied.value, pages: store.pages().length, template: template.name };
 });
 
 /* ------------------------------------------------------------------ */

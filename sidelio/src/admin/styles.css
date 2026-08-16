@@ -379,3 +379,37 @@ textarea { font: inherit; padding: .45rem .55rem; border-radius: 6px; border: 1p
 }
 .concept-swatches .muted { margin-left: .35rem; }
 .concept-preview { height: 420px; }
+
+/* Design library ----------------------------------------------------- */
+
+.design-filters { display: flex; flex-wrap: wrap; gap: .25rem; }
+.design-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: .85rem; margin-top: .75rem;
+}
+.design {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--radius); overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.design:hover { border-color: var(--accent); }
+/* The preview is a live render at desktop width, scaled down — a scaled real
+   page reads more truthfully than a cropped one. */
+.design-preview-wrap {
+  height: 260px; overflow: hidden; background: #fff;
+  border-bottom: 1px solid var(--line);
+}
+.design-preview {
+  width: 1280px; height: 900px; border: 0;
+  transform: scale(0.29); transform-origin: top left; pointer-events: none;
+}
+.design-body { padding: .7rem .8rem; display: grid; gap: .4rem; }
+.design-title { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.design-title h3 { margin: 0; font-size: 1rem; }
+.design-meta { display: flex; align-items: center; gap: .3rem; }
+.design-meta .sw {
+  width: 16px; height: 16px; border-radius: 3px;
+  border: 1px solid var(--line); display: inline-block;
+}
+.design-meta .muted { margin-left: .35rem; }
+.tag.ok { background: var(--ok); color: #04220c; }

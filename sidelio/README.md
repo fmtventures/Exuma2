@@ -14,7 +14,7 @@ specified but not yet implemented.
 
 ```bash
 npm install
-npm test          # 242 tests
+npm test          # 247 tests
 npm run typecheck
 npm run dev       # admin + visual editor at http://localhost:4310
 npm run demo      # full pipeline against a fixture site
@@ -88,7 +88,8 @@ src/
   import/     attestation, robots, fetcher, extractors, crawl, review
   design/     brand kit, tokens, colour maths, WCAG contrast auditing
   blocks/     block schema (26 types), page and navigation model
-  generate/   rebuild modes and 13 industry content architectures
+  generate/   rebuild modes, 13 industry content architectures,
+              16-design library
   ai/         provider registry, Anthropic + mock adapters, Site Assistant
   media/      ingestion, object store, image probing, rights, smart crop,
               derivatives, duplicates, library audit, search
@@ -97,7 +98,7 @@ src/
   api/        HTTP API over the domain modules
   admin/      admin + visual editor (no framework, no build step)
   demo/       runnable end-to-end walkthrough
-tests/        242 tests, including full-journey and HTTP integration tests
+tests/        247 tests, including full-journey and HTTP integration tests
 docs/         architecture and module specifications
 ```
 

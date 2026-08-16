@@ -395,6 +395,64 @@ describe('typography', () => {
   });
 });
 
+describe('design library', () => {
+  it('offers a gallery of distinct designs rendered with this site\'s content', async () => {
+    const { body } = await call('/api/templates');
+    expect(body.total).toBeGreaterThanOrEqual(12);
+    expect(body.templates).toHaveLength(body.total);
+
+    // Distinctness is the whole product claim, so it is asserted, not assumed.
+    const palettes = new Set(body.templates.map((t: { palette: { primary: string } }) => t.palette.primary));
+    expect(palettes.size).toBeGreaterThanOrEqual(body.total - 1);
+
+    const grounds = new Set(body.templates.map((t: { palette: { background: string } }) => t.palette.background));
+    expect(grounds.size).toBeGreaterThan(3);
+
+    const typefaces = new Set(body.templates.map((t: { typeface: string }) => t.typeface));
+    expect(typefaces.size).toBeGreaterThan(4);
+
+    // Each preview is the real renderer over the real business, not a mockup.
+    for (const t of body.templates) {
+      expect(t.previewHtml).toContain('<!doctype html>');
+      expect(t.previewHtml).toContain('Acme Roofing Ltd.');
+      expect(t.tagline).toBeTruthy();
+    }
+  });
+
+  it('puts designs built for the detected industry first', async () => {
+    const { body } = await call('/api/templates');
+    expect(body.industry).toBe('trades');
+    expect(body.templates[0].suitsThisBusiness).toBe(true);
+
+    const firstMismatch = body.templates.findIndex((t: { suitsThisBusiness: boolean }) => !t.suitsThisBusiness);
+    const laterMatch = body.templates
+      .slice(firstMismatch)
+      .some((t: { suitsThisBusiness: boolean }) => t.suitsThisBusiness);
+    expect(laterMatch).toBe(false);
+  });
+
+  it('applies a design, swapping pages and brand kit, and undoes cleanly', async () => {
+    const before = (await call('/api/brand')).body.brandKit;
+    const applied = await post('/api/templates/terminal/apply', {});
+    expect(applied.status).toBe(200);
+    expect(applied.body.template).toBe('Terminal');
+
+    const after = (await call('/api/brand')).body.brandKit;
+    expect(after.colors.background).toBe('#0a0f0c');
+    expect(after.typography.headingFamily).toMatch(/mono/i);
+    expect(after.colors.primary).not.toBe(before.colors.primary);
+
+    const history = await call('/api/history');
+    const entry = history.body.changeSets[0];
+    expect(entry.title).toMatch(/Terminal/);
+    expect((await post(`/api/history/${entry.id}/revert`, {})).status).toBe(200);
+  });
+
+  it('404s an unknown design', async () => {
+    expect((await post('/api/templates/not-a-design/apply', {})).status).toBe(404);
+  });
+});
+
 describe('design concepts', () => {
   it('generates three distinct directions with previews', async () => {
     const { body } = await call('/api/concepts');

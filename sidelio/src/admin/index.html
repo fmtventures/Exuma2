@@ -32,6 +32,7 @@
       <li><button type="button" class="nav-item" data-view="facts">Fact queue <span class="badge" id="badge-facts"></span></button></li>
       <li><button type="button" class="nav-item" data-view="media">Media <span class="badge" id="badge-media"></span></button></li>
       <li><button type="button" class="nav-item" data-view="brand">Brand kit</button></li>
+      <li><button type="button" class="nav-item" data-view="designs">Designs</button></li>
       <li><button type="button" class="nav-item" data-view="concepts">Design concepts</button></li>
       <li><button type="button" class="nav-item" data-view="history">History</button></li>
       <li><button type="button" class="nav-item" data-view="audit">Audit log</button></li>
@@ -150,6 +151,18 @@
       <div class="type-grid" id="type-grid"></div>
       <div id="type-issues"></div>
       <div class="type-specimen" id="type-specimen"></div>
+    </section>
+
+    <!-- Design library ----------------------------------------------- -->
+    <section class="view" data-view="designs">
+      <div class="panel-head">
+        <div>
+          <h2>Designs</h2>
+          <p class="muted" id="designs-intro">Pick a design. Every preview is your own content, so what you see is what you get.</p>
+        </div>
+        <div class="design-filters" id="design-filters" role="group" aria-label="Filter designs"></div>
+      </div>
+      <div class="design-grid" id="design-grid"></div>
     </section>
 
     <!-- Design concepts ---------------------------------------------- -->

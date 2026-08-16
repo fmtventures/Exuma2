@@ -176,7 +176,7 @@ faults.
 
 ## 8. What is built here
 
-Implemented, tested, and typechecked (242 tests):
+Implemented, tested, and typechecked (247 tests):
 
 | Area | State |
 |---|---|
@@ -187,7 +187,7 @@ Implemented, tested, and typechecked (242 tests):
 | Change sets: preview / apply / revert | complete |
 | Knowledge graph, 29 entity types | complete |
 | Smart Import: attestation, robots, crawl, extract, review | complete for HTML/URL sources |
-| Rebuild modes and site generation | complete, 13 industry architectures |
+| Rebuild modes and site generation | complete, 13 industry architectures + a 16-design library |
 | Brand kit, tokens, WCAG contrast auditing | complete |
 | Block schema (26 types) and validation | complete |
 | AI provider registry, Anthropic + mock adapters | complete |
@@ -196,7 +196,7 @@ Implemented, tested, and typechecked (242 tests):
 | Renderer, sanitizer, SEO/AEO, sitemap | complete |
 | Database schema and RLS policies | complete, verified against a real Postgres |
 | Admin HTTP API | complete for the modules above |
-| Admin UI | editor, import review, fact queue, media centre, brand kit + typography, design concepts, history, audit |
+| Admin UI | editor, import review, fact queue, media centre, brand kit + typography, design gallery, design concepts, history, audit |
 
 ## 9. What is specified but not built
 

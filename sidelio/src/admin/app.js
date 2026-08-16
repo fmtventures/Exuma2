@@ -665,6 +665,102 @@ function updateMediaBadge(count) {
 }
 
 /* ------------------------------------------------------------------ */
+/* Design library                                                      */
+/* ------------------------------------------------------------------ */
+
+state.designs = [];
+state.designFilter = 'all';
+
+loaders.designs = async () => {
+  const grid = document.getElementById('design-grid');
+  if (state.designs.length === 0) {
+    grid.innerHTML = '<p class="muted">Rendering every design with your content…</p>';
+    try {
+      const data = await api('/api/templates');
+      state.designs = data.templates;
+      state.designTags = data.tags;
+      state.industry = data.industry;
+      document.getElementById('designs-intro').textContent =
+        `${data.total} designs, rendered with your own business content. Designs built for ${String(data.industry).replace(/_/g, ' ')} are shown first.`;
+      renderDesignFilters();
+    } catch (error) {
+      grid.innerHTML = `<div class="note error">${esc(error.message)}</div>`;
+      return;
+    }
+  }
+  renderDesigns();
+};
+
+function renderDesignFilters() {
+  const tags = ['all', ...(state.designTags ?? [])];
+  document.getElementById('design-filters').innerHTML = tags.map((t) => `
+    <button type="button" class="btn btn-sm ${t === state.designFilter ? 'is-active' : ''}" data-design-tag="${esc(t)}">
+      ${esc(t)}
+    </button>`).join('');
+}
+
+function renderDesigns() {
+  const list = state.designFilter === 'all'
+    ? state.designs
+    : state.designs.filter((d) => d.tags.includes(state.designFilter));
+
+  document.getElementById('design-grid').innerHTML = list.map((d) => `
+    <article class="design">
+      <div class="design-preview-wrap">
+        <iframe class="design-preview" title="${esc(d.name)} preview" sandbox="" loading="lazy" scrolling="no"></iframe>
+      </div>
+      <div class="design-body">
+        <div class="design-title">
+          <h3>${esc(d.name)}</h3>
+          ${d.suitsThisBusiness ? '<span class="tag ok">suits your trade</span>' : ''}
+        </div>
+        <p class="muted small">${esc(d.tagline)}</p>
+        <div class="design-meta">
+          <span class="sw" style="background:${esc(d.palette.background)}" title="background"></span>
+          <span class="sw" style="background:${esc(d.palette.primary)}" title="primary"></span>
+          <span class="sw" style="background:${esc(d.palette.accent)}" title="accent"></span>
+          <span class="muted small">${esc(d.typeface)}</span>
+        </div>
+        <button type="button" class="btn btn-primary btn-block" data-use-design="${esc(d.id)}">Use ${esc(d.name)}</button>
+      </div>
+    </article>`).join('') || '<p class="muted">No designs match that filter.</p>';
+
+  // srcdoc rather than src: the HTML is already in hand and a sandboxed frame
+  // keeps the rendered site away from the admin's origin.
+  document.querySelectorAll('.design-preview').forEach((frame, i) => {
+    frame.srcdoc = list[i].previewHtml;
+  });
+}
+
+document.getElementById('design-filters').addEventListener('click', (event) => {
+  const btn = event.target.closest('[data-design-tag]');
+  if (!btn) return;
+  state.designFilter = btn.dataset.designTag;
+  renderDesignFilters();
+  renderDesigns();
+});
+
+document.getElementById('design-grid').addEventListener('click', async (event) => {
+  const btn = event.target.closest('[data-use-design]');
+  if (!btn) return;
+  const design = state.designs.find((d) => d.id === btn.dataset.useDesign);
+  if (!confirm(`Switch to ${design.name}? This replaces the current pages and brand kit. You can undo it from History.`)) return;
+
+  try {
+    await api(`/api/templates/${encodeURIComponent(design.id)}/apply`, {
+      method: 'POST', body: JSON.stringify({}),
+    });
+    toast(`${design.name} applied — undo from History`, 'ok');
+    state.designs = [];
+    await loadPages();
+    await loadBrand();
+    showView('editor');
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+});
+
+/* ------------------------------------------------------------------ */
 /* Design concepts                                                     */
 /* ------------------------------------------------------------------ */
 

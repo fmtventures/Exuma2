@@ -4,6 +4,7 @@ import { normalizePath, slugify, type Page, type Navigation, type NavigationItem
 import type { KnowledgeGraph } from '../knowledge/graph.ts';
 import type { Entity } from '../knowledge/entities.ts';
 import { themeFor, schemeFor, type ConceptDirection } from './concept-themes.ts';
+import { templateById } from './templates.ts';
 
 /**
  * Site generation — the rebuild modes.
@@ -34,6 +35,8 @@ export interface GenerateOptions {
   mode: RebuildMode;
   /** Only used by the three-concepts flow. */
   direction?: ConceptDirection;
+  /** Design library template; overrides the direction when both are given. */
+  templateId?: string;
   /** Pages carried over from Smart Import, with their review decisions. */
   importedPages?: Array<{ url: string; path: string; title: string; kind: string; decision: string }>;
   industry?: IndustryKey;
@@ -263,9 +266,19 @@ export function generateSite(
   options: GenerateOptions,
 ): GeneratedSite {
   const industry = options.industry ?? detectIndustry(graph);
+  const template = options.templateId ? templateById(options.templateId) : undefined;
   const profile = {
     ...MODE_PROFILES[options.mode],
     ...(options.direction ? profileForDirection(options.direction) : {}),
+    ...(template
+      ? {
+          heroHeight: template.hero.height,
+          heroLayout: template.hero.layout,
+          heroOverlay: template.hero.overlay,
+          animation: template.animation,
+          homeSections: template.homeSections,
+        }
+      : {}),
   };
   const locale = options.locale ?? 'en';
   const missing: MissingFact[] = [];

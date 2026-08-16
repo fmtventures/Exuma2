@@ -51,6 +51,7 @@ const data: Record<string, unknown> = {
   '/api/audit': await get('/api/audit'),
   '/api/media': media,
   '/api/concepts': await get('/api/concepts'),
+  '/api/templates': await get('/api/templates'),
 };
 
 const previews: Record<string, string> = {};
