@@ -31,7 +31,16 @@ const base = `http://127.0.0.1:${port}`;
 const get = async (path: string) => (await fetch(`${base}${path}`)).json();
 const getText = async (path: string) => (await fetch(`${base}${path}`)).text();
 
+const getBytes = async (path: string) => {
+  const res = await fetch(`${base}${path}`);
+  return {
+    contentType: res.headers.get('content-type') ?? 'application/octet-stream',
+    bytes: Buffer.from(await res.arrayBuffer()),
+  };
+};
+
 const pages = await get('/api/pages');
+const media = await get('/api/media');
 const data: Record<string, unknown> = {
   '/api/session': await get('/api/session'),
   '/api/pages': pages,
@@ -40,6 +49,8 @@ const data: Record<string, unknown> = {
   '/api/facts': await get('/api/facts'),
   '/api/history': await get('/api/history'),
   '/api/audit': await get('/api/audit'),
+  '/api/media': media,
+  '/api/concepts': await get('/api/concepts'),
 };
 
 const previews: Record<string, string> = {};
@@ -48,7 +59,46 @@ for (const page of (pages as { pages: Array<{ id: string }> }).pages) {
   previews[page.id] = await getText(`/preview/${page.id}`);
 }
 
+/**
+ * Inline the image bytes.
+ *
+ * A static file cannot call /media/:id/raw or the /cdn endpoint, so every
+ * asset becomes a data: URI and each URL that points at it is rewritten. The
+ * alternative — leaving the src attributes pointing at a dead origin — would
+ * show a page full of broken images and misrepresent the admin.
+ */
+const assetIds = (media as { assets: Array<{ id: string }> }).assets.map((a) => a.id);
+const dataUris = new Map<string, string>();
+
+for (const id of assetIds) {
+  data[`/api/media/${id}`] = await get(`/api/media/${id}`);
+  const raw = await getBytes(`/media/${id}/raw`);
+  dataUris.set(id, `data:${raw.contentType};base64,${raw.bytes.toString('base64')}`);
+}
+
 await new Promise<void>((r) => server.close(() => r()));
+
+/** Point every /media and /cdn reference at its inlined copy. */
+function inlineImages(text: string): string {
+  // srcset is comma-delimited and a base64 data: URI contains a comma, so an
+  // inlined srcset is unparseable and the browser picks a nonsense candidate.
+  // A snapshot needs one image per element, not a responsive set, so the
+  // responsive attributes are dropped rather than corrupted.
+  let out = text
+    .replace(/\s+srcset="[^"]*"/g, '')
+    .replace(/\s+sizes="[^"]*"/g, '');
+
+  for (const [id, uri] of dataUris) {
+    out = out.replaceAll(`/media/${id}/raw`, uri);
+    out = out.replace(new RegExp(`/cdn/sites/[^"'\\s]*${id}[^"'\\s]*`, 'g'), uri);
+  }
+  return out;
+}
+
+for (const [id, html] of Object.entries(previews)) previews[id] = inlineImages(html);
+for (const [key, value] of Object.entries(data)) {
+  data[key] = JSON.parse(inlineImages(JSON.stringify(value)));
+}
 
 const html = readFileSync(join(adminDir, 'index.html'), 'utf8');
 const css = readFileSync(join(adminDir, 'styles.css'), 'utf8');
@@ -77,6 +127,20 @@ window.fetch = async (input, init) => {
         details: [], retryable: false,
       },
     }), { status: 501, headers: { 'content-type': 'application/json' } });
+  }
+
+  // Media search filters the baked library client-side rather than returning
+  // everything and pretending it searched.
+  if (url === '/api/media/search') {
+    const q = (String(input).split('?')[1] || '').replace(/^q=/, '');
+    const term = decodeURIComponent(q).toLowerCase().trim();
+    const all = DATA['/api/media'].assets;
+    const assets = term
+      ? all.filter((a) => \`\${a.filename} \${a.altText || ''}\`.toLowerCase().includes(term))
+      : all;
+    return new Response(JSON.stringify({ assets }), {
+      status: 200, headers: { 'content-type': 'application/json' },
+    });
   }
 
   if (url in DATA) {
