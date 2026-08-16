@@ -166,11 +166,20 @@ export async function runCrawl(
 
   const sitemapUrls = await discoverFromSitemaps(origins, robots, deps, budget.maxPages);
 
-  const queue: Array<{ url: string; depth: number }> = [
+  // Seeds and sitemap entries overlap in almost every real site — the home
+  // page is both. Deduplicate as the queue is built, not just when new links
+  // are discovered, or the overlapping pages are crawled and counted twice.
+  const seen = new Set<string>();
+  const queue: Array<{ url: string; depth: number }> = [];
+  for (const { url, depth } of [
     ...input.seeds.map((url) => ({ url, depth: 0 })),
     ...sitemapUrls.map((url) => ({ url, depth: 1 })),
-  ];
-  const seen = new Set<string>(queue.map((q) => normalizeUrl(q.url)));
+  ]) {
+    const key = normalizeUrl(url);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    queue.push({ url, depth });
+  }
   let extracted = 0;
 
   while (queue.length > 0) {

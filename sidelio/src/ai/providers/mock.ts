@@ -31,7 +31,11 @@ export class MockTextProvider implements TextProvider {
   readonly models = ['mock-1'];
 
   /** Optional canned answers keyed by a substring of the prompt. */
-  constructor(private readonly canned: Array<{ match: RegExp; text: string }> = []) {}
+  private readonly canned: Array<{ match: RegExp; text: string }>;
+
+  constructor(canned: Array<{ match: RegExp; text: string }> = []) {
+    this.canned = canned;
+  }
 
   async generateText(req: TextRequest, _ctx: GenerationContext): Promise<Result<TextResponse>> {
     const hit = this.canned.find((c) => c.match.test(req.prompt));

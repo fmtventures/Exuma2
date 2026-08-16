@@ -297,10 +297,13 @@ export class ProviderRegistry {
 
 /** Enforces the org's monthly AI allowance before a call is made. */
 export class CreditGuard {
-  constructor(
-    private readonly monthlyAllowance: number,
-    private used: number = 0,
-  ) {}
+  private readonly monthlyAllowance: number;
+  private used: number;
+
+  constructor(monthlyAllowance: number, used = 0) {
+    this.monthlyAllowance = monthlyAllowance;
+    this.used = used;
+  }
 
   check(estimatedCredits: number): Result<true> {
     if (this.used + estimatedCredits > this.monthlyAllowance) {

@@ -416,7 +416,11 @@ export const PLAN_SCHEMA = {
 } as const;
 
 export class SiteAssistant {
-  constructor(private readonly providers: ProviderRegistry) {}
+  private readonly providers: ProviderRegistry;
+
+  constructor(providers: ProviderRegistry) {
+    this.providers = providers;
+  }
 
   /** Try deterministic handlers first; fall back to the model. */
   async plan(request: AssistantRequest): Promise<Result<AssistantPlan>> {

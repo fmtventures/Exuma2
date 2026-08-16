@@ -10,7 +10,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "api": "node --experimental-strip-types src/api/main.ts"
+    "demo": "node --experimental-strip-types src/demo/rebuild.ts"
   },
   "dependencies": {
     "node-html-parser": "^6.1.13",

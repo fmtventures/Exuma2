@@ -80,7 +80,11 @@ export class MemoryAuditSink implements AuditSink {
 }
 
 export class Auditor {
-  constructor(private readonly sink: AuditSink) {}
+  private readonly sink: AuditSink;
+
+  constructor(sink: AuditSink) {
+    this.sink = sink;
+  }
 
   async record(input: AuditInput): Promise<AuditEvent> {
     const event = buildAuditEvent(input);

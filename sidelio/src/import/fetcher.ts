@@ -58,7 +58,11 @@ export function isPubliclyRoutable(url: string): boolean {
 }
 
 export class HttpFetcher implements Fetcher {
-  constructor(private readonly opts: { timeoutMs?: number; maxBytes?: number } = {}) {}
+  private readonly opts: { timeoutMs?: number; maxBytes?: number };
+
+  constructor(opts: { timeoutMs?: number; maxBytes?: number } = {}) {
+    this.opts = opts;
+  }
 
   async get(url: string): Promise<Result<FetchResponse>> {
     if (!isPubliclyRoutable(url)) {
@@ -118,7 +122,11 @@ export class HttpFetcher implements Fetcher {
 
 /** Fixture-backed fetcher used by tests and by the import dry-run mode. */
 export class StaticFetcher implements Fetcher {
-  constructor(private readonly pages: Record<string, { body: string; contentType?: string; status?: number }>) {}
+  private readonly pages: Record<string, { body: string; contentType?: string; status?: number }>;
+
+  constructor(pages: Record<string, { body: string; contentType?: string; status?: number }>) {
+    this.pages = pages;
+  }
 
   async get(url: string): Promise<Result<FetchResponse>> {
     const page = this.pages[url] ?? this.pages[url.replace(/\/$/, '')];

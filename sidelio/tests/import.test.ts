@@ -248,6 +248,17 @@ describe('crawl pipeline', () => {
     expect(job.outcomes.some((o) => o.url.endsWith('.pdf'))).toBe(false);
   });
 
+  it('crawls each URL once when the seed also appears in the sitemap', async () => {
+    const job = await runCrawl({
+      siteId: SITE, attestation: attestation(), seeds: ['https://acmeroofing.ca/'],
+      budget: { maxPages: 30, maxDepth: 3 },
+    }, deps);
+
+    const urls = job.outcomes.filter((o) => o.status === 'extracted').map((o) => o.url);
+    expect(new Set(urls).size).toBe(urls.length);
+    expect(urls.filter((u) => u === 'https://acmeroofing.ca/')).toHaveLength(1);
+  });
+
   it('stops at the page budget', async () => {
     const job = await runCrawl({
       siteId: SITE, attestation: attestation(), seeds: ['https://acmeroofing.ca/'],

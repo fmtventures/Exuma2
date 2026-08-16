@@ -36,7 +36,10 @@ export class AnthropicProvider implements TextProvider, VisionProvider {
   readonly name = 'anthropic';
   readonly models: string[];
 
-  constructor(private readonly config: AnthropicConfig) {
+  private readonly config: AnthropicConfig;
+
+  constructor(config: AnthropicConfig) {
+    this.config = config;
     this.models = [config.model ?? DEFAULT_MODEL];
   }
 
