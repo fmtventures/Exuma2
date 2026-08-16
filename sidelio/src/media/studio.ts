@@ -299,7 +299,10 @@ export function findDuplicates(assets: Asset[]): DuplicateGroup[] {
     const resolutionsDiffer = new Set(matches.map(pixels)).size > 1;
 
     groups.push({
-      kind: exact ? 'exact' : resolutionsDiffer ? 'lower_resolution' : 'near',
+      // Differing resolutions is checked first: "you have a downscaled copy of
+      // this, keep the original" is more actionable than "these are identical",
+      // and it is true even when the hashes match exactly.
+      kind: resolutionsDiffer ? 'lower_resolution' : exact ? 'exact' : 'near',
       assets: matches,
       keep,
       reason: exact

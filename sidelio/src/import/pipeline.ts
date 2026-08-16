@@ -8,6 +8,7 @@ import {
 } from './extract/schema-org.ts';
 import type { Fetcher } from './fetcher.ts';
 import { isAllowed, parseRobots, PERMISSIVE_POLICY, type RobotsPolicy } from './robots.ts';
+import { normalizePhone } from './extract/contacts.ts';
 
 /**
  * Smart Import pipeline.
@@ -445,13 +446,19 @@ function applyBusinessSideEffects(
   node: StructuredNode,
   src: SourceRef,
 ) {
+  // Normalize before storing: structured data carries numbers in E.164-ish
+  // form (`+1-902-555-1234`) while page text yields `(902) 555-1234`. Storing
+  // both verbatim creates two ContactPoints for one phone line and makes the
+  // dedupe key useless.
   if (fields.telephone) {
-    graph.upsertEntity('ContactPoint', { contactType: 'phone', value: fields.telephone, purpose: 'main' }, src,
-      { dedupeKey: `phone:${fields.telephone}` });
+    const value = normalizePhone(fields.telephone);
+    graph.upsertEntity('ContactPoint', { contactType: 'phone', value, purpose: 'main' }, src,
+      { dedupeKey: `phone:${value}` });
   }
   if (fields.email) {
-    graph.upsertEntity('ContactPoint', { contactType: 'email', value: fields.email, purpose: 'main' }, src,
-      { dedupeKey: `email:${fields.email}` });
+    const value = fields.email.trim().toLowerCase();
+    graph.upsertEntity('ContactPoint', { contactType: 'email', value, purpose: 'main' }, src,
+      { dedupeKey: `email:${value}` });
   }
   for (const url of fields.sameAs ?? []) {
     graph.upsertEntity('SocialProfile', { network: networkFromUrl(url), url }, src, { dedupeKey: url });
