@@ -42,6 +42,28 @@ describe('treatments never trap content', () => {
    * content and whose animation reveals it would leave the page permanently
    * blank there — and equally on any engine without scroll-driven animations.
    */
+  it('guards every scroll-driven treatment, including ones added later', () => {
+    // Derived from the CSS rather than listed by hand: a new treatment that
+    // animates on scroll inherits this check without anyone remembering to
+    // add it. `mask-wipe` hides with clip-path, not opacity, so a rule that
+    // only looked for `opacity: 0` would have waved it through.
+    const scrollDriven = TREATMENT_IDS.filter((id) => TREATMENTS[id].css.includes('animation-timeline'));
+    expect(scrollDriven.length).toBeGreaterThanOrEqual(4);
+    for (const id of scrollDriven) {
+      const css = TREATMENTS[id].css;
+      const supportsAt = css.indexOf('@supports (animation-timeline: view())');
+      const motionAt = css.indexOf('@media (prefers-reduced-motion: no-preference)');
+      expect(supportsAt, `${id} is not behind @supports`).toBeGreaterThan(-1);
+      expect(motionAt, `${id} is not behind a motion query`).toBeGreaterThan(supportsAt);
+      // Every animation-timeline *declaration* must sit inside both guards.
+      // The @supports condition itself contains the token, so match on the
+      // declaration form rather than the bare name.
+      for (const m of css.matchAll(/animation-timeline:\s*view\(\);/g)) {
+        expect(m.index, `${id} animates outside its guards`).toBeGreaterThan(motionAt);
+      }
+    }
+  });
+
   const hidingTreatments = ['reveal', 'stagger'] as const;
 
   it.each(hidingTreatments)('guards %s behind support and motion queries', (id) => {

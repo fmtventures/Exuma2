@@ -187,7 +187,7 @@ Implemented, tested, and typechecked (249 tests):
 | Change sets: preview / apply / revert | complete |
 | Knowledge graph, 29 entity types | complete |
 | Smart Import: attestation, robots, crawl, extract, review | complete for HTML/URL sources |
-| Rebuild modes and site generation | complete, 13 industry architectures + a 16-design library spanning 10 page layouts |
+| Rebuild modes and site generation | complete, 13 industry architectures + a 26-design library spanning 13 page layouts and 31 visual treatments |
 | Brand kit, tokens, WCAG contrast auditing | complete |
 | Block schema (26 types) and validation | complete |
 | AI provider registry, Anthropic + mock adapters | complete |

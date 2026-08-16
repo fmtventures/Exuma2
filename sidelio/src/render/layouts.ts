@@ -19,6 +19,7 @@
 export const LAYOUT_IDS = [
   'stack', 'sidebar', 'split', 'editorial', 'canvas',
   'offset', 'cards', 'magazine', 'showcase', 'compact',
+  'masonry', 'banded', 'rail',
 ] as const;
 
 export type LayoutId = (typeof LAYOUT_IDS)[number];
@@ -252,6 +253,104 @@ export const LAYOUTS: Record<LayoutId, LayoutDef> = {
 .sl-compact .sl-card, .sl-compact .sl-person, .sl-compact .sl-testimonial { padding: var(--sl-space-4); }
 .sl-compact .sl-buttons { margin-top: var(--sl-space-4); }
 @media (max-width: 900px) { .sl-compact .sl-grid { grid-template-columns: repeat(2, 1fr); } }
+`,
+  },
+
+  masonry: {
+    id: 'masonry',
+    name: 'Masonry',
+    description: 'Uneven columns of differing height, packed rather than aligned.',
+    css: `
+.sl-masonry { --sl-measure: 1240px; }
+.sl-masonry .sl-block { padding-block: var(--sl-space-8); }
+@media (min-width: 900px) {
+  /* Real column packing, not a grid — items flow and the run-on is uneven,
+     which is the whole point of a masonry wall. */
+  .sl-masonry .sl-grid, .sl-masonry .sl-gallery {
+    display: block;
+    columns: 3;
+    column-gap: var(--sl-space-6);
+  }
+  .sl-masonry .sl-grid > *, .sl-masonry .sl-gallery > * {
+    break-inside: avoid;
+    margin-bottom: var(--sl-space-6);
+    display: block;
+  }
+  /* Varying the media ratio is what makes the columns pack unevenly; equal
+     tiles in columns just look like a grid with a bug. */
+  .sl-masonry .sl-gallery__item:nth-child(3n+1) img { aspect-ratio: 3 / 4; object-fit: cover; width: 100%; }
+  .sl-masonry .sl-gallery__item:nth-child(3n+2) img { aspect-ratio: 1; object-fit: cover; width: 100%; }
+  .sl-masonry .sl-gallery__item:nth-child(3n) img { aspect-ratio: 4 / 3; object-fit: cover; width: 100%; }
+  .sl-masonry .sl-testimonials { columns: 2; column-gap: var(--sl-space-6); display: block; }
+  .sl-masonry .sl-testimonials > * { break-inside: avoid; margin-bottom: var(--sl-space-6); }
+}
+.sl-masonry .sl-block--hero { padding-block: var(--sl-space-10); }
+`,
+  },
+
+  banded: {
+    id: 'banded',
+    name: 'Banded',
+    description: 'Alternating full-width bands of light and dark, edge to edge.',
+    css: `
+.sl-banded { --sl-measure: 100%; }
+.sl-banded .sl-block { max-width: none; padding: var(--sl-space-10) var(--sl-space-7); }
+.sl-banded .sl-block > * { max-width: 1180px; margin-inline: auto; }
+/* Every other band inverts. The scheme swap has to carry the text colour with
+   it or the band below reads as a contrast failure rather than a design. */
+.sl-banded main > .sl-block:nth-child(4n+3) {
+  background: var(--sl-color-text);
+  color: var(--sl-color-background);
+  --sl-color-text: var(--sl-color-background);
+  --sl-color-border: color-mix(in oklab, var(--sl-color-background) 28%, transparent);
+}
+.sl-banded main > .sl-block:nth-child(4n+3) .sl-card,
+.sl-banded main > .sl-block:nth-child(4n+3) .sl-tier,
+.sl-banded main > .sl-block:nth-child(4n+3) .sl-testimonial {
+  background: transparent;
+  border-color: var(--sl-color-border);
+}
+.sl-banded main > .sl-block:nth-child(4n+1) { background: var(--sl-color-surface); }
+.sl-banded .sl-block--hero { min-height: 80vh; display: flex; align-items: center; }
+`,
+  },
+
+  rail: {
+    id: 'rail',
+    name: 'Rail',
+    description: 'Content on the left with a narrow contents rail pinned right.',
+    css: `
+.sl-rail { --sl-measure: 100%; }
+@media (min-width: 1100px) {
+  .sl-rail main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 240px;
+    gap: var(--sl-space-9);
+    max-width: 1320px;
+    margin-inline: auto;
+    padding-inline: var(--sl-space-6);
+    align-items: start;
+  }
+  .sl-rail main > .sl-block { grid-column: 1; max-width: 780px; margin: 0; padding-block: var(--sl-space-8); }
+  /* The contact block becomes the rail: the thing a visitor needs at any
+     point on the page is the thing that should never scroll away. */
+  .sl-rail main > .sl-block--contact,
+  .sl-rail main > .sl-block--cta {
+    grid-column: 2;
+    grid-row: 2 / span 99;
+    position: sticky;
+    top: var(--sl-space-6);
+    max-width: none;
+    padding: var(--sl-space-6);
+    background: var(--sl-color-surface);
+    border: var(--sl-border-width) solid var(--sl-color-border);
+    border-radius: var(--sl-radius-lg);
+  }
+  .sl-rail main > .sl-block--hero { grid-column: 1 / -1; max-width: none; }
+  .sl-rail .sl-grid { grid-template-columns: repeat(2, 1fr); }
+  .sl-rail .sl-cta__heading { font-size: var(--sl-text-h4); }
+  .sl-rail .sl-buttons { flex-direction: column; align-items: stretch; }
+}
 `,
   },
 };

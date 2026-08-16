@@ -402,8 +402,10 @@ describe('design library', () => {
     expect(body.templates).toHaveLength(body.total);
 
     // Distinctness is the whole product claim, so it is asserted, not assumed.
+    // Exactly equal, not total-1: the slack hid two designs sharing a primary
+    // until the library grew and a third collision pushed it over the line.
     const palettes = new Set(body.templates.map((t: { palette: { primary: string } }) => t.palette.primary));
-    expect(palettes.size).toBeGreaterThanOrEqual(body.total - 1);
+    expect(palettes.size).toBe(body.total);
 
     const grounds = new Set(body.templates.map((t: { palette: { background: string } }) => t.palette.background));
     expect(grounds.size).toBeGreaterThan(3);

@@ -32,15 +32,16 @@
 
 export const TREATMENT_IDS = [
   // Motion
-  'reveal', 'stagger', 'parallax',
+  'reveal', 'stagger', 'parallax', 'sticky-stack', 'mask-wipe', 'tilt',
   // Typography
   'display-tight', 'display-caps', 'drop-cap', 'numbered',
+  'outline-type', 'italic-display', 'big-numerals',
   // Surface
-  'grain', 'gradient-wash', 'hard-edge', 'ruled',
+  'grain', 'gradient-wash', 'hard-edge', 'ruled', 'dot-grid', 'stripes', 'glass',
   // Media
-  'duotone', 'arch', 'offset-frame',
+  'duotone', 'arch', 'offset-frame', 'polaroid', 'circle-mask',
   // Detail
-  'marquee', 'underline', 'quote-marks',
+  'marquee', 'underline', 'quote-marks', 'pull-quote', 'arrow-links', 'corner-marks',
 ] as const;
 
 export type TreatmentId = (typeof TREATMENT_IDS)[number];
@@ -552,6 +553,398 @@ export const TREATMENTS: Record<TreatmentId, TreatmentDef> = {
 }
 .sl-tr-quote-marks .sl-testimonial blockquote { position: relative; font-style: italic; }
 .sl-tr-quote-marks .sl-testimonial figcaption { margin-top: var(--sl-space-4); font-weight: 600; opacity: .8; }
+`,
+  },
+
+  /* ---------------------------------------------------------------- */
+  /* Motion — second set                                               */
+  /* ---------------------------------------------------------------- */
+
+  'sticky-stack': {
+    id: 'sticky-stack',
+    name: 'Stacking panels',
+    category: 'motion',
+    description: 'Sections pin at the top and the next one slides over them.',
+    css: `
+/* Each section must paint its own ground, or the pinned one shows through the
+   one sliding over it and both become unreadable. */
+.sl-tr-sticky-stack main > .sl-block {
+  position: sticky; top: 0;
+  background: var(--sl-color-background);
+  border-top: var(--sl-border-width) solid var(--sl-color-border);
+}
+.sl-tr-sticky-stack main > .sl-block:nth-child(even) { background: var(--sl-color-surface); }
+.sl-tr-sticky-stack main > .sl-block:last-child { position: static; }
+@media (max-width: 900px) {
+  /* Pinning on a short viewport hides more than it reveals. */
+  .sl-tr-sticky-stack main > .sl-block { position: static; }
+}
+`,
+  },
+
+  'mask-wipe': {
+    id: 'mask-wipe',
+    name: 'Wipe reveal',
+    category: 'motion',
+    description: 'Headings and media are wiped into view rather than faded.',
+    css: `
+@keyframes sl-wipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .sl-tr-mask-wipe .sl-heading, .sl-tr-mask-wipe main > .sl-block > h2,
+    .sl-tr-mask-wipe .sl-gallery__item img, .sl-tr-mask-wipe .sl-split__media img {
+      animation: sl-wipe linear both;
+      animation-timeline: view();
+      animation-range: entry 5% entry 50%;
+    }
+  }
+}
+`,
+  },
+
+  tilt: {
+    id: 'tilt',
+    name: 'Tilt on hover',
+    category: 'motion',
+    description: 'Cards lift and tilt slightly under the pointer.',
+    css: `
+.sl-tr-tilt .sl-card, .sl-tr-tilt .sl-tier, .sl-tr-tilt .sl-person, .sl-tr-tilt .sl-testimonial {
+  transition: transform .3s cubic-bezier(.2,.8,.3,1), box-shadow .3s ease;
+  transform-origin: center bottom;
+}
+.sl-tr-tilt .sl-card:hover, .sl-tr-tilt .sl-tier:hover,
+.sl-tr-tilt .sl-person:hover, .sl-tr-tilt .sl-testimonial:hover {
+  transform: perspective(900px) rotateX(3deg) translateY(-6px) scale(1.015);
+  box-shadow: var(--sl-shadow-lg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .sl-tr-tilt .sl-card:hover, .sl-tr-tilt .sl-tier:hover,
+  .sl-tr-tilt .sl-person:hover, .sl-tr-tilt .sl-testimonial:hover { transform: none; }
+}
+`,
+  },
+
+  /* ---------------------------------------------------------------- */
+  /* Typography — second set                                           */
+  /* ---------------------------------------------------------------- */
+
+  'outline-type': {
+    id: 'outline-type',
+    name: 'Outlined display',
+    category: 'type',
+    description: 'The headline is drawn as a hollow outline and fills on hover.',
+    css: `
+.sl-tr-outline-type .sl-hero__heading {
+  font-size: clamp(2.5rem, 7vw, 6rem);
+  letter-spacing: -0.03em;
+  line-height: .98;
+  color: transparent;
+  -webkit-text-stroke: 2px var(--sl-color-text);
+  paint-order: stroke fill;
+}
+/* text-stroke is prefixed everywhere it exists; where it does not, the
+   heading must not stay transparent and disappear. */
+@supports not (-webkit-text-stroke: 1px red) {
+  .sl-tr-outline-type .sl-hero__heading { color: var(--sl-color-text); }
+}
+.sl-tr-outline-type .sl-heading, .sl-tr-outline-type main > .sl-block > h2 {
+  font-size: clamp(1.8rem, 3.4vw, 3rem);
+  letter-spacing: -0.02em;
+}
+.sl-tr-outline-type .sl-stat__value {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--sl-color-primary);
+  font-size: clamp(2.2rem, 4vw, 3.6rem);
+}
+@supports not (-webkit-text-stroke: 1px red) {
+  .sl-tr-outline-type .sl-stat__value { color: var(--sl-color-primary); }
+}
+`,
+  },
+
+  'italic-display': {
+    id: 'italic-display',
+    name: 'Italic display',
+    category: 'type',
+    description: 'Large italic headlines with a high-contrast roman body.',
+    css: `
+.sl-tr-italic-display .sl-hero__heading {
+  font-style: italic;
+  font-size: clamp(2.6rem, 6.5vw, 5.5rem);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  max-width: 15ch;
+  text-wrap: balance;
+}
+.sl-tr-italic-display .sl-heading, .sl-tr-italic-display main > .sl-block > h2 {
+  font-style: italic;
+  font-size: clamp(1.7rem, 3.2vw, 2.8rem);
+  letter-spacing: -0.015em;
+}
+.sl-tr-italic-display .sl-eyebrow {
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: .2em;
+  font-size: .72rem;
+}
+.sl-tr-italic-display .sl-hero__subheading { font-size: clamp(1.05rem, 1.5vw, 1.3rem); max-width: 46ch; }
+`,
+  },
+
+  'big-numerals': {
+    id: 'big-numerals',
+    name: 'Enormous figures',
+    category: 'type',
+    description: 'Statistics are set at headline scale and carry the section.',
+    css: `
+.sl-tr-big-numerals .sl-stats {
+  gap: var(--sl-space-9);
+  align-items: end;
+}
+.sl-tr-big-numerals .sl-stat__value {
+  font-size: clamp(3rem, 8vw, 7rem);
+  line-height: .88;
+  letter-spacing: -0.045em;
+  font-weight: 800;
+  color: var(--sl-color-primary);
+}
+.sl-tr-big-numerals .sl-stat__label {
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  font-size: .74rem;
+  margin-top: var(--sl-space-3);
+  max-width: 16ch;
+}
+.sl-tr-big-numerals .sl-tier__price { font-size: clamp(2rem, 3.4vw, 3rem); letter-spacing: -0.03em; }
+`,
+  },
+
+  /* ---------------------------------------------------------------- */
+  /* Surface — second set                                              */
+  /* ---------------------------------------------------------------- */
+
+  'dot-grid': {
+    id: 'dot-grid',
+    name: 'Dot grid',
+    category: 'surface',
+    description: 'A faint engineering dot grid runs behind the whole page.',
+    css: `
+/* Drawn with a gradient rather than an image: no request, and it re-tints
+   automatically when the palette changes. */
+.sl-tr-dot-grid {
+  background-image: radial-gradient(var(--sl-color-border) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-attachment: fixed;
+}
+.sl-tr-dot-grid main > .sl-block { background: transparent; }
+.sl-tr-dot-grid .sl-card, .sl-tr-dot-grid .sl-tier, .sl-tr-dot-grid .sl-person,
+.sl-tr-dot-grid .sl-testimonial { background: var(--sl-color-background); }
+.sl-tr-dot-grid .sl-block--hero { background: transparent; }
+`,
+  },
+
+  stripes: {
+    id: 'stripes',
+    name: 'Diagonal bands',
+    category: 'surface',
+    description: 'Angled colour bands cut across section edges.',
+    css: `
+.sl-tr-stripes main > .sl-block { position: relative; }
+.sl-tr-stripes main > .sl-block:nth-child(odd)::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--sl-color-primary) 9%, transparent) 0 14px,
+    transparent 14px 34px);
+  pointer-events: none;
+}
+@supports not (color: color-mix(in oklab, red 50%, blue)) {
+  .sl-tr-stripes main > .sl-block:nth-child(odd)::before { background: none; }
+}
+.sl-tr-stripes .sl-block--cta {
+  border-top: 6px solid var(--sl-color-primary);
+  border-bottom: 6px solid var(--sl-color-primary);
+}
+.sl-tr-stripes .sl-heading, .sl-tr-stripes main > .sl-block > h2 {
+  position: relative;
+  padding-left: var(--sl-space-5);
+}
+.sl-tr-stripes .sl-heading::before, .sl-tr-stripes main > .sl-block > h2::before {
+  content: '';
+  position: absolute; left: 0; top: .1em; bottom: .1em;
+  width: 5px; background: var(--sl-color-primary);
+}
+`,
+  },
+
+  glass: {
+    id: 'glass',
+    name: 'Frosted panels',
+    category: 'surface',
+    description: 'Cards float as translucent frosted panels over the ground.',
+    css: `
+.sl-tr-glass .sl-card, .sl-tr-glass .sl-tier, .sl-tr-glass .sl-person, .sl-tr-glass .sl-testimonial {
+  background: color-mix(in oklab, var(--sl-color-background) 62%, transparent);
+  border: 1px solid color-mix(in oklab, var(--sl-color-text) 12%, transparent);
+  backdrop-filter: blur(14px) saturate(1.25);
+  box-shadow: 0 12px 40px rgb(0 0 0 / .10);
+}
+/* Frost is a luxury: without color-mix or backdrop-filter the panel must still
+   be an opaque, readable surface rather than a transparent smear. */
+@supports not (backdrop-filter: blur(4px)) {
+  .sl-tr-glass .sl-card, .sl-tr-glass .sl-tier,
+  .sl-tr-glass .sl-person, .sl-tr-glass .sl-testimonial { background: var(--sl-color-surface); }
+}
+@supports not (color: color-mix(in oklab, red 50%, blue)) {
+  .sl-tr-glass .sl-card, .sl-tr-glass .sl-tier,
+  .sl-tr-glass .sl-person, .sl-tr-glass .sl-testimonial {
+    background: var(--sl-color-surface); border-color: var(--sl-color-border);
+  }
+}
+.sl-tr-glass .sl-block--hero .sl-hero__content { border-radius: var(--sl-radius-lg); }
+`,
+  },
+
+  /* ---------------------------------------------------------------- */
+  /* Media — second set                                                */
+  /* ---------------------------------------------------------------- */
+
+  polaroid: {
+    id: 'polaroid',
+    name: 'Print frames',
+    category: 'media',
+    description: 'Photographs sit in white mounts, tilted like prints on a desk.',
+    css: `
+.sl-tr-polaroid .sl-gallery__item {
+  background: #fff;
+  padding: 10px 10px 34px;
+  box-shadow: 0 6px 22px rgb(0 0 0 / .16);
+  border-radius: 2px;
+  overflow: visible;
+}
+.sl-tr-polaroid .sl-gallery__item img { border-radius: 0; aspect-ratio: 1; object-fit: cover; width: 100%; }
+.sl-tr-polaroid .sl-gallery { gap: var(--sl-space-7); }
+/* Alternating rotation, so a grid of prints does not look like a grid. */
+.sl-tr-polaroid .sl-gallery__item:nth-child(3n+1) { transform: rotate(-1.6deg); }
+.sl-tr-polaroid .sl-gallery__item:nth-child(3n+2) { transform: rotate(1.1deg); }
+.sl-tr-polaroid .sl-gallery__item:nth-child(3n) { transform: rotate(-.5deg); }
+.sl-tr-polaroid .sl-gallery__item:hover { transform: rotate(0) scale(1.03); z-index: 2; }
+.sl-tr-polaroid .sl-split__media img { background: #fff; padding: 12px; box-shadow: 0 8px 26px rgb(0 0 0 / .16); }
+@media (prefers-reduced-motion: reduce) {
+  .sl-tr-polaroid .sl-gallery__item:hover { transform: none; }
+}
+`,
+  },
+
+  'circle-mask': {
+    id: 'circle-mask',
+    name: 'Circular media',
+    category: 'media',
+    description: 'Images are cropped to circles and soft organic shapes.',
+    css: `
+.sl-tr-circle-mask .sl-gallery__item img {
+  border-radius: 50%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  width: 100%;
+}
+.sl-tr-circle-mask .sl-gallery__item { overflow: visible; }
+.sl-tr-circle-mask .sl-split__media img {
+  border-radius: 46% 54% 58% 42% / 52% 44% 56% 48%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  width: 100%;
+}
+.sl-tr-circle-mask .sl-person__photo { border-radius: 50%; aspect-ratio: 1; object-fit: cover; }
+.sl-tr-circle-mask .sl-gallery { gap: var(--sl-space-7); }
+`,
+  },
+
+  /* ---------------------------------------------------------------- */
+  /* Detail — second set                                               */
+  /* ---------------------------------------------------------------- */
+
+  'pull-quote': {
+    id: 'pull-quote',
+    name: 'Pull quotes',
+    category: 'detail',
+    description: 'A line of body copy is lifted out large between the columns.',
+    css: `
+/* The first blockquote inside prose becomes a display pull quote — the same
+   markup an author already writes, given editorial weight. */
+.sl-tr-pull-quote .sl-prose blockquote {
+  font-family: var(--sl-font-heading);
+  font-size: clamp(1.35rem, 2.6vw, 2.1rem);
+  line-height: 1.18;
+  letter-spacing: -0.015em;
+  margin: var(--sl-space-7) 0;
+  padding-left: var(--sl-space-6);
+  border-left: 4px solid var(--sl-color-primary);
+  color: var(--sl-color-text);
+  max-width: 26ch;
+}
+.sl-tr-pull-quote .sl-intro {
+  font-size: clamp(1.1rem, 1.8vw, 1.45rem);
+  max-width: 44ch;
+  color: var(--sl-color-text);
+}
+.sl-tr-pull-quote .sl-testimonial blockquote { font-size: var(--sl-text-body-lg); border: 0; padding: 0; max-width: none; }
+`,
+  },
+
+  'arrow-links': {
+    id: 'arrow-links',
+    name: 'Arrow links',
+    category: 'detail',
+    description: 'Buttons and card titles grow an arrow that slides on hover.',
+    css: `
+.sl-tr-arrow-links .sl-btn--secondary::after,
+.sl-tr-arrow-links .sl-card__title a::after {
+  content: '\\2192';
+  display: inline-block;
+  margin-left: .5em;
+  transition: transform .22s ease;
+}
+.sl-tr-arrow-links .sl-btn--secondary:hover::after,
+.sl-tr-arrow-links .sl-card__title a:hover::after { transform: translateX(5px); }
+.sl-tr-arrow-links .sl-card { display: flex; flex-direction: column; }
+.sl-tr-arrow-links .sl-card__title a { text-decoration: none; }
+.sl-tr-arrow-links .sl-card:hover { border-color: var(--sl-color-primary); }
+@media (prefers-reduced-motion: reduce) {
+  .sl-tr-arrow-links .sl-btn--secondary:hover::after,
+  .sl-tr-arrow-links .sl-card__title a:hover::after { transform: none; }
+}
+`,
+  },
+
+  'corner-marks': {
+    id: 'corner-marks',
+    name: 'Corner marks',
+    category: 'detail',
+    description: 'Printer crop marks bracket each section, like a proof sheet.',
+    css: `
+.sl-tr-corner-marks main > .sl-block { position: relative; }
+.sl-tr-corner-marks main > .sl-block::before,
+.sl-tr-corner-marks main > .sl-block::after {
+  content: '';
+  position: absolute;
+  width: 16px; height: 16px;
+  border: 2px solid var(--sl-color-primary);
+  opacity: .6;
+  pointer-events: none;
+}
+.sl-tr-corner-marks main > .sl-block::before {
+  top: 14px; left: 14px; border-right: 0; border-bottom: 0;
+}
+.sl-tr-corner-marks main > .sl-block::after {
+  bottom: 14px; right: 14px; border-left: 0; border-top: 0;
+}
+.sl-tr-corner-marks .sl-heading, .sl-tr-corner-marks main > .sl-block > h2 {
+  text-transform: uppercase;
+  letter-spacing: .16em;
+  font-size: var(--sl-text-h4);
+}
 `,
   },
 };

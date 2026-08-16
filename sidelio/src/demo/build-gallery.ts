@@ -80,7 +80,7 @@ h2{font-size:1.12rem;margin:0;letter-spacing:-.01em}
 </style>
 <header>
   <h1>Design library</h1>
-  <p class="lede">Sixteen designs, ten structural layouts, seventeen visual treatments. Every preview below is the <em>same business content</em> rendered through a different design system — palette, type pairing, arrangement, media handling, motion and detail. Sections the crawler found no data for are filled with clearly-marked sample content so the composition can be judged; artwork is abstract by design rather than fabricated photography.</p>
+  <p class="lede">Twenty-six designs, thirteen structural layouts, thirty-one visual treatments. Every preview below is the <em>same business content</em> rendered through a different design system — palette, type pairing, arrangement, media handling, motion and detail. Sections the crawler found no data for are filled with clearly-marked sample content so the composition can be judged; artwork is abstract by design rather than fabricated photography.</p>
 </header>
 <div class="filters" id="f">
   <button aria-pressed="true" data-l="all">All layouts</button>
