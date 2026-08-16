@@ -102,6 +102,8 @@ src/
                 duplicates, library audit, search
   render/       HTML renderer + sanitizer, SEO/AEO, sitemap, audit
   db/           schema.sql, rls.sql
+  api/          HTTP layer: routes, permission checks, audit, preview
+  admin/        admin UI + visual editor (no framework, no build step)
 ```
 
 Boundaries are enforced by convention and import direction: `core` imports
@@ -174,7 +176,7 @@ faults.
 
 ## 8. What is built here
 
-Implemented, tested, and typechecked (175 tests):
+Implemented, tested, and typechecked (200 tests):
 
 | Area | State |
 |---|---|
@@ -193,6 +195,8 @@ Implemented, tested, and typechecked (175 tests):
 | Media: rights, smart crop, derivatives, duplicates, search | complete (deterministic half) |
 | Renderer, sanitizer, SEO/AEO, sitemap | complete |
 | Database schema and RLS policies | complete |
+| Admin HTTP API | complete for the modules above |
+| Admin UI + visual editor | editor, import review, fact queue, brand kit, history, audit |
 
 ## 9. What is specified but not built
 
@@ -209,7 +213,6 @@ extensibility, tests, risks) but have no code in this repository yet:
 - Email and SMS
 - Analytics
 - Billing and metering
-- The visual editor front end and admin UI
 - Non-HTML import adapters (WordPress XML, CSV, PDF, DOCX, cloud storage)
 - Real image generation/editing provider adapters
 - Multi-language publishing runtime
@@ -239,5 +242,12 @@ Stated plainly rather than discovered later:
 - **The renderer resolves dynamic blocks at publish time**, not during render;
   `products`, `calendar`, `booking` and `social_feed` emit placeholders that the
   publisher fills.
-- **No HTTP API or UI ships in this repository.** The modules are libraries with
-  a demo entry point; the API surface is specified per module but not served.
+- **The admin store is in memory.** `npm run dev` seeds by running the import
+  pipeline and holds state in maps; `src/db/schema.sql` is the persistent
+  implementation and is not yet wired up. Restarting the dev server resets it.
+- **The admin ships one dev actor.** There is no login: the API resolves a fixed
+  `org_owner` and enforces permissions against it. Authentication is the missing
+  piece, not authorization.
+- **Approving a fact does not rewrite already-generated inline content.** It
+  releases the fact to structured data, collection-backed sections and future
+  generation; text already written into a block stays until edited.

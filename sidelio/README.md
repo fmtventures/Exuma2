@@ -14,14 +14,19 @@ specified but not yet implemented.
 
 ```bash
 npm install
-npm test          # 176 tests
+npm test          # 200 tests
 npm run typecheck
+npm run dev       # admin + visual editor at http://localhost:4310
 npm run demo      # full pipeline against a fixture site
 ```
 
-`npm run demo` runs Journey A end to end — attestation, crawl, extraction,
-knowledge graph, review, generation, an AI edit, and rendering — printing each
-stage and writing the generated homepage to `dist/demo/index.html`.
+`npm run dev` starts the admin, seeded by actually running Smart Import against
+the fixture site — so it opens on a website that came through the pipeline, not
+on sample data. It has an editor with live preview, the import review screen,
+the fact queue, the brand kit, version history and the audit log.
+
+`npm run demo` runs the same pipeline headlessly, printing each stage and
+writing the generated homepage to `dist/demo/index.html`.
 
 ## The idea
 
@@ -81,8 +86,10 @@ src/
   media/      rights, smart crop, derivatives, duplicates, library audit, search
   render/     HTML renderer + sanitizer, SEO/AEO, sitemap
   db/         schema.sql, rls.sql
+  api/        HTTP API over the domain modules
+  admin/      admin + visual editor (no framework, no build step)
   demo/       runnable end-to-end walkthrough
-tests/        176 tests, including a full-journey integration test
+tests/        200 tests, including full-journey and HTTP integration tests
 docs/         architecture and module specifications
 ```
 
@@ -109,12 +116,12 @@ network calls.
 Built and tested: tenancy, permissions, provenance, audit, change sets,
 knowledge graph, Smart Import (HTML/URL sources), rebuild modes and generation,
 brand kit, block schema, AI provider abstraction, Site Assistant, media studio
-(deterministic half), renderer and SEO, database schema and RLS.
+(deterministic half), renderer and SEO, database schema and RLS, the admin API,
+and the admin UI with its visual editor.
 
 Specified, not built: ecommerce, events/bookings, forms runtime, domains and
 publishing infrastructure, integrations and automations, analytics, billing,
-the visual editor front end, non-HTML import adapters, and image generation
-provider adapters.
+non-HTML import adapters, and image generation provider adapters.
 
 Known limitations are listed explicitly in
 [`docs/architecture.md`](docs/architecture.md#10-known-limitations) — the

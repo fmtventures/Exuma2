@@ -1,9 +1,9 @@
-# Module Specifications — Not Yet Implemented
+# Module Specifications
 
 Each module below is specified to the same twelve points: UX, data model, API,
 permissions, jobs, errors, audit, admin controls, AI capabilities,
-extensibility, tests, and risks. None of these have code in this repository —
-they build on the foundations that do.
+extensibility, tests, and risks. All but the visual editor (§11, now partially
+built) have no code in this repository yet — they build on the foundations that do.
 
 Conventions assumed throughout: every table carries `org_id` and `site_id` and
 is covered by RLS; every mutation flows through a `ChangeSet` where it edits
@@ -482,7 +482,7 @@ database with RLS active, not only against the permission function.
 
 ---
 
-## 11. Visual Editor (front end)
+## 11. Visual Editor (front end) — partially built
 
 **The four modes** from the specification map onto existing primitives:
 
@@ -496,9 +496,14 @@ database with RLS active, not only against the permission function.
 Every mode produces a `ChangeSet`, so undo, version history, collaboration and
 audit are uniform across all four rather than four separate implementations.
 
-**Needs building.** Canvas with breakpoint preview; inline editing; drag and
-drop; a token-aware style panel; the review UI for the import queue; the
-preview/apply dialog; presence and conflict indication for concurrent editors.
+**Built** (`src/admin/`): section list with inline field editing, add/remove/
+reorder, live preview at three breakpoints, the import review screen, the
+record-grouped fact queue, the brand kit with contrast enforcement, version
+history with undo, the audit log, and the assistant's preview/apply dialog.
+
+**Still needed.** Drag-and-drop reordering; a full token-aware style panel;
+per-block inspectors for the collection-backed types; media picker and the AI
+Media Studio surfaces; presence and conflict indication for concurrent editors.
 
 **Concurrency.** Change sets already carry preconditions and return
 `PRECONDITION_FAILED` on stale writes. For multi-user editing that becomes a
