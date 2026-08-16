@@ -9,8 +9,11 @@ import type { Permission } from '../core/permissions.ts';
 import { effectivePermissions, requireCan } from '../core/permissions.ts';
 import { approve, effectiveValue, reject } from '../core/provenance.ts';
 import { visibleModules } from '../core/tenancy.ts';
-import { auditContrast, type BrandKit } from '../design/brand-kit.ts';
+import { auditContrast, auditTypography, FONT_STACKS, type BrandKit } from '../design/brand-kit.ts';
 import { renderPage, renderStyles } from '../render/html.ts';
+import { isPublishable as assetPublishable } from '../media/asset.ts';
+import { auditLibrary, findDuplicates, planDerivatives, searchAssets } from '../media/studio.ts';
+import { generateThreeConcepts, type ConceptDirection } from '../generate/site-plan.ts';
 import { auditPageSeo, renderHead } from '../render/seo.ts';
 import { summaryLines } from '../import/review.ts';
 import { AppStore, DEV_ACTOR, ORG_ID, SITE_ID, USER_ID } from './store.ts';
@@ -92,6 +95,8 @@ route('GET', '/api/pages/:pageId', ({ store, params }) => {
 route('GET', '/api/brand', ({ store }) => ({
   brandKit: store.brandKit,
   contrastIssues: auditContrast(store.brandKit),
+  typographyIssues: auditTypography(store.brandKit.typography),
+  fontStacks: FONT_STACKS,
 }));
 
 route('GET', '/api/review', ({ store }) => {
@@ -384,10 +389,29 @@ route('POST', '/api/history/:changeSetId/revert', async ({ store, params }) => {
 
 route('PATCH', '/api/brand', async ({ store, body }) => {
   authorize('brand:update');
-  const { colors } = body as { colors?: Partial<BrandKit['colors']> };
-  if (!colors) throw err('VALIDATION_FAILED', 'colors are required');
+  const { colors, typography } = body as {
+    colors?: Partial<BrandKit['colors']>;
+    typography?: Partial<BrandKit['typography']>;
+  };
+  if (!colors && !typography) throw err('VALIDATION_FAILED', 'colors or typography are required');
 
-  const next: BrandKit = { ...store.brandKit, colors: { ...store.brandKit.colors, ...colors } };
+  const next: BrandKit = {
+    ...store.brandKit,
+    colors: { ...store.brandKit.colors, ...(colors ?? {}) },
+    typography: { ...store.brandKit.typography, ...(typography ?? {}) },
+  };
+
+  // Same shape of guard as colour: a change that makes text unreadable is
+  // refused with the measurement; anything softer comes back as a warning.
+  const typeIssues = auditTypography(next.typography);
+  const typeBlocking = typeIssues.filter((i) => i.severity === 'blocking');
+  if (typeBlocking.length > 0) {
+    throw err('VALIDATION_FAILED', 'typography change would harm readability', {
+      details: typeBlocking.map((i) => ({ path: i.field, message: i.message })),
+      userMessage: typeBlocking[0]?.message ?? 'That typography setting would make the site hard to read.',
+    });
+  }
+
   const issues = auditContrast(next);
   // Illegible text is refused outright; a hard-to-distinguish component is
   // returned as a warning the user can accept.
@@ -403,10 +427,10 @@ route('PATCH', '/api/brand', async ({ store, body }) => {
   await store.auditor.record({
     orgId: ORG_ID, siteId: SITE_ID, actorId: USER_ID, category: 'content',
     action: 'brand.update', outcome: 'success', permission: 'brand:update',
-    metadata: { fields: Object.keys(colors).join(',') },
+    metadata: { fields: [...Object.keys(colors ?? {}), ...Object.keys(typography ?? {})].join(',') },
   });
 
-  return { brandKit: next, contrastIssues: issues };
+  return { brandKit: next, contrastIssues: issues, typographyIssues: typeIssues, fontStacks: FONT_STACKS };
 });
 
 route('POST', '/api/facts/:factId/decision', async ({ store, params, body }) => {
@@ -440,6 +464,291 @@ route('POST', '/api/review/decision', async ({ store, body }) => {
 });
 
 /* ------------------------------------------------------------------ */
+/* Media                                                               */
+/* ------------------------------------------------------------------ */
+
+function assetSummary(store: AppStore, asset: ReturnType<AppStore['asset']> & object) {
+  const publishable = assetPublishable(asset);
+  return {
+    id: asset.id,
+    filename: asset.filename,
+    mimeType: asset.mimeType,
+    width: asset.width ?? null,
+    height: asset.height ?? null,
+    sizeBytes: asset.sizeBytes,
+    altText: asset.altText ?? null,
+    altTextGenerated: asset.altTextGenerated,
+    usageCount: asset.usageCount,
+    rights: asset.rights,
+    focalPoint: asset.focalPoint ?? null,
+    publishable: publishable.ok,
+    blockedReason: publishable.reason ?? null,
+    rawUrl: `/media/${asset.id}/raw`,
+    archived: Boolean(asset.archivedAt),
+  };
+}
+
+route('GET', '/api/media', ({ store }) => {
+  const assets = store.assets();
+  return {
+    assets: assets.map((a) => assetSummary(store, a)),
+    issues: auditLibrary(assets),
+    duplicates: findDuplicates(assets).map((g) => ({
+      kind: g.kind,
+      reason: g.reason,
+      keepId: g.keep.id,
+      assetIds: g.assets.map((a) => a.id),
+    })),
+    ingest: store.ingestSummary ?? null,
+    // Stated in the UI so an empty duplicates list is not read as "no
+    // duplicates" when it really means "near-duplicate detection has not run".
+    perceptualHashing: false,
+  };
+});
+
+route('GET', '/api/media/search', ({ store, req }) => {
+  const query = new URL(req.url ?? '/', 'http://localhost').searchParams.get('q') ?? '';
+  if (!query.trim()) return { assets: store.assets().map((a) => assetSummary(store, a)) };
+  return {
+    assets: searchAssets(store.assets(), query).map((hit) => ({
+      ...assetSummary(store, hit.asset),
+      score: Math.round(hit.score * 100),
+      matchedOn: hit.matchedOn,
+    })),
+  };
+});
+
+route('GET', '/api/media/:assetId', ({ store, params }) => {
+  const asset = store.asset(params['assetId'] as string);
+  if (!asset) throw err('NOT_FOUND', 'asset not found');
+  const derivatives = planDerivatives(asset);
+  return {
+    asset: assetSummary(store, asset),
+    source: asset.rights.source ?? null,
+    contentHash: asset.contentHash ?? null,
+    derivatives: derivatives.ok ? derivatives.value : [],
+    derivativeError: derivatives.ok ? null : derivatives.error.userMessage,
+  };
+});
+
+route('POST', '/api/media/:assetId/alt', async ({ store, params, body }) => {
+  authorize('media:update');
+  const { altText } = body as { altText?: string };
+  const updated = store.updateAsset(params['assetId'] as string, {
+    altText: (altText ?? '').trim(),
+    altTextGenerated: false,
+  });
+  if (!updated) throw err('NOT_FOUND', 'asset not found');
+
+  await store.auditor.record({
+    orgId: ORG_ID, siteId: SITE_ID, actorId: USER_ID, category: 'media',
+    action: 'asset.alt_text', outcome: 'success', permission: 'media:update',
+    targetType: 'asset', targetId: updated.id, metadata: {},
+  });
+  return { asset: assetSummary(store, updated) };
+});
+
+route('POST', '/api/media/:assetId/rights', async ({ store, params, body }) => {
+  authorize('media:update');
+  const { approvedForCommercialUse, license, owner } = body as {
+    approvedForCommercialUse?: boolean; license?: string; owner?: string;
+  };
+  const asset = store.asset(params['assetId'] as string);
+  if (!asset) throw err('NOT_FOUND', 'asset not found');
+
+  const updated = store.updateAsset(asset.id, {
+    rights: {
+      ...asset.rights,
+      approvedForCommercialUse: Boolean(approvedForCommercialUse),
+      ...(license ? { license } : {}),
+      ...(owner ? { owner } : {}),
+    },
+  });
+
+  // Confirming rights is the action that lets an image reach a live page, so
+  // it is recorded with who said so.
+  await store.auditor.record({
+    orgId: ORG_ID, siteId: SITE_ID, actorId: USER_ID, category: 'media',
+    action: approvedForCommercialUse ? 'asset.rights_confirmed' : 'asset.rights_revoked',
+    outcome: 'success', permission: 'media:update',
+    targetType: 'asset', targetId: asset.id,
+    metadata: { source: asset.rights.source ?? '', origin: asset.rights.origin },
+  });
+  return { asset: assetSummary(store, updated as NonNullable<typeof updated>) };
+});
+
+route('POST', '/api/media/:assetId/focal', async ({ store, params, body }) => {
+  authorize('media:update');
+  const { x, y } = body as { x?: number; y?: number };
+  if (typeof x !== 'number' || typeof y !== 'number' || x < 0 || x > 1 || y < 0 || y > 1) {
+    throw err('VALIDATION_FAILED', 'focal point must be two numbers between 0 and 1');
+  }
+  const updated = store.updateAsset(params['assetId'] as string, { focalPoint: { x, y } });
+  if (!updated) throw err('NOT_FOUND', 'asset not found');
+
+  await store.auditor.record({
+    orgId: ORG_ID, siteId: SITE_ID, actorId: USER_ID, category: 'media',
+    action: 'asset.focal_point', outcome: 'success', permission: 'media:update',
+    targetType: 'asset', targetId: updated.id, metadata: {},
+  });
+
+  const derivatives = planDerivatives(updated);
+  return {
+    asset: assetSummary(store, updated),
+    derivatives: derivatives.ok ? derivatives.value : [],
+  };
+});
+
+route('POST', '/api/media/:assetId/archive', async ({ store, params }) => {
+  authorize('media:delete');
+  const asset = store.asset(params['assetId'] as string);
+  if (!asset) throw err('NOT_FOUND', 'asset not found');
+  if (asset.usageCount > 0) {
+    throw err('CONFLICT', 'asset is still in use', {
+      userMessage: `This image is used on ${asset.usageCount} page(s). Remove it there first.`,
+    });
+  }
+  const updated = store.updateAsset(asset.id, { archivedAt: new Date().toISOString() });
+
+  await store.auditor.record({
+    orgId: ORG_ID, siteId: SITE_ID, actorId: USER_ID, category: 'media',
+    action: 'asset.archive', outcome: 'success', permission: 'media:delete',
+    targetType: 'asset', targetId: asset.id, metadata: {},
+  });
+  return { asset: assetSummary(store, updated as NonNullable<typeof updated>) };
+});
+
+route('GET', '/media/:assetId/raw', async ({ store, params, res }) => {
+  const asset = store.asset(params['assetId'] as string);
+  if (!asset) throw err('NOT_FOUND', 'asset not found');
+
+  const stored = await store.storage.get(asset.storageKey);
+  if (!stored.ok) throw stored.error;
+
+  res.writeHead(200, {
+    'content-type': stored.value.contentType,
+    'content-length': String(stored.value.bytes.byteLength),
+    'cache-control': 'private, max-age=300',
+    // Stored bytes come from a third-party site; never let a browser sniff
+    // them into something executable.
+    'x-content-type-options': 'nosniff',
+    'content-disposition': 'inline',
+  });
+  res.end(Buffer.from(stored.value.bytes));
+  return undefined;
+});
+
+/**
+ * Image CDN endpoint.
+ *
+ * `responsiveImage` builds `/cdn/:key?w=&h=&fm=&rect=` URLs, which in
+ * production an image CDN answers by transforming on the fly. There is no
+ * transformer here — that needs an image decoder — so this serves the original
+ * bytes and says so in a header rather than leaving every generated src
+ * pointing at a 404.
+ */
+route('GET', '/cdn/sites/:siteId/:file', async ({ store, params, res }) => {
+  const key = `sites/${params['siteId']}/${params['file']}`;
+  const stored = await store.storage.get(key);
+  if (!stored.ok) throw stored.error;
+
+  res.writeHead(200, {
+    'content-type': stored.value.contentType,
+    'content-length': String(stored.value.bytes.byteLength),
+    'cache-control': 'public, max-age=60',
+    'x-content-type-options': 'nosniff',
+    // Honest about what did not happen: the requested width/crop was ignored.
+    'x-sidelio-transform': 'not-implemented; original bytes served',
+  });
+  res.end(Buffer.from(stored.value.bytes));
+  return undefined;
+});
+
+/* ------------------------------------------------------------------ */
+/* Design concepts                                                     */
+/* ------------------------------------------------------------------ */
+
+route('GET', '/api/concepts', ({ store }) => {
+  const concepts = generateThreeConcepts(SITE_ID, store.graph, { mode: 'redesign' });
+  const directions: ConceptDirection[] = ['conservative', 'modern', 'bold'];
+
+  return {
+    concepts: directions.map((direction) => {
+      const site = concepts[direction];
+      const home = site.pages.find((p) => p.path === '/') ?? site.pages[0];
+      return {
+        direction,
+        pageCount: site.pages.length,
+        notes: site.notes,
+        missing: site.missing,
+        pages: site.pages.map((p) => ({
+          path: p.path,
+          title: p.title,
+          blocks: p.blocks.map((b) => b.type),
+        })),
+        previewHtml: home
+          ? renderPage(
+              {
+                page: home, brandKit: store.brandKit, assets: store.assetMap(),
+                origin: `https://${store.site.subdomain}.sidelio.site`, preview: true,
+              },
+              { head: '<meta name="robots" content="noindex">' },
+            )
+          : '',
+      };
+    }),
+  };
+});
+
+route('POST', '/api/concepts/apply', async ({ store, body }) => {
+  authorize('page:create');
+  const { direction } = body as { direction?: ConceptDirection };
+  if (!direction || !['conservative', 'modern', 'bold'].includes(direction)) {
+    throw err('VALIDATION_FAILED', 'pick conservative, modern or bold');
+  }
+
+  const chosen = generateThreeConcepts(SITE_ID, store.graph, { mode: 'redesign' })[direction];
+  const current = store.pages();
+
+  // Replacing the page set goes through a change set rather than a store swap,
+  // so switching concepts is undoable from History like any other edit.
+  const operations: Operation[] = [
+    ...current.map((page) => ({
+      op: 'delete' as const,
+      resource: { type: 'page' as const, id: page.id, label: page.title },
+      before: page,
+    })),
+    ...chosen.pages.map((page) => ({
+      op: 'create' as const,
+      resource: { type: 'page' as const, id: page.id, label: page.title },
+      after: page,
+    })),
+  ];
+
+  const applied = store.applyChanges(createChangeSet({
+    siteId: SITE_ID,
+    origin: 'bulk_admin',
+    title: `Apply the ${direction} concept`,
+    createdBy: USER_ID,
+    operations,
+    warnings: [{
+      severity: 'warning',
+      code: 'pages_replaced',
+      message: `Replaces all ${current.length} existing page(s). Undo from History if this is not what you wanted.`,
+    }],
+  }));
+  if (!applied.ok) throw applied.error;
+
+  await store.auditor.record({
+    orgId: ORG_ID, siteId: SITE_ID, actorId: USER_ID, category: 'content',
+    action: 'concept.apply', outcome: 'success', permission: 'page:create',
+    metadata: { direction, replaced: current.length, created: chosen.pages.length },
+  });
+
+  return { changeSet: applied.value, pages: store.pages().length };
+});
+
+/* ------------------------------------------------------------------ */
 /* Preview rendering                                                   */
 /* ------------------------------------------------------------------ */
 
@@ -448,7 +757,14 @@ route('GET', '/preview/:pageId', ({ store, params, res }) => {
   if (!page) throw err('NOT_FOUND', 'page not found');
 
   const html = renderPage(
-    { page, brandKit: store.brandKit, assets: new Map(), origin: `https://${store.site.subdomain}.sidelio.site`, preview: true },
+    {
+      page, brandKit: store.brandKit,
+      // Real assets, so blocks referencing an assetId render responsive
+      // srcset markup instead of falling back to a bare URL.
+      assets: store.assetMap(),
+      origin: `https://${store.site.subdomain}.sidelio.site`,
+      preview: true,
+    },
     {
       head: renderHead({
         page,

@@ -501,6 +501,217 @@ function updateFactBadge(count) {
   pill.textContent = `${count} facts awaiting review`;
 }
 
+
+/* ------------------------------------------------------------------ */
+/* Media                                                               */
+/* ------------------------------------------------------------------ */
+
+const bytes = (n) => (n < 1024 ? `${n} B` : n < 1024 ** 2 ? `${(n / 1024).toFixed(0)} KB` : `${(n / 1024 ** 2).toFixed(1)} MB`);
+
+function assetCard(a) {
+  const warn = !a.publishable ? '<span class="tag warn">rights not confirmed</span>' : '';
+  const alt = !a.altText ? '<span class="tag">no alt text</span>' : '';
+  return `
+    <li class="media-item ${a.publishable ? '' : 'is-blocked'}">
+      <button type="button" data-asset="${esc(a.id)}" class="media-thumb">
+        <img src="${esc(a.rawUrl)}" alt="${esc(a.altText ?? '')}" loading="lazy" decoding="async">
+      </button>
+      <div class="media-meta">
+        <strong>${esc(a.filename)}</strong>
+        <span class="muted small">${a.width ?? '?'}\u00d7${a.height ?? '?'} · ${bytes(a.sizeBytes)} · used on ${a.usageCount}</span>
+        <span class="media-tags">${warn}${alt}</span>
+      </div>
+    </li>`;
+}
+
+loaders.media = async () => {
+  const data = await api('/api/media');
+  state.media = data.assets;
+
+  const blocked = data.assets.filter((a) => !a.publishable).length;
+  document.getElementById('media-stats').innerHTML = `
+    <div><strong>${data.assets.length}</strong><span>images</span></div>
+    <div><strong>${blocked}</strong><span>rights not confirmed</span></div>
+    <div><strong>${data.issues.filter((i) => i.code === 'missing_alt').length}</strong><span>missing alt text</span></div>
+    <div><strong>${data.ingest?.bytesStored ? bytes(data.ingest.bytesStored) : '0 B'}</strong><span>stored</span></div>`;
+
+  document.getElementById('media-duplicates').innerHTML = [
+    data.duplicates.map((g) => `
+      <div class="note warning">
+        <strong>${esc(g.reason)}</strong><br>
+        <span class="muted small">Keeping ${esc(g.keepId.slice(0, 12))}… of ${g.assetIds.length}</span>
+      </div>`).join(''),
+    data.perceptualHashing
+      ? ''
+      : `<p class="muted small">Exact duplicates only — near-duplicate detection needs an image decoder and has not run.</p>`,
+  ].join('');
+
+  renderMediaGrid(data.assets);
+  updateMediaBadge(blocked);
+};
+
+function renderMediaGrid(assets) {
+  document.getElementById('media-grid').innerHTML = assets.map(assetCard).join('')
+    || '<li class="muted">No images matched.</li>';
+  document.getElementById('media-count').textContent = `${assets.length} shown`;
+}
+
+let mediaSearchTimer;
+document.getElementById('media-search').addEventListener('input', (event) => {
+  clearTimeout(mediaSearchTimer);
+  const q = event.target.value.trim();
+  mediaSearchTimer = setTimeout(async () => {
+    try {
+      const { assets } = await api(`/api/media/search?q=${encodeURIComponent(q)}`);
+      renderMediaGrid(assets);
+    } catch (error) {
+      toast(error.message, 'error');
+    }
+  }, 200);
+});
+
+document.getElementById('media-grid').addEventListener('click', (event) => {
+  const btn = event.target.closest('[data-asset]');
+  if (btn) showAsset(btn.dataset.asset);
+});
+
+async function showAsset(id) {
+  const panel = document.getElementById('media-detail');
+  panel.innerHTML = '<p class="muted small">Loading…</p>';
+  try {
+    const { asset, source, derivatives, derivativeError } = await api(`/api/media/${encodeURIComponent(id)}`);
+    state.currentAsset = asset;
+
+    panel.innerHTML = `
+      <h3>${esc(asset.filename)}</h3>
+      <img class="media-detail__preview" src="${esc(asset.rawUrl)}" alt="${esc(asset.altText ?? '')}">
+
+      <dl class="kv">
+        <dt>Dimensions</dt><dd>${asset.width ?? '?'}\u00d7${asset.height ?? '?'}</dd>
+        <dt>Size</dt><dd>${bytes(asset.sizeBytes)}</dd>
+        <dt>Type</dt><dd>${esc(asset.mimeType)}</dd>
+        <dt>Used on</dt><dd>${asset.usageCount} page(s)</dd>
+        <dt>Origin</dt><dd>${esc(asset.rights.origin)}</dd>
+        ${source ? `<dt>Source</dt><dd class="break">${esc(source)}</dd>` : ''}
+      </dl>
+
+      <div class="field">
+        <label for="asset-alt">Alt text</label>
+        <input type="text" id="asset-alt" value="${esc(asset.altText ?? '')}" placeholder="Describe what the image shows">
+      </div>
+
+      <div class="note ${asset.publishable ? 'info' : 'blocking'}">
+        <strong>${asset.publishable ? 'Cleared for use' : 'Cannot be published'}</strong><br>
+        <span class="muted small">${esc(asset.blockedReason ?? 'Commercial use confirmed.')}</span>
+        <div style="margin-top:.5rem">
+          <label class="check">
+            <input type="checkbox" id="asset-rights" ${asset.rights.approvedForCommercialUse ? 'checked' : ''}>
+            I have the rights to use this image commercially
+          </label>
+        </div>
+      </div>
+
+      <h4>Generated sizes</h4>
+      ${derivativeError
+        ? `<p class="muted small">${esc(derivativeError)}</p>`
+        : `<ul class="derivatives">${derivatives.slice(0, 8).map((d) => `
+            <li>
+              <strong>${esc(d.name.replace(/_/g, ' '))}</strong>
+              <span class="muted small">${d.width}\u00d7${d.height} · crop ${d.crop.width}\u00d7${d.crop.height}${d.requiresUpscale ? ' · needs upscaling' : ''}</span>
+            </li>`).join('')}</ul>
+          <p class="muted small">Crops are computed now; the pixels are produced by a worker with an image decoder.</p>`}
+
+      <button type="button" class="btn btn-sm btn-danger" id="asset-archive" ${asset.usageCount > 0 ? 'disabled title="Still used on a page"' : ''}>Archive</button>
+    `;
+
+    document.getElementById('asset-alt').addEventListener('change', async (e) => {
+      try {
+        await api(`/api/media/${encodeURIComponent(id)}/alt`, {
+          method: 'POST', body: JSON.stringify({ altText: e.target.value }),
+        });
+        toast('Alt text saved', 'ok');
+        loaders.media();
+      } catch (error) { toast(error.message, 'error'); }
+    });
+
+    document.getElementById('asset-rights').addEventListener('change', async (e) => {
+      try {
+        await api(`/api/media/${encodeURIComponent(id)}/rights`, {
+          method: 'POST', body: JSON.stringify({ approvedForCommercialUse: e.target.checked }),
+        });
+        toast(e.target.checked ? 'Rights confirmed — this image can now be published' : 'Rights withdrawn', 'ok');
+        await loaders.media();
+        showAsset(id);
+      } catch (error) { toast(error.message, 'error'); }
+    });
+
+    document.getElementById('asset-archive').addEventListener('click', async () => {
+      try {
+        await api(`/api/media/${encodeURIComponent(id)}/archive`, { method: 'POST' });
+        toast('Archived', 'ok');
+        panel.innerHTML = '<p class="muted small">Select an image to see its details.</p>';
+        loaders.media();
+      } catch (error) { toast(error.message, 'error'); }
+    });
+  } catch (error) {
+    panel.innerHTML = `<div class="note error">${esc(error.message)}</div>`;
+  }
+}
+
+function updateMediaBadge(count) {
+  const badge = document.getElementById('badge-media');
+  badge.textContent = count > 0 ? String(count) : '';
+  badge.hidden = count === 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Design concepts                                                     */
+/* ------------------------------------------------------------------ */
+
+loaders.concepts = async () => {
+  const grid = document.getElementById('concept-grid');
+  grid.innerHTML = '<p class="muted">Generating three directions…</p>';
+  try {
+    const { concepts } = await api('/api/concepts');
+    grid.innerHTML = concepts.map((c) => `
+      <article class="concept">
+        <header>
+          <h3>${esc(c.direction)}</h3>
+          <span class="muted small">${c.pageCount} pages</span>
+        </header>
+        <iframe class="concept-preview" title="${esc(c.direction)} concept preview" sandbox=""></iframe>
+        <ul class="concept-pages">
+          ${c.pages.map((p) => `<li><strong>${esc(p.path)}</strong> <span class="muted small">${esc(p.blocks.join(' → '))}</span></li>`).join('')}
+        </ul>
+        <button type="button" class="btn btn-primary btn-block" data-apply-concept="${esc(c.direction)}">Use this direction</button>
+      </article>`).join('');
+
+    // srcdoc rather than src: the preview HTML is already in hand, and a
+    // sandboxed frame keeps it away from the admin's origin.
+    grid.querySelectorAll('.concept-preview').forEach((frame, i) => {
+      frame.srcdoc = concepts[i].previewHtml;
+    });
+  } catch (error) {
+    grid.innerHTML = `<div class="note error">${esc(error.message)}</div>`;
+  }
+};
+
+document.getElementById('concept-grid').addEventListener('click', async (event) => {
+  const btn = event.target.closest('[data-apply-concept]');
+  if (!btn) return;
+  const direction = btn.dataset.applyConcept;
+  if (!confirm(`Replace the current pages with the ${direction} concept? You can undo this from History.`)) return;
+
+  try {
+    await api('/api/concepts/apply', { method: 'POST', body: JSON.stringify({ direction }) });
+    toast(`Applied the ${direction} concept — undo from History`, 'ok');
+    await loadPages();
+    showView('editor');
+  } catch (error) {
+    toast(error.message, 'error');
+  }
+});
+
 /* ------------------------------------------------------------------ */
 /* Brand kit                                                           */
 /* ------------------------------------------------------------------ */
@@ -508,8 +719,9 @@ function updateFactBadge(count) {
 loaders.brand = loadBrand;
 
 async function loadBrand() {
-  const { brandKit, contrastIssues } = await api('/api/brand');
+  const { brandKit, contrastIssues, typographyIssues, fontStacks } = await api('/api/brand');
   state.brandKit = brandKit;
+  state.fontStacks = fontStacks;
 
   document.getElementById('brand-grid').innerHTML = Object.entries(brandKit.colors).map(([name, value]) => `
     <div class="swatch">
@@ -521,13 +733,96 @@ async function loadBrand() {
     </div>`).join('');
 
   document.getElementById('contrast-issues').innerHTML = contrastIssues.length
-    ? `<h3>Contrast</h3>${contrastIssues.map((i) => `
+    ? contrastIssues.map((i) => `
         <div class="note ${i.kind === 'text' && i.level === 'fail' ? 'blocking' : 'warning'}">
           <strong>${esc(i.token)} — ${i.ratio}:1</strong><br>
           <span class="muted small">${i.kind === 'text' ? 'WCAG AA needs 4.5:1 for text.' : 'WCAG needs 3:1 so the component is distinguishable.'}</span>
-        </div>`).join('')}`
-    : '<h3>Contrast</h3><p class="muted small">All checked pairings pass WCAG AA.</p>';
+        </div>`).join('')
+    : '<p class="muted small">All checked pairings pass WCAG AA.</p>';
+
+  renderTypography(brandKit.typography, typographyIssues, fontStacks);
 }
+
+const TYPE_CONTROLS = [
+  { key: 'headingFamily', label: 'Heading font', kind: 'font' },
+  { key: 'bodyFamily', label: 'Body font', kind: 'font' },
+  { key: 'baseSizePx', label: 'Base size', kind: 'range', min: 12, max: 26, step: 1, unit: 'px' },
+  { key: 'ratio', label: 'Scale ratio', kind: 'range', min: 1.0, max: 1.9, step: 0.05, unit: '' },
+  { key: 'lineHeight', label: 'Body line height', kind: 'range', min: 1.1, max: 2.1, step: 0.05, unit: '' },
+  { key: 'headingLineHeight', label: 'Heading line height', kind: 'range', min: 0.9, max: 1.6, step: 0.05, unit: '' },
+  { key: 'headingWeight', label: 'Heading weight', kind: 'range', min: 300, max: 900, step: 100, unit: '' },
+  { key: 'bodyWeight', label: 'Body weight', kind: 'range', min: 300, max: 700, step: 100, unit: '' },
+];
+
+function renderTypography(t, issues, stacks) {
+  document.getElementById('type-grid').innerHTML = TYPE_CONTROLS.map((c) => {
+    if (c.kind === 'font') {
+      const options = stacks.map((f) =>
+        `<option value="${esc(f.stack)}" ${f.stack === t[c.key] ? 'selected' : ''}>${esc(f.label)}</option>`).join('');
+      // A stack set outside the curated list (e.g. by import) stays selectable.
+      const known = stacks.some((f) => f.stack === t[c.key]);
+      return `<div class="field">
+          <label for="type-${c.key}">${esc(c.label)}</label>
+          <select id="type-${c.key}" data-type-key="${c.key}">
+            ${known ? '' : `<option value="${esc(t[c.key])}" selected>Current — ${esc(String(t[c.key]).split(',')[0])}</option>`}
+            ${options}
+          </select>
+        </div>`;
+    }
+    return `<div class="field">
+        <label for="type-${c.key}">${esc(c.label)} <span class="muted" id="type-${c.key}-out">${t[c.key]}${c.unit}</span></label>
+        <input type="range" id="type-${c.key}" data-type-key="${c.key}"
+          min="${c.min}" max="${c.max}" step="${c.step}" value="${t[c.key]}">
+      </div>`;
+  }).join('');
+
+  document.getElementById('type-issues').innerHTML = issues.length
+    ? issues.map((i) => `<div class="note ${i.severity === 'blocking' ? 'blocking' : 'warning'}">${esc(i.message)}</div>`).join('')
+    : '<p class="muted small">Readable at the current settings.</p>';
+
+  // Specimen rendered with the live tokens, so the effect is visible without
+  // switching to the editor.
+  const scale = (step) => `${(t.baseSizePx * t.ratio ** step) / 16}rem`;
+  document.getElementById('type-specimen').innerHTML = `
+    <div class="specimen" style="font-family:${esc(t.bodyFamily)};line-height:${t.lineHeight};font-weight:${t.bodyWeight}">
+      <p style="font-family:${esc(t.headingFamily)};font-size:${scale(4)};font-weight:${t.headingWeight};line-height:${t.headingLineHeight};letter-spacing:${esc(t.letterSpacing)};margin:0 0 .4rem">
+        Roofing you can rely on
+      </p>
+      <p style="font-family:${esc(t.headingFamily)};font-size:${scale(2)};font-weight:${t.headingWeight};line-height:${t.headingLineHeight};margin:0 0 .4rem">
+        What we do
+      </p>
+      <p style="font-size:${scale(0)};margin:0">
+        Acme Roofing has protected Island homes and businesses since 1998, from a single
+        missing shingle to a full commercial re-roof.
+      </p>
+    </div>`;
+}
+
+document.getElementById('type-grid').addEventListener('input', (event) => {
+  // Live-update the readout while dragging; only commit on release.
+  const input = event.target.closest('input[type=range][data-type-key]');
+  if (!input) return;
+  const out = document.getElementById(`type-${input.dataset.typeKey}-out`);
+  const control = TYPE_CONTROLS.find((c) => c.key === input.dataset.typeKey);
+  if (out) out.textContent = `${input.value}${control?.unit ?? ''}`;
+});
+
+document.getElementById('type-grid').addEventListener('change', async (event) => {
+  const input = event.target.closest('[data-type-key]');
+  if (!input) return;
+  const key = input.dataset.typeKey;
+  const value = input.type === 'range' ? Number(input.value) : input.value;
+
+  try {
+    await api('/api/brand', { method: 'PATCH', body: JSON.stringify({ typography: { [key]: value } }) });
+    await loadBrand();
+    refreshPreview();
+    toast('Typography updated across every page', 'ok');
+  } catch (error) {
+    toast(error.message, 'error');
+    loadBrand();
+  }
+});
 
 document.getElementById('brand-grid').addEventListener('change', async (event) => {
   const input = event.target.closest('[data-color]');

@@ -273,10 +273,30 @@ export interface DuplicateGroup {
 
 const NEAR_DUPLICATE_THRESHOLD = 6;
 
+/**
+ * Group duplicates.
+ *
+ * Two independent signals, and the distinction matters:
+ *  - `contentHash` (SHA-256 of the bytes) finds *exact* duplicates with
+ *    certainty. It is computed at ingest and always available.
+ *  - `phash` finds *near* duplicates — a resized or recompressed copy. It
+ *    needs decoded pixels, so it is only present once a media worker with an
+ *    image decoder has run.
+ *
+ * Assets are compared on phash when both sides have one, and fall back to an
+ * exact content match otherwise, so the function is useful immediately after
+ * ingest and gets better once perceptual hashing has run.
+ */
 export function findDuplicates(assets: Asset[]): DuplicateGroup[] {
-  const withHash = assets.filter((a) => a.phash && !a.archivedAt);
+  const withHash = assets.filter((a) => (a.phash || a.contentHash) && !a.archivedAt);
   const groups: DuplicateGroup[] = [];
   const claimed = new Set<string>();
+
+  const isMatch = (a: Asset, b: Asset): boolean => {
+    if (a.phash && b.phash) return hammingDistance(a.phash, b.phash) <= NEAR_DUPLICATE_THRESHOLD;
+    if (a.contentHash && b.contentHash) return a.contentHash === b.contentHash;
+    return false;
+  };
 
   for (let i = 0; i < withHash.length; i++) {
     const a = withHash[i] as Asset;
@@ -286,14 +306,15 @@ export function findDuplicates(assets: Asset[]): DuplicateGroup[] {
     for (let j = i + 1; j < withHash.length; j++) {
       const b = withHash[j] as Asset;
       if (claimed.has(b.id)) continue;
-      const distance = hammingDistance(a.phash as string, b.phash as string);
-      if (distance <= NEAR_DUPLICATE_THRESHOLD) matches.push(b);
+      if (isMatch(a, b)) matches.push(b);
     }
 
     if (matches.length < 2) continue;
     for (const m of matches) claimed.add(m.id);
 
-    const exact = matches.every((m) => m.phash === a.phash);
+    const exact = a.contentHash
+      ? matches.every((m) => m.contentHash === a.contentHash)
+      : matches.every((m) => m.phash === a.phash);
     // Keep the largest — resolution is what you cannot get back.
     const keep = [...matches].sort((x, y) => pixels(y) - pixels(x) || y.sizeBytes - x.sizeBytes)[0] as Asset;
     const resolutionsDiffer = new Set(matches.map(pixels)).size > 1;

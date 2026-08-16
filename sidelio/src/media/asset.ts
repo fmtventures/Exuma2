@@ -73,7 +73,15 @@ export interface Asset {
   focalPoint?: FocalPoint;
   subjectBox?: SubjectBox;
   rights: AssetRights;
-  /** Perceptual hash for duplicate detection. */
+  /**
+   * SHA-256 of the stored bytes — exact-duplicate detection, computed at
+   * ingest. Cheap and certain.
+   */
+  contentHash?: string;
+  /**
+   * Perceptual hash for *near*-duplicate detection. Requires decoded pixels,
+   * so it is populated by a media worker with an image decoder, not at ingest.
+   */
   phash?: string;
   /** Vision embedding for natural-language search. */
   embedding?: number[];

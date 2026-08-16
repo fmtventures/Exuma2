@@ -19,6 +19,9 @@ import { StaticFetcher } from '../import/fetcher.ts';
 import { buildKnowledgeGraph, runCrawl, type ImportJob } from '../import/pipeline.ts';
 import { buildReview, type ImportReview, type PageDecision } from '../import/review.ts';
 import { KnowledgeGraph } from '../knowledge/graph.ts';
+import type { Asset } from '../media/asset.ts';
+import { ingestImages, summarizeIngest, type IngestSummary } from '../media/ingest.ts';
+import { MemoryObjectStore, type ObjectStore } from '../media/store.ts';
 
 /**
  * In-memory application store.
@@ -50,6 +53,9 @@ export interface SiteState {
   importJob?: ImportJob;
   review?: ImportReview;
   changeSets: ChangeSet[];
+  assets: Map<string, Asset>;
+  storage: ObjectStore;
+  ingestSummary?: IngestSummary;
 }
 
 const pageRef = (page: Page): ResourceRef => ({ type: 'page', id: page.id, label: page.title });
@@ -75,6 +81,36 @@ export class AppStore {
   get review() { return this.state.review; }
   get importJob() { return this.state.importJob; }
   get changeSets() { return this.state.changeSets; }
+  get storage() { return this.state.storage; }
+  get ingestSummary() { return this.state.ingestSummary; }
+
+  /** Live assets, newest first. Archived ones are kept but not listed. */
+  assets(): Asset[] {
+    return [...this.state.assets.values()]
+      .filter((a) => !a.archivedAt)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  allAssets(): Asset[] {
+    return [...this.state.assets.values()];
+  }
+
+  asset(id: string): Asset | undefined {
+    return this.state.assets.get(id);
+  }
+
+  /** The map the renderer resolves `assetId` block references against. */
+  assetMap(): Map<string, Asset> {
+    return this.state.assets;
+  }
+
+  updateAsset(id: string, patch: Partial<Asset>): Asset | undefined {
+    const existing = this.state.assets.get(id);
+    if (!existing) return undefined;
+    const next = { ...existing, ...patch };
+    this.state.assets.set(id, next);
+    return next;
+  }
 
   pages(): Page[] {
     return this.documents.entries()
@@ -133,7 +169,9 @@ export class AppStore {
  * so the admin opens on a site that genuinely came through Smart Import rather
  * than hand-written sample data.
  */
-export async function seedStore(fixtures: Record<string, { body: string; contentType?: string }>): Promise<AppStore> {
+export async function seedStore(
+  fixtures: Record<string, { body?: string; binary?: Uint8Array; contentType?: string }>,
+): Promise<AppStore> {
   const attested = createAttestation({
     orgId: ORG_ID, siteId: SITE_ID, attestedBy: USER_ID, basis: 'owner',
     hosts: ['acmeroofing.ca'], accepted: true,
@@ -149,6 +187,17 @@ export async function seedStore(fixtures: Record<string, { body: string; content
   const review = buildReview(importJob, graph);
   const generated = generateSite(SITE_ID, graph, { mode: 'industry_optimized' });
 
+  // Download the images the review kept, so the media library and the
+  // renderer's assetId path have real data rather than an empty map.
+  const storage = new MemoryObjectStore();
+  const ingest = await ingestImages(review, {
+    fetcher: new StaticFetcher(fixtures),
+    storage,
+    siteId: SITE_ID,
+    attestation: attested.value,
+    uploadedBy: USER_ID,
+  });
+
   const site: Site = {
     id: SITE_ID,
     orgId: ORG_ID,
@@ -162,6 +211,11 @@ export async function seedStore(fixtures: Record<string, { body: string; content
     createdAt: new Date().toISOString(),
   };
 
+  // Link each page's largest ingested image into its hero block. Without this
+  // the generated blocks carry no assetId, the renderer's asset branch stays
+  // unreachable, and imported media would sit in the library doing nothing.
+  const pages = attachHeroImages(generated.pages, ingest.assets, review);
+
   return new AppStore(
     {
       site,
@@ -171,9 +225,56 @@ export async function seedStore(fixtures: Record<string, { body: string; content
       importJob,
       review,
       changeSets: [],
+      assets: new Map(ingest.assets.map((a) => [a.id, a])),
+      storage,
+      ingestSummary: summarizeIngest(ingest),
     },
-    generated.pages,
+    pages,
   );
+}
+
+/**
+ * Attach imported imagery to the pages it came from.
+ *
+ * The review already records which pages used each image, so a page's hero
+ * gets the largest image that actually appeared on it rather than an arbitrary
+ * one from the library. Pages whose source had no usable image keep an empty
+ * slot — inventing an unrelated stock photo would be worse than a blank.
+ */
+function attachHeroImages(pages: Page[], assets: Asset[], review: ImportReview): Page[] {
+  if (assets.length === 0) return pages;
+
+  const bySourceUrl = new Map(assets.map((a) => [a.rights.source ?? '', a]));
+  const largest = [...assets].sort((a, b) => (b.width ?? 0) * (b.height ?? 0) - (a.width ?? 0) * (a.height ?? 0))[0];
+
+  return pages.map((page) => {
+    const heroIndex = page.blocks.findIndex((b) => b.type === 'hero');
+    if (heroIndex === -1) return page;
+
+    // Prefer an image the source page actually used; fall back to the largest.
+    const used = review.assets
+      .filter((item) => item.usedOnPages.some((u) => u.endsWith(page.path) || page.path === '/'))
+      .map((item) => bySourceUrl.get(item.url))
+      .filter((a): a is Asset => a !== undefined)
+      .sort((a, b) => (b.width ?? 0) * (b.height ?? 0) - (a.width ?? 0) * (a.height ?? 0));
+
+    const chosen = used[0] ?? largest;
+    if (!chosen) return page;
+
+    const blocks = [...page.blocks];
+    const hero = blocks[heroIndex] as Page['blocks'][number];
+    blocks[heroIndex] = {
+      ...hero,
+      props: {
+        ...hero.props,
+        image: {
+          assetId: chosen.id,
+          ...(chosen.altText ? { alt: chosen.altText } : {}),
+        },
+      },
+    };
+    return { ...page, blocks };
+  });
 }
 
 export function emptyGraph(): KnowledgeGraph {

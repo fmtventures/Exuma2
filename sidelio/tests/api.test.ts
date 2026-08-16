@@ -22,7 +22,14 @@ async function call(path: string, init?: RequestInit) {
     headers: init?.body ? { 'content-type': 'application/json' } : {},
   });
   const text = await res.text();
-  return { status: res.status, body: text ? JSON.parse(text) : {}, raw: text };
+  // Not every route returns JSON — /preview and /cdn serve HTML and bytes — so
+  // the raw text is always available and parsing is best-effort.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test helper
+  let body: any = {};
+  if (text && (res.headers.get('content-type') ?? '').includes('json')) {
+    body = JSON.parse(text);
+  }
+  return { status: res.status, body, raw: text };
 }
 
 const post = (path: string, body: unknown) =>
@@ -234,6 +241,197 @@ describe('fact review', () => {
     const pages = await call('/api/pages');
     const html = (await call(`/preview/${pages.body.pages[0].id}`)).raw;
     expect(html).toContain('LocalBusiness');
+  });
+});
+
+describe('media', () => {
+  it('lists assets ingested from the import with provenance', async () => {
+    const { body } = await call('/api/media');
+    expect(body.assets.length).toBeGreaterThan(0);
+    expect(body.ingest.stored).toBe(body.assets.length);
+
+    const hero = body.assets.find((a: { width: number }) => a.width === 1600);
+    expect(hero.height).toBe(900);
+    expect(hero.rights.origin).toBe('import_crawl');
+    expect(hero.rights.source).toMatch(/^https:\/\/acmeroofing\.ca\//);
+  });
+
+  it('blocks every imported asset from publishing until rights are confirmed', async () => {
+    const { body } = await call('/api/media');
+    expect(body.assets.every((a: { publishable: boolean }) => !a.publishable)).toBe(true);
+    expect(body.assets[0].blockedReason).toMatch(/commercial use/i);
+  });
+
+  it('confirms rights, and only then is the asset publishable', async () => {
+    const before = await call('/api/media');
+    const id = before.body.assets[0].id;
+
+    const after = await post(`/api/media/${id}/rights`, { approvedForCommercialUse: true });
+    expect(after.status).toBe(200);
+    expect(after.body.asset.publishable).toBe(true);
+
+    // Recorded, because this is the action that lets an image reach a page.
+    const audit = await call('/api/audit');
+    expect(audit.body.events.some((e: { action: string }) => e.action === 'asset.rights_confirmed')).toBe(true);
+  });
+
+  it('serves the stored bytes with a nosniff header', async () => {
+    const { body } = await call('/api/media');
+    const res = await fetch(`${base}${body.assets[0].rawUrl}`);
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toMatch(/^image\//);
+    expect(res.headers.get('x-content-type-options')).toBe('nosniff');
+    expect((await res.arrayBuffer()).byteLength).toBeGreaterThan(0);
+  });
+
+  it('serves /cdn URLs and says the transform did not happen', async () => {
+    const { body } = await call('/api/media');
+    const detail = await call(`/api/media/${body.assets[0].id}`);
+    expect(detail.body.derivatives.length).toBeGreaterThan(5);
+
+    const pages = await call('/api/pages');
+    const html = (await call(`/preview/${pages.body.pages[0].id}`)).raw;
+    const src = /src="(\/cdn\/[^"]+)"/.exec(html.replace(/&amp;/g, '&'))?.[1];
+    expect(src).toBeTruthy();
+
+    const res = await fetch(`${base}${src}`);
+    expect(res.status).toBe(200);
+    expect(res.headers.get('x-sidelio-transform')).toMatch(/not-implemented/);
+  });
+
+  it('renders imported media through the responsive asset path', async () => {
+    const pages = await call('/api/pages');
+    const html = (await call(`/preview/${pages.body.pages[0].id}`)).raw;
+    // The assetId branch produces srcset + explicit dimensions; the fallback
+    // URL branch does not. This is what proves ingestion reached the renderer.
+    expect(html).toContain('srcset=');
+    expect(html).toContain('fetchpriority="high"');
+  });
+
+  it('saves alt text and clears the generated flag', async () => {
+    const { body } = await call('/api/media');
+    const id = body.assets[0].id;
+    const res = await post(`/api/media/${id}/alt`, { altText: 'A finished roof in Charlottetown' });
+    expect(res.body.asset.altText).toBe('A finished roof in Charlottetown');
+    expect(res.body.asset.altTextGenerated).toBe(false);
+  });
+
+  it('validates a focal point', async () => {
+    const { body } = await call('/api/media');
+    const id = body.assets[0].id;
+    expect((await post(`/api/media/${id}/focal`, { x: 0.5, y: 0.3 })).status).toBe(200);
+    expect((await post(`/api/media/${id}/focal`, { x: 5, y: 0 })).status).toBe(400);
+  });
+
+  it('refuses to archive an asset still used on a page', async () => {
+    const { body } = await call('/api/media');
+    const inUse = body.assets.find((a: { usageCount: number }) => a.usageCount > 0);
+    const res = await post(`/api/media/${inUse.id}/archive`, {});
+    expect(res.status).toBe(409);
+    expect(res.body.error.message).toMatch(/used on/i);
+  });
+
+  it('searches by text and by structural filter', async () => {
+    const all = await call('/api/media/search?q=');
+    expect(all.body.assets.length).toBeGreaterThan(0);
+
+    const named = await call('/api/media/search?q=hero');
+    expect(named.body.assets.every((a: { filename: string }) => /hero/i.test(a.filename))).toBe(true);
+  });
+
+  it('reports that near-duplicate detection has not run', async () => {
+    const { body } = await call('/api/media');
+    // Being explicit matters: an empty duplicates list otherwise reads as
+    // "no duplicates" when it means "perceptual hashing never ran".
+    expect(body.perceptualHashing).toBe(false);
+  });
+});
+
+describe('typography', () => {
+  it('offers font stacks with no external dependency', async () => {
+    const { body } = await call('/api/brand');
+    expect(body.fontStacks.length).toBeGreaterThan(4);
+    for (const f of body.fontStacks) {
+      expect(f.stack).not.toMatch(/https?:|url\(/);
+    }
+  });
+
+  it('applies a typography change across the rendered site', async () => {
+    const res = await call('/api/brand', {
+      method: 'PATCH',
+      body: JSON.stringify({ typography: { headingFamily: 'Georgia, Cambria, serif', baseSizePx: 18 } }),
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.brandKit.typography.baseSizePx).toBe(18);
+
+    const pages = await call('/api/pages');
+    const html = (await call(`/preview/${pages.body.pages[0].id}`)).raw;
+    expect(html).toContain('--sl-font-heading: Georgia, Cambria, serif');
+  });
+
+  it('refuses body text too small to read', async () => {
+    const res = await call('/api/brand', {
+      method: 'PATCH',
+      body: JSON.stringify({ typography: { baseSizePx: 11 } }),
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error.message).toMatch(/too small/i);
+  });
+
+  it('refuses crowded line height but warns on merely tight', async () => {
+    expect((await call('/api/brand', {
+      method: 'PATCH', body: JSON.stringify({ typography: { lineHeight: 1.1 } }),
+    })).status).toBe(400);
+
+    const warned = await call('/api/brand', {
+      method: 'PATCH', body: JSON.stringify({ typography: { lineHeight: 1.4 } }),
+    });
+    expect(warned.status).toBe(200);
+    expect(warned.body.typographyIssues.some((i: { field: string }) => i.field === 'lineHeight')).toBe(true);
+  });
+
+  it('rejects a request that changes nothing', async () => {
+    expect((await call('/api/brand', { method: 'PATCH', body: JSON.stringify({}) })).status).toBe(400);
+  });
+});
+
+describe('design concepts', () => {
+  it('generates three distinct directions with previews', async () => {
+    const { body } = await call('/api/concepts');
+    expect(body.concepts.map((c: { direction: string }) => c.direction))
+      .toEqual(['conservative', 'modern', 'bold']);
+
+    for (const c of body.concepts) {
+      expect(c.pageCount).toBeGreaterThan(0);
+      expect(c.previewHtml).toContain('<!doctype html>');
+    }
+
+    // The directions must actually differ, or the picker is theatre.
+    const heroHeights = body.concepts.map((c: { previewHtml: string }) => c.previewHtml.length);
+    expect(new Set(heroHeights).size).toBeGreaterThan(1);
+  });
+
+  it('applies a concept as a reversible change set', async () => {
+    const before = await call('/api/pages');
+    const applied = await post('/api/concepts/apply', { direction: 'bold' });
+    expect(applied.status).toBe(200);
+    expect(applied.body.changeSet.status).toBe('applied');
+
+    const history = await call('/api/history');
+    const entry = history.body.changeSets[0];
+    expect(entry.title).toMatch(/bold/);
+    expect(entry.warnings.some((w: { code: string }) => w.code === 'pages_replaced')).toBe(true);
+
+    // And it undoes cleanly back to the previous page set.
+    const reverted = await post(`/api/history/${entry.id}/revert`, {});
+    expect(reverted.status).toBe(200);
+    const after = await call('/api/pages');
+    expect(after.body.pages.map((p: { path: string }) => p.path).sort())
+      .toEqual(before.body.pages.map((p: { path: string }) => p.path).sort());
+  });
+
+  it('rejects an unknown direction', async () => {
+    expect((await post('/api/concepts/apply', { direction: 'wild' })).status).toBe(400);
   });
 });
 

@@ -14,7 +14,7 @@ specified but not yet implemented.
 
 ```bash
 npm install
-npm test          # 200 tests
+npm test          # 242 tests
 npm run typecheck
 npm run dev       # admin + visual editor at http://localhost:4310
 npm run demo      # full pipeline against a fixture site
@@ -90,13 +90,14 @@ src/
   blocks/     block schema (26 types), page and navigation model
   generate/   rebuild modes and 13 industry content architectures
   ai/         provider registry, Anthropic + mock adapters, Site Assistant
-  media/      rights, smart crop, derivatives, duplicates, library audit, search
+  media/      ingestion, object store, image probing, rights, smart crop,
+              derivatives, duplicates, library audit, search
   render/     HTML renderer + sanitizer, SEO/AEO, sitemap
   db/         schema.sql, rls.sql
   api/        HTTP API over the domain modules
   admin/      admin + visual editor (no framework, no build step)
   demo/       runnable end-to-end walkthrough
-tests/        200 tests, including full-journey and HTTP integration tests
+tests/        242 tests, including full-journey and HTTP integration tests
 docs/         architecture and module specifications
 ```
 
@@ -123,8 +124,9 @@ network calls.
 Built and tested: tenancy, permissions, provenance, audit, change sets,
 knowledge graph, Smart Import (HTML/URL sources), rebuild modes and generation,
 brand kit, block schema, AI provider abstraction, Site Assistant, media studio
-(deterministic half), renderer and SEO, database schema and RLS, the admin API,
-and the admin UI with its visual editor.
+(ingestion through to the library UI), renderer and SEO, database schema and
+RLS verified against a real Postgres, the admin API, and the admin UI with its
+visual editor, media centre, typography controls and design-concept picker.
 
 Specified, not built: ecommerce, events/bookings, forms runtime, domains and
 publishing infrastructure, integrations and automations, analytics, billing,

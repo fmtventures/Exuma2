@@ -30,7 +30,9 @@
       <li><button type="button" class="nav-item is-active" data-view="editor">Editor</button></li>
       <li><button type="button" class="nav-item" data-view="review">Import review</button></li>
       <li><button type="button" class="nav-item" data-view="facts">Fact queue <span class="badge" id="badge-facts"></span></button></li>
+      <li><button type="button" class="nav-item" data-view="media">Media <span class="badge" id="badge-media"></span></button></li>
       <li><button type="button" class="nav-item" data-view="brand">Brand kit</button></li>
+      <li><button type="button" class="nav-item" data-view="concepts">Design concepts</button></li>
       <li><button type="button" class="nav-item" data-view="history">History</button></li>
       <li><button type="button" class="nav-item" data-view="audit">Audit log</button></li>
     </ul>
@@ -107,12 +109,57 @@
       <div id="fact-groups" class="record-list"></div>
     </section>
 
+    <!-- Media -------------------------------------------------------- -->
+    <section class="view" data-view="media">
+      <h2>Media</h2>
+      <p class="muted">
+        Images downloaded from the source site during import. Each one keeps its
+        provenance, and none can be published until you confirm you have the rights to it.
+      </p>
+
+      <div class="media-toolbar">
+        <label class="sr-only" for="media-search">Search media</label>
+        <input type="search" id="media-search" placeholder="Search — try &quot;roof&quot;, &quot;unused&quot;, &quot;hero&quot;">
+        <span class="muted small" id="media-count"></span>
+      </div>
+
+      <div class="stat-row" id="media-stats"></div>
+      <div id="media-duplicates"></div>
+
+      <div class="media-layout">
+        <ul class="media-grid" id="media-grid"></ul>
+        <aside class="panel media-detail" id="media-detail">
+          <p class="muted small">Select an image to see its provenance, rights and generated sizes.</p>
+        </aside>
+      </div>
+    </section>
+
     <!-- Brand -------------------------------------------------------- -->
     <section class="view" data-view="brand">
       <h2>Brand kit</h2>
-      <p class="muted">One change propagates to every page. Contrast is checked on save.</p>
+      <p class="muted">One change propagates to every page. Contrast and readability are checked on save.</p>
+
+      <h3>Colour</h3>
       <div class="brand-grid" id="brand-grid"></div>
       <div id="contrast-issues"></div>
+
+      <h3>Typography</h3>
+      <p class="muted small">
+        System and open-source stacks only — a published site never depends on a font CDN.
+      </p>
+      <div class="type-grid" id="type-grid"></div>
+      <div id="type-issues"></div>
+      <div class="type-specimen" id="type-specimen"></div>
+    </section>
+
+    <!-- Design concepts ---------------------------------------------- -->
+    <section class="view" data-view="concepts">
+      <h2>Design concepts</h2>
+      <p class="muted">
+        Three directions generated from the same business information. Applying one
+        replaces the current pages and is undoable from History.
+      </p>
+      <div class="concept-grid" id="concept-grid"></div>
     </section>
 
     <!-- History ------------------------------------------------------ -->

@@ -163,7 +163,13 @@ Crawl-delay: 0
 Sitemap: https://acmeroofing.ca/sitemap.xml
 `;
 
-export const FIXTURE_PAGES: Record<string, { body: string; contentType?: string }> = {
+import { PNG_1600x900, PNG_320x240 } from './images.ts';
+
+export const FIXTURE_PAGES: Record<string, {
+  body?: string;
+  binary?: Uint8Array;
+  contentType?: string;
+}> = {
   'https://acmeroofing.ca/robots.txt': { body: ROBOTS_TXT, contentType: 'text/plain' },
   'https://acmeroofing.ca/sitemap.xml': { body: SITEMAP_XML, contentType: 'application/xml' },
   'https://acmeroofing.ca/': { body: HOME_HTML },
@@ -176,4 +182,9 @@ export const FIXTURE_PAGES: Record<string, { body: string; contentType?: string 
   'https://acmeroofing.ca/services/roof-repair': { body: BROKEN_HTML },
   'https://acmeroofing.ca/services/emergency': { body: BROKEN_HTML },
   'https://acmeroofing.ca/warranty.pdf': { body: '%PDF-1.4', contentType: 'application/pdf' },
+
+  // Real image bytes, so media ingestion has something genuine to download,
+  // probe and store rather than a stubbed response.
+  'https://acmeroofing.ca/img/hero.jpg': { binary: PNG_1600x900, contentType: 'image/png' },
+  'https://acmeroofing.ca/img/small.jpg': { binary: PNG_320x240, contentType: 'image/png' },
 };

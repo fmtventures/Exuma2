@@ -176,7 +176,7 @@ faults.
 
 ## 8. What is built here
 
-Implemented, tested, and typechecked (200 tests):
+Implemented, tested, and typechecked (242 tests):
 
 | Area | State |
 |---|---|
@@ -192,11 +192,11 @@ Implemented, tested, and typechecked (200 tests):
 | Block schema (26 types) and validation | complete |
 | AI provider registry, Anthropic + mock adapters | complete |
 | Site Assistant: deterministic + constrained model planning | complete |
-| Media: rights, smart crop, derivatives, duplicates, search | complete (deterministic half) |
+| Media: ingestion, storage, probing, rights, crop, derivatives, duplicates, search | complete (deterministic half) |
 | Renderer, sanitizer, SEO/AEO, sitemap | complete |
 | Database schema and RLS policies | complete, verified against a real Postgres |
 | Admin HTTP API | complete for the modules above |
-| Admin UI + visual editor | editor, import review, fact queue, brand kit, history, audit |
+| Admin UI | editor, import review, fact queue, media centre, brand kit + typography, design concepts, history, audit |
 
 ## 9. What is specified but not built
 
@@ -237,8 +237,14 @@ Stated plainly rather than discovered later:
   the same `Fetcher` interface is the intended fix.
 - **`smartCrop` is geometry, not perception.** Without a vision-provided subject
   box it centre-crops. Subject detection must run first for good framing.
-- **Perceptual hashes are consumed, not computed here.** `findDuplicates`
-  expects `phash` to be populated by the media worker.
+- **Near-duplicate detection is not available.** Exact duplicates are found by
+  content hash at ingest; perceptual hashing needs decoded pixels and a media
+  worker with an image decoder. The media view states this rather than letting
+  an empty duplicate list read as "no duplicates".
+- **Image transformation is planned, not performed.** `planDerivatives` and
+  `smartCrop` compute every crop rectangle, and the `/cdn` endpoint serves the
+  original bytes with an `x-sidelio-transform: not-implemented` header instead
+  of silently returning the wrong size.
 - **The renderer resolves dynamic blocks at publish time**, not during render;
   `products`, `calendar`, `booking` and `social_feed` emit placeholders that the
   publisher fills.

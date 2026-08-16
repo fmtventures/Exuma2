@@ -288,6 +288,65 @@ function round(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
+/**
+ * Font stacks offered in the admin.
+ *
+ * System and open-source families only, declared as full CSS stacks. A
+ * published Sidelio site must not depend on a font CDN — that is a third-party
+ * request on every page load, a privacy exposure, and a single point of
+ * failure for the site's typography. Anything not installed falls through the
+ * stack to a sane local face.
+ */
+export const FONT_STACKS: Array<{ id: string; label: string; stack: string; kind: 'sans' | 'serif' | 'mono' }> = [
+  { id: 'system-sans', label: 'System sans', kind: 'sans', stack: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' },
+  { id: 'inter', label: 'Inter', kind: 'sans', stack: 'Inter, system-ui, sans-serif' },
+  { id: 'helvetica', label: 'Helvetica / Arial', kind: 'sans', stack: 'Helvetica Neue, Helvetica, Arial, sans-serif' },
+  { id: 'avenir', label: 'Avenir / Nunito', kind: 'sans', stack: 'Avenir Next, Avenir, Nunito Sans, system-ui, sans-serif' },
+  { id: 'system-serif', label: 'System serif', kind: 'serif', stack: 'Georgia, Cambria, "Times New Roman", serif' },
+  { id: 'iowan', label: 'Iowan / Palatino', kind: 'serif', stack: 'Iowan Old Style, Palatino Linotype, Palatino, serif' },
+  { id: 'charter', label: 'Charter / Bitstream', kind: 'serif', stack: 'Charter, Bitstream Charter, Georgia, serif' },
+  { id: 'mono', label: 'Monospace', kind: 'mono', stack: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace' },
+];
+
+export interface TypographyIssue {
+  field: string;
+  message: string;
+  severity: 'blocking' | 'warning';
+}
+
+/**
+ * Validate a typography change. Body text below 14px and cramped leading are
+ * the two settings that most reliably make a site unreadable, so they are
+ * refused rather than warned about.
+ */
+export function auditTypography(t: TypographyScale): TypographyIssue[] {
+  const issues: TypographyIssue[] = [];
+
+  if (t.baseSizePx < 14) {
+    issues.push({ field: 'baseSizePx', severity: 'blocking', message: `Body text at ${t.baseSizePx}px is too small to read comfortably. 16px is the recommended minimum.` });
+  } else if (t.baseSizePx < 16) {
+    issues.push({ field: 'baseSizePx', severity: 'warning', message: `${t.baseSizePx}px body text is below the 16px most readers expect.` });
+  }
+  if (t.baseSizePx > 24) {
+    issues.push({ field: 'baseSizePx', severity: 'warning', message: `${t.baseSizePx}px body text is unusually large and will wrap awkwardly on mobile.` });
+  }
+  if (t.lineHeight < 1.3) {
+    issues.push({ field: 'lineHeight', severity: 'blocking', message: `A line height of ${t.lineHeight} crowds the text. WCAG asks for at least 1.5 in body copy.` });
+  } else if (t.lineHeight < 1.5) {
+    issues.push({ field: 'lineHeight', severity: 'warning', message: `WCAG 1.4.12 asks for a body line height of at least 1.5; this is ${t.lineHeight}.` });
+  }
+  if (t.ratio < 1.05) {
+    issues.push({ field: 'ratio', severity: 'warning', message: 'A scale ratio this small leaves headings nearly the same size as body text.' });
+  }
+  if (t.ratio > 1.8) {
+    issues.push({ field: 'ratio', severity: 'warning', message: 'A scale ratio this large makes display headings overwhelm the page on mobile.' });
+  }
+  if (t.headingWeight < 400) {
+    issues.push({ field: 'headingWeight', severity: 'warning', message: 'Headings lighter than 400 lose their hierarchy against body text.' });
+  }
+  return issues;
+}
+
 /** Emit the kit as CSS custom properties consumed by the renderer. */
 export function toCssVariables(kit: BrandKit): string {
   const lines: string[] = [];
