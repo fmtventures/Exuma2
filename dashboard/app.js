@@ -22,9 +22,13 @@
   };
   const CONN_LABEL = {
     'paid-addon': 'Paid add-on', 'bundled-free': 'Bundled free',
+    'idea-from': 'Idea came from', 'paid-tier': 'Paid tier',
     api: 'API link', planned: 'Planned', idea: 'Idea',
   };
-  const CONN_SHORT = { 'paid-addon': 'PAID', 'bundled-free': 'FREE', api: 'API', planned: 'PLAN', idea: 'IDEA' };
+  const CONN_SHORT = {
+    'paid-addon': 'PAID', 'bundled-free': 'FREE', 'idea-from': 'FROM',
+    'paid-tier': 'TIER', api: 'API', planned: 'PLAN', idea: 'IDEA',
+  };
 
   const STALE_DAYS = 45;
 
@@ -591,12 +595,68 @@
         </tr>`;
       }).join('')}</tbody></table>`;
 
+    /* The module inventory — the "what exists and what works" question. */
+    const sync = DATA.meta.moduleSync;
+    const studioMods = mods.filter((m) => m.source === 'studio/registry.js');
+    const otherMods = mods.filter((m) => m.source !== 'studio/registry.js');
+
+    const modRow = (m) => `<tr>
+      <td><strong>${esc(m.name)}</strong>${m.subTools && m.subTools.length
+        ? `<br><span class="faint" style="font-size:11px">${esc(m.subTools.join(' · '))}</span>` : ''}</td>
+      <td>${esc(m.ownerToolId ? toolName(m.ownerToolId) : '—')}</td>
+      <td>${m.wired
+        ? `<span class="health good">${icon('check')}Wired</span>`
+        : `<span class="health warning">${icon('alert')}Set-up pending</span>`}</td>
+      <td>${m.ideaFrom ? `<span class="tag">${esc(m.ideaFrom)}</span>` : '<span class="faint">—</span>'}</td>
+      <td>${(m.skills && m.skills.length)
+        ? m.skills.map((s) => `<span class="tag">${esc(s)}</span>`).join(' ')
+        : '<span class="faint">none declared</span>'}</td>
+      <td class="dim">${esc(m.description || '')}</td>
+    </tr>`;
+
+    const modTable = `<table class="data">
+      <thead><tr><th>Module</th><th>Owned by</th><th>State</th><th>Idea from</th><th>Skills behind it</th><th>What it does</th></tr></thead>
+      <tbody>${studioMods.map(modRow).join('')}${otherMods.map(modRow).join('')}</tbody></table>`;
+
+    const tiers = DATA.meta.tiers || [];
+    const tiersCard = tiers.length ? `
+      <section class="card">
+        <div class="card-head">${icon('box')}<h2>How modules are sold today</h2>
+          <div class="spacer"></div><span class="topbar-meta">from studio/pitch.html</span></div>
+        <div class="card-body">
+          <div class="tiles">
+            ${tiers.map((t) => `<div class="tile">
+              <span class="eyebrow">${esc(t.name)}</span>
+              <span class="tile-val" style="font-size:22px">${esc(t.price)}</span>
+              <span class="tile-sub">${esc(t.includes)}</span>
+            </div>`).join('')}
+          </div>
+          ${DATA.meta.tiersNote ? `<p class="section-note" style="margin-top:14px">${esc(DATA.meta.tiersNote)}</p>` : ''}
+        </div>
+      </section>` : '';
+
     return `
       <div class="section-title">
         <h2>Modules and connections</h2>
         <span class="section-note">Which capability plugs into which product, and on what commercial terms.
           Rows are modules, columns are the products that host them.</span>
       </div>
+
+      <section class="card">
+        <div class="card-head">${icon('grid')}<h2>The module shelf</h2>
+          <div class="spacer"></div>
+          <span class="topbar-meta">${mods.length} modules · ${mods.filter((m) => m.wired).length} wired</span>
+        </div>
+        <div class="card-body">
+          ${sync ? `<p class="section-note" style="margin-bottom:14px">The first ${sync.count} rows are read directly from
+            <span class="mono">${esc(sync.from)}</span> — the Studio's own shelf, which is the real source of truth.
+            Re-sync with <span class="mono">node dashboard/sync-modules.mjs &lt;path&gt;</span> rather than editing them here,
+            so this board can never drift from the platform.</p>` : ''}
+          <div class="table-wrap">${modTable}</div>
+        </div>
+      </section>
+
+      ${tiersCard}
 
       <section class="card">
         <div class="card-head">${icon('link')}<h2>Attachment matrix</h2>
@@ -612,7 +672,7 @@
             <span class="legend-key"><span class="legend-swatch" style="background:var(--accent-soft);border-color:var(--accent-line)"></span>Planned</span>
             <span class="legend-key"><span class="legend-swatch" style="background:transparent;border-style:dashed"></span>Idea only</span>
             <span class="legend-key"><span class="legend-swatch" style="background:var(--surface-3)"></span>Owns the module</span>
-            <span class="legend-key faint">FREE = bundled free · PAID = paid add-on · API = service link</span>
+            <span class="legend-key faint">FROM = idea came from · API = service link · FREE = bundled free · PAID = paid add-on · PLAN = planned</span>
           </div>
         </div>
       </section>
@@ -623,11 +683,16 @@
       </section>
 
       <div class="empty-state">
-        <h3>The decision this view exists for</h3>
-        <p>You described two commercial models: a module people <strong>buy as an add-on</strong> to a tool they already
-          own, and a module you <strong>give away free</strong> inside a bigger platform. The Site Builder row shows both
-          at once — paid into BF, free into the platform. Once you confirm which products really host it,
-          this becomes the map we build the entitlement logic from.</p>
+        <h3>The thing worth knowing</h3>
+        <p>You asked how the website builder could connect to existing tools like BF. It turns out
+          <strong>both are already modules on the same shelf</strong> — <strong>Website</strong> and
+          <strong>Full BrokerFlow</strong> are two of the fourteen, both wired, and the Builder already
+          composes any combination of them into a branded client portal. The mechanism you were asking me to
+          design exists and works.</p>
+        <p>So the open question is not how to connect them. It is <strong>which real business goes on it first</strong>
+          — peifotoshop.com is the obvious candidate, since the Website and Gallery modules were both built from
+          its ideas — and <strong>whether Sidelio's separate module system merges onto this shelf</strong>, which is
+          the one decision that could double or halve the work ahead.</p>
       </div>
     `;
   }
