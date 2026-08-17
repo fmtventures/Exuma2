@@ -196,6 +196,12 @@ Implemented, tested, and typechecked (249 tests):
 | Renderer, sanitizer, SEO/AEO, sitemap | complete |
 | Database schema and RLS policies | complete, verified against a real Postgres |
 | Admin HTTP API | complete for the modules above |
+| Commerce: money, pricing, catalog, inventory, orders | complete (deterministic core; no payment-provider adapter) |
+| Scheduling: availability, bookings, events, ICS | complete |
+| Forms, spam scoring, CRM, consent, pipeline | complete |
+| Automations: triggers, conditions, actions | complete (engine + guards; action handlers are injected) |
+| Domains, DNS verification, certificates, redirects, publish versions | complete (deterministic core; no ACME/DNS provider adapter) |
+| Analytics, plan metering, agency roll-up | complete |
 | Admin UI | editor, import review, fact queue, media centre, brand kit + typography, design gallery, design concepts, history, audit |
 
 ## 9. What is specified but not built

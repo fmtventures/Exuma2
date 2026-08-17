@@ -95,11 +95,17 @@ src/
               derivatives, duplicates, library audit, search
   render/     HTML renderer + sanitizer, 13 page layouts,
               31 visual treatments, SEO/AEO, sitemap
+  commerce/   money, cart pricing, catalog, inventory ledger, orders
+  scheduling/ availability engine, bookings, events, ICS
+  crm/        forms, spam scoring, contacts, consent, pipeline
+  automation/ trigger/condition/action engine with loop and rate guards
+  publishing/ domains, DNS verification, certificates, redirects, versions
+  analytics/  cookieless metrics, plan metering, agency roll-up
   db/         schema.sql, rls.sql
   api/        HTTP API over the domain modules
   admin/      admin + visual editor (no framework, no build step)
   demo/       runnable end-to-end walkthrough
-tests/        249 tests, including full-journey and HTTP integration tests
+tests/        507 tests, including full-journey and HTTP integration tests
 docs/         architecture and module specifications
 ```
 
