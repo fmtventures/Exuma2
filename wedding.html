@@ -424,6 +424,7 @@
             </div>
         </div>
 
+        <div id="dash-invite"></div>
         <div id="dash-alerts" class="space-y-3"></div>
     </section>
 
@@ -540,7 +541,24 @@
                         <option value="maybe">Maybe</option>
                         <option value="no">Declined</option>
                     </select>
+                    <button class="btn btn-ghost" onclick="toggleGuestImport()">Import</button>
                     <button class="btn btn-ghost" onclick="exportGuestsCsv()">Export CSV</button>
+                </div>
+            </div>
+
+            <div id="guest-import" class="hidden no-print mb-5 p-5 rounded-xl" style="border:2px dashed var(--ink);background:var(--paper)">
+                <h4 class="font-bold text-sm mb-1">Bring a list in</h4>
+                <p class="text-[11px] mb-4" style="color:var(--ink-soft)">
+                    Choose a CSV file, or paste straight from a spreadsheet or a note. One party per line.
+                    A first row of column names is used if it is there — Name, Side, Seats, RSVP, Meal, Table, Dietary, Access, Contact, Notes —
+                    otherwise the first column is the name, and a number after it is the seats.
+                </p>
+                <input id="gi-file" type="file" accept=".csv,.tsv,.txt,text/csv,text/plain" class="inp" onchange="importGuestsFile(this)">
+                <textarea id="gi-text" rows="6" class="inp mt-3" placeholder="Marc &amp; Julie Arsenault, 2, marc@example.com&#10;Aunt Claire&#10;The Gallants, 4"></textarea>
+                <div class="flex flex-wrap items-center gap-2 mt-3">
+                    <button class="btn btn-primary" onclick="importGuests()">Add these guests</button>
+                    <button class="btn btn-ghost" onclick="toggleGuestImport()">Close</button>
+                    <span id="gi-note" class="text-[11px]" style="color:var(--ink-soft)"></span>
                 </div>
             </div>
             <div class="overflow-x-auto">
@@ -638,7 +656,12 @@
                     <button class="btn btn-ghost" onclick="printPack('floorplan')">Print</button>
                 </div>
             </div>
+            <div class="no-print mb-4">
+                <div class="eyebrow mb-2" style="color:var(--ink-soft)">Put something else in the room</div>
+                <div id="fixture-buttons" class="flex flex-wrap gap-2"></div>
+            </div>
             <div id="floorplan-wrap"></div>
+            <div id="fixture-list" class="mt-4 no-print"></div>
         </div>
 
         <div id="tables-wrap" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
@@ -1205,6 +1228,24 @@
     <!-- ============ GUEST PAGE & QR ============ -->
     <section id="view-guestpage" class="view hidden space-y-6">
         <div class="card p-6">
+            <h3 class="text-lg font-bold mb-2">Your invitation</h3>
+            <p class="text-sm text-gray-600 mb-5">Upload the picture you had made — the invitation, a save-the-date, a photograph of the two of you. It goes at the top of the guest page, prints on its own sheet, and is stored in this browser with everything else.</p>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+                <div class="lg:col-span-2">
+                    <label class="eyebrow" style="color:var(--ink-soft)">Picture file</label>
+                    <input id="invite-file" type="file" accept="image/*" class="inp mt-1 no-print" onchange="setInvite(this)">
+                    <p class="text-[11px] mt-2" style="color:var(--ink-soft)">JPG, PNG, HEIC — whatever your phone or the print shop gave you. It is shrunk to fit browser storage.</p>
+                    <div class="flex flex-wrap gap-2 mt-4 no-print">
+                        <button class="btn btn-ghost" onclick="printPack('invite')">Print it</button>
+                        <button class="btn btn-ghost" onclick="clearInvite()">Remove</button>
+                    </div>
+                    <p id="invite-note" class="text-[11px] mt-3" style="color:var(--ink-soft)"></p>
+                </div>
+                <div id="invite-preview"></div>
+            </div>
+        </div>
+
+        <div class="card p-6">
             <h3 class="text-lg font-bold mb-2">The page your guests see</h3>
             <p class="text-sm text-gray-600 mb-5">Exports one self-contained file with the day's timings, the places with map links, where to stay, the dress code and anything you want to tell people. Put it on a web address and the QR code below points at it.</p>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1255,8 +1296,10 @@
             <div class="flex flex-wrap gap-2 mt-5 no-print">
                 <button class="btn btn-ghost" onclick="printPack('qrcards')">Print QR table cards</button>
             </div>
+            <div id="album-embed" class="mt-6"></div>
             <p class="text-[11px] text-gray-500 mt-4">
-                Uploads are received by whatever service you point at — this planner makes the codes and the links, it does not store the pictures.
+                There is no live link between this planner and the upload service. It turns the addresses you type into codes, links and printed cards;
+                the pictures and videos are received, stored and served by the service behind those addresses, and prints are ordered on its own site.
             </p>
         </div>
     </section>
@@ -1686,6 +1729,7 @@ function defaultState() {
                                 cocktailMins: 60, dinnerMins: 90, endTime: '00:00' },
                     guestPage: { dressCode: '', message: '', uploadUrl: '', albumUrl: '',
                                  printsUrl: 'https://sidelio.ca/photographers', faq: '' },
+                    invite: { src: '', name: '' },
                     sun: { lat: null, lng: null, place: '' },
                     thanksTemplate: 'Dear {name},\n\nThank you so much for the {gift} — it was so thoughtful of you, and we love it.\n\nIt meant the world to have you with us on our wedding day.\n\nWith love,\n{couple}',
                     modules: { seating: true, gifts: true, inventory: true, places: true, vendors: true,
@@ -1694,7 +1738,7 @@ function defaultState() {
         budget: [], guests: [], tables: [], tasks: [], vendors: [], schedule: [],
         gifts: [], registries: [], inventory: [], places: [],
         payments: [], events: [], shots: [], music: [],
-        rules: [], speeches: [], journal: [], attire: [], scenarios: [], board: []
+        rules: [], speeches: [], journal: [], attire: [], scenarios: [], board: [], fixtures: []
     };
     s.budget = CATEGORIES.map(c => ({
         id: uid(), category: c.name, item: c.name, vendor: '',
@@ -1713,12 +1757,16 @@ let activeView = 'dashboard';
 /* =========================================================
    PERSISTENCE
    ========================================================= */
+/* Returns false when the browser refused the write — anything that stores a
+   picture checks that, so a full quota is undone rather than silently lost. */
 function save() {
     try {
         localStorage.setItem(STORE_KEY, JSON.stringify(S));
         flashSaved();
+        return true;
     } catch (e) {
         console.warn('Could not save to localStorage:', e);
+        return false;
     }
 }
 
@@ -1742,12 +1790,13 @@ function migrate(obj) {
     out.couple   = Object.assign({}, base.couple,   obj.couple   || {});
     out.settings = Object.assign({}, base.settings, obj.settings || {});
     ['budget','guests','tables','tasks','vendors','schedule','gifts','registries','inventory','places',
-     'payments','events','shots','music','rules','speeches','journal','attire','scenarios','board'].forEach(k => {
+     'payments','events','shots','music','rules','speeches','journal','attire','scenarios','board','fixtures'].forEach(k => {
         if (!Array.isArray(out[k])) out[k] = base[k];
     });
     out.settings.modules = Object.assign({}, base.settings.modules, out.settings.modules || {});
     out.settings.timeline = Object.assign({}, base.settings.timeline, out.settings.timeline || {});
     out.settings.guestPage = Object.assign({}, base.settings.guestPage, out.settings.guestPage || {});
+    out.settings.invite = Object.assign({}, base.settings.invite, out.settings.invite || {});
     out.settings.sun = Object.assign({}, base.settings.sun, out.settings.sun || {});
     if (!out.settings.thanksTemplate) out.settings.thanksTemplate = base.settings.thanksTemplate;
     out.guests.forEach(g => { if (!Array.isArray(g.events)) g.events = []; });
@@ -2129,6 +2178,14 @@ function renderAlerts() {
     document.getElementById('dash-alerts').innerHTML = alerts.map(a =>
         '<div class="border rounded-lg px-4 py-3 text-sm font-medium ' + colors[a[0]] + '">' + esc(a[1]) + '</div>'
     ).join('');
+
+    const inv = S.settings.invite;
+    document.getElementById('dash-invite').innerHTML = inv.src
+        ? '<div class="card p-6 text-center">' +
+            '<div class="eyebrow mb-4" style="color:var(--ink-soft)">Your invitation</div>' +
+            '<img src="' + esc(inv.src) + '" alt="Your invitation" style="max-width:22rem;width:100%;margin:0 auto;border:2px solid var(--ink);border-radius:12px;box-shadow:3px 3px 0 var(--ink)">' +
+          '</div>'
+        : '';
 }
 
 function drawRsvpChart() {
@@ -2485,6 +2542,128 @@ function exportGuestsCsv() {
     ]);
     const csv = [header].concat(rows).map(r => r.map(csvCell).join(',')).join('\r\n');
     download(new Blob([csv], { type: 'text/csv;charset=utf-8' }), 'guest-list.csv');
+}
+
+/* ---------- bringing a list in ---------- */
+function toggleGuestImport() {
+    const box = document.getElementById('guest-import');
+    box.classList.toggle('hidden');
+    if (!box.classList.contains('hidden')) document.getElementById('gi-text').focus();
+}
+
+function importGuestsFile(input) {
+    const file = (input.files || [])[0];
+    input.value = '';
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        document.getElementById('gi-text').value = String(e.target.result || '');
+        importGuests();
+    };
+    reader.onerror = () => { document.getElementById('gi-note').innerText = 'That file could not be read.'; };
+    reader.readAsText(file);
+}
+
+/* A row at a time, honouring quoted cells so a name like "Arsenault, Marc" survives. */
+function splitRow(line, delim) {
+    const out = [];
+    let cell = '', quoted = false;
+    for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (quoted) {
+            if (ch === '"') {
+                if (line[i + 1] === '"') { cell += '"'; i++; }
+                else quoted = false;
+            } else cell += ch;
+        } else if (ch === '"') {
+            quoted = true;
+        } else if (ch === delim) {
+            out.push(cell.trim()); cell = '';
+        } else cell += ch;
+    }
+    out.push(cell.trim());
+    return out;
+}
+
+const IMPORT_FIELDS = {
+    name: 'name', 'name / party': 'name', party: 'name', 'guest': 'name', 'guests': 'name',
+    side: 'side', seats: 'seats', 'seat': 'seats', 'party size': 'seats', 'no.': 'seats', qty: 'seats',
+    rsvp: 'rsvp', meal: 'meal', table: 'table',
+    dietary: 'diet', diet: 'diet', allergies: 'diet',
+    access: 'access', accessibility: 'access',
+    contact: 'contact', email: 'contact', phone: 'contact', 'email / phone': 'contact',
+    notes: 'notes', note: 'notes'
+};
+
+function normaliseRsvp(v) {
+    const s = String(v || '').trim().toLowerCase();
+    if (/^(y|yes|attending|coming|accept)/.test(s)) return 'yes';
+    if (/^(n|no|declined|regret|not)/.test(s)) return 'no';
+    if (/^(m|maybe|tentative)/.test(s)) return 'maybe';
+    return 'pending';
+}
+
+function parseGuestRows(text) {
+    const lines = String(text || '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    if (!lines.length) return [];
+    const delim = lines.some(l => l.indexOf('\t') > -1) ? '\t' : ',';
+    const rows = lines.map(l => splitRow(l, delim));
+
+    // A first row of column names is used when it names at least the guests.
+    let cols = null;
+    const head = rows[0].map(h => h.toLowerCase().replace(/\s+/g, ' ').trim());
+    if (head.some(h => IMPORT_FIELDS[h] === 'name')) {
+        cols = head.map(h => IMPORT_FIELDS[h] || '');
+        rows.shift();
+    }
+
+    return rows.map(r => {
+        const g = { name: '', side: '', seats: 1, rsvp: 'pending', meal: '', table: '', diet: '', access: '', contact: '', notes: '' };
+        if (cols) {
+            cols.forEach((field, i) => { if (field) g[field] = (r[i] || '').trim(); });
+        } else {
+            g.name = (r[0] || '').trim();
+            r.slice(1).forEach(cell => {
+                const c = (cell || '').trim();
+                if (!c) return;
+                if (/^\d{1,2}$/.test(c) && g.seats === 1) g.seats = c;
+                else if (!g.contact && /[@\d]/.test(c)) g.contact = c;
+                else if (!g.notes) g.notes = c;
+            });
+        }
+        g.seats = Math.max(1, parseInt(g.seats) || 1);
+        g.rsvp = normaliseRsvp(g.rsvp);
+        return g;
+    }).filter(g => g.name);
+}
+
+function importGuests() {
+    const parsed = parseGuestRows(document.getElementById('gi-text').value);
+    const note = document.getElementById('gi-note');
+    if (!parsed.length) {
+        note.innerText = 'Nothing to add — paste a list or choose a file first.';
+        return;
+    }
+    const seen = S.guests.map(g => (g.name || '').trim().toLowerCase());
+    let added = 0, skipped = 0;
+    parsed.forEach(p => {
+        const key = p.name.toLowerCase();
+        if (seen.indexOf(key) > -1) { skipped++; return; }
+        seen.push(key);
+        const side = S.settings.sides.indexOf(p.side) > -1 ? p.side : (p.side || S.settings.sides[0]);
+        const table = (S.tables.find(t => (t.name || '').toLowerCase() === p.table.toLowerCase()) || {}).id || '';
+        S.guests.push({
+            id: uid(), name: p.name, side: side, party: p.seats,
+            rsvp: p.rsvp, meal: p.meal, table: table, diet: p.diet, access: p.access,
+            away: false, arrive: '', depart: '', staying: '', lift: false, travelNotes: '', events: [],
+            contact: p.contact, notes: p.notes
+        });
+        added++;
+    });
+    document.getElementById('gi-text').value = '';
+    note.innerText = added + (added === 1 ? ' guest added' : ' guests added') +
+        (skipped ? ', ' + skipped + ' already on the list' : '') + '.';
+    save(); renderGuests(); renderHeader();
 }
 
 /* =========================================================
@@ -4093,6 +4272,50 @@ function setGuestPage(field, value) {
     save(); renderGuestPage();
 }
 
+/* The invitation is kept as a picture in this browser, so it is shrunk first:
+   wide enough that the lettering still reads, small enough to store. */
+function setInvite(input) {
+    const file = (input.files || [])[0];
+    input.value = '';
+    if (!file) return;
+    const note = document.getElementById('invite-note');
+    note.innerText = 'Reading ' + file.name + '…';
+
+    const reader = new FileReader();
+    reader.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+            const max = 1600;
+            const scale = Math.min(1, max / Math.max(img.width, img.height));
+            const cv = document.createElement('canvas');
+            cv.width = Math.round(img.width * scale);
+            cv.height = Math.round(img.height * scale);
+            cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+
+            const before = S.settings.invite;
+            S.settings.invite = { src: cv.toDataURL('image/jpeg', 0.82), name: file.name };
+            if (!save()) {
+                S.settings.invite = before;
+                note.innerText = 'That picture is too big for this browser\'s storage. Try a smaller one, or clear out the mood board.';
+                return;
+            }
+            renderGuestPage();
+            if (activeView === 'dashboard') renderDashboard();
+        };
+        img.onerror = () => { note.innerText = 'That file is not a picture this browser can open.'; };
+        img.src = e.target.result;
+    };
+    reader.onerror = () => { note.innerText = 'That file could not be read.'; };
+    reader.readAsDataURL(file);
+}
+
+function clearInvite() {
+    if (!S.settings.invite.src) return;
+    S.settings.invite = { src: '', name: '' };
+    save(); renderGuestPage();
+    if (activeView === 'dashboard') renderDashboard();
+}
+
 function qrSvg(text, size) {
     if (typeof qrcode === 'undefined' || !text) return '';
     try {
@@ -4122,6 +4345,27 @@ function renderGuestPage() {
     const set = (id, v) => { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = v || ''; };
     set('gp-dress', gp.dressCode); set('gp-message', gp.message); set('gp-faq', gp.faq);
     set('gp-url', gp.pageUrl); set('gp-upload', gp.uploadUrl); set('gp-album', gp.albumUrl); set('gp-prints', gp.printsUrl);
+
+    const inv = S.settings.invite;
+    document.getElementById('invite-preview').innerHTML = inv.src
+        ? '<img src="' + esc(inv.src) + '" alt="Your invitation" class="w-full rounded-xl" style="border:2px solid var(--ink);box-shadow:3px 3px 0 var(--ink)">'
+        : '<div class="rounded-xl text-center text-sm p-8" style="border:2px dashed var(--ink);color:var(--ink-soft)">No picture yet.<br>It shows here once you choose one.</div>';
+    document.getElementById('invite-note').innerText = inv.src
+        ? (inv.name ? inv.name + ' · ' : '') + 'about ' + Math.round(inv.src.length / 1024) + ' KB stored, and it travels inside the exported guest page.'
+        : '';
+
+    const album = safeUrl(gp.albumUrl);
+    document.getElementById('album-embed').innerHTML = album
+        ? '<div class="card p-4">' +
+            '<div class="flex flex-wrap items-center justify-between gap-3 mb-3">' +
+                '<div class="eyebrow" style="color:var(--ink-soft)">The album, as it stands</div>' +
+                '<a class="btn btn-ghost no-print" href="' + esc(album) + '" target="_blank" rel="noopener noreferrer">Open it in a new tab</a>' +
+            '</div>' +
+            '<iframe src="' + esc(album) + '" title="Photo album" loading="lazy" referrerpolicy="no-referrer" ' +
+                'style="width:100%;height:420px;border:2px solid var(--ink);border-radius:10px;background:#fff"></iframe>' +
+            '<p class="text-[11px] mt-3" style="color:var(--ink-soft)">This is the album\'s own page shown inside this one. If it stays blank, that service does not allow being framed — the button opens it properly.</p>' +
+          '</div>'
+        : '';
 
     const codes = [
         ['Guest page', gp.pageUrl, 'Everything they need to know'],
@@ -4182,11 +4426,13 @@ function guestPageHtml() {
     '.cta{display:inline-block;background:var(--pink);color:#fff;border:2px solid var(--ink);border-radius:10px;' +
     'box-shadow:3px 3px 0 var(--ink);padding:.6rem 1rem;text-decoration:none;margin:.3rem .3rem 0 0}' +
     '.qr{text-align:center}.qr svg{max-width:200px;height:auto;border:2px solid var(--ink);border-radius:10px}' +
+    '.invite{display:block;max-width:26rem;width:100%;margin:1.5rem auto 0;border:3px solid #fff;border-radius:12px}' +
     'footer{text-align:center;padding:2rem 1rem;color:var(--soft);font-size:.8rem}' +
     '</style></head><body>' +
     '<header><p class="eyebrow">You are invited</p><h1>' + esc(couple) + '</h1>' +
     (c.date ? '<p>' + esc(longDate(c.date)) + '</p>' : '') +
     (c.venue ? '<p class="t" style="color:#cfc9ea">' + esc(c.venue) + (c.location ? ' · ' + esc(c.location) : '') + '</p>' : '') +
+    (S.settings.invite.src ? '<img class="invite" src="' + esc(S.settings.invite.src) + '" alt="Our invitation">' : '') +
     '</header><div class="wrap">' +
 
     (gp.message ? '<section><h2>A word from us</h2><p>' + esc(gp.message).replace(/\n/g, '<br>') + '</p></section>' : '') +
@@ -4381,7 +4627,113 @@ function cycleShape(id) {
     save(); renderSeating();
 }
 
+/* Everything in the room that is not a table you seat people at. Each one is
+   dropped in the middle of the plan and dragged from there like a table. */
+const FIXTURE_TYPES = [
+    ['Stage',           'rect',  260, 110, '#FFD84D'],
+    ['Dance floor',     'rect',  240, 190, '#C6FF3D'],
+    ['Food table',      'rect',  220,  64, '#FFB38A'],
+    ['Buffet',          'rect',  260,  56, '#FFC79A'],
+    ['Bar',             'rect',  190,  64, '#8FD3FF'],
+    ['Cake table',      'round',  88,  88, '#FFC6E4'],
+    ['Gift table',      'rect',  170,  58, '#D9CCFF'],
+    ['Stand-up table',  'round',  62,  62, '#EDE8FF'],
+    ['DJ / band',       'rect',  150,  90, '#B9B2FF'],
+    ['Photo booth',     'rect',  140, 110, '#FFAFCB'],
+    ['Arch / backdrop', 'rect',  210,  38, '#FFE9A8'],
+    ['Decor',           'round',  70,  70, '#9EE7C8'],
+    ['Entrance',        'rect',  140,  44, '#E4DFF7']
+];
+
+/* New items are laid out in rows across the top of the room, each one clear of
+   the last, so nothing arrives hidden underneath something else. */
+function nextFixtureSpot(w, h) {
+    let x = 8, y = 10, rowH = 0;
+    const place = (fw, fh) => {
+        const pw = fw / PLAN_W * 100, ph = fh / PLAN_H * 100;
+        if (x + pw > 92) { x = 8; y += rowH + 3; rowH = 0; }
+        const spot = { x: Math.min(92, x + pw / 2), y: Math.min(88, y + ph / 2) };
+        x += pw + 3;
+        rowH = Math.max(rowH, ph);
+        return spot;
+    };
+    S.fixtures.forEach(f => place(f.w, f.h));
+    return place(w, h);
+}
+
+function addFixture(label) {
+    const def = FIXTURE_TYPES.find(f => f[0] === label) || ['Item', 'rect', 150, 70, '#E4DFF7'];
+    const same = S.fixtures.filter(f => f.label.indexOf(def[0]) === 0).length;
+    const spot = nextFixtureSpot(def[2], def[3]);
+    S.fixtures.push({
+        id: uid(), label: def[0] + (same ? ' ' + (same + 1) : ''),
+        shape: def[1], w: def[2], h: def[3], fill: def[4],
+        x: spot.x, y: spot.y
+    });
+    save(); renderSeating();
+}
+function delFixture(id) { S.fixtures = S.fixtures.filter(f => f.id !== id); save(); renderSeating(); }
+function fixtureSet(id, field, v) {
+    const f = S.fixtures.find(x => x.id === id);
+    if (!f) return;
+    f[field] = v;
+    save(); scheduleRender();
+}
+function fixtureScale(id, factor) {
+    const f = S.fixtures.find(x => x.id === id);
+    if (!f) return;
+    f.w = Math.round(Math.min(500, Math.max(30, f.w * factor)));
+    f.h = Math.round(Math.min(400, Math.max(24, f.h * factor)));
+    save(); renderSeating();
+}
+function fixtureTurn(id) {
+    const f = S.fixtures.find(x => x.id === id);
+    if (!f) return;
+    const w = f.w; f.w = f.h; f.h = w;
+    save(); renderSeating();
+}
+function fixtureShape(id) {
+    const f = S.fixtures.find(x => x.id === id);
+    if (!f) return;
+    f.shape = f.shape === 'round' ? 'rect' : 'round';
+    save(); renderSeating();
+}
+
+function fixtureNode(f, forExport) {
+    const cx = f.x / 100 * PLAN_W, cy = f.y / 100 * PLAN_H;
+    const node = f.shape === 'round'
+        ? '<ellipse cx="0" cy="0" rx="' + (f.w / 2) + '" ry="' + (f.h / 2) + '" fill="' + esc(f.fill) + '" stroke="#17132E" stroke-width="2.5"/>'
+        : '<rect x="' + (-f.w / 2) + '" y="' + (-f.h / 2) + '" width="' + f.w + '" height="' + f.h + '" rx="6" fill="' + esc(f.fill) + '" stroke="#17132E" stroke-width="2.5"/>';
+    const label = f.label.length > 20 ? f.label.slice(0, 19) + '…' : f.label;
+    return '<g class="plan-item" data-id="' + f.id + '" transform="translate(' + cx.toFixed(1) + ',' + cy.toFixed(1) + ')"' +
+           (forExport ? '' : ' style="cursor:grab"') + '>' + node +
+           '<text x="0" y="5" text-anchor="middle" font-family="Outfit,sans-serif" font-size="14" font-weight="700" fill="#17132E">' +
+                esc(label) + '</text></g>';
+}
+
+function renderFixtures() {
+    const buttons = document.getElementById('fixture-buttons');
+    if (!buttons) return;
+    buttons.innerHTML = FIXTURE_TYPES.map(f =>
+        '<button class="btn btn-ghost" style="padding:.35rem .7rem;font-size:.75rem" onclick="addFixture(\'' + f[0].replace(/'/g, "\\'") + '\')">+ ' + esc(f[0]) + '</button>').join('');
+
+    document.getElementById('fixture-list').innerHTML = S.fixtures.length
+        ? '<div class="eyebrow mb-2" style="color:var(--ink-soft)">In the room</div>' +
+          '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">' + S.fixtures.map(f =>
+            '<div class="flex items-center gap-1 p-2 rounded-lg" style="border:2px solid var(--ink);background:var(--card)">' +
+                '<span style="width:14px;height:14px;border-radius:4px;border:1.5px solid var(--ink);background:' + esc(f.fill) + ';flex:none"></span>' +
+                '<input class="inp" style="padding:.25rem .4rem;font-size:.8rem" data-k="fx-' + f.id + '-label" value="' + esc(f.label) + '" onchange="fixtureSet(\'' + f.id + '\',\'label\',this.value)">' +
+                '<button class="btn btn-ghost" style="padding:.15rem .4rem;font-size:.7rem" title="Smaller" onclick="fixtureScale(\'' + f.id + '\',0.85)">−</button>' +
+                '<button class="btn btn-ghost" style="padding:.15rem .4rem;font-size:.7rem" title="Bigger" onclick="fixtureScale(\'' + f.id + '\',1.18)">+</button>' +
+                '<button class="btn btn-ghost" style="padding:.15rem .4rem;font-size:.7rem" title="Turn it" onclick="fixtureTurn(\'' + f.id + '\')">⟲</button>' +
+                '<button class="btn btn-ghost" style="padding:.15rem .4rem;font-size:.7rem" title="Round or square" onclick="fixtureShape(\'' + f.id + '\')">◻</button>' +
+                '<span class="row-x" onclick="delFixture(\'' + f.id + '\')">&times;</span>' +
+            '</div>').join('') + '</div>'
+        : '';
+}
+
 function floorPlanSvg(forExport) {
+    const items = S.fixtures.map(f => fixtureNode(f, forExport)).join('');
     const body = S.tables.map((t, i) => {
         planPos(t, i);
         const used = seatsUsed(t.id);
@@ -4409,18 +4761,19 @@ function floorPlanSvg(forExport) {
         'width="100%" style="background:#FBFAFF;border:2px solid #17132E;border-radius:.5rem;touch-action:none">' +
         '<rect x="0" y="0" width="' + PLAN_W + '" height="' + PLAN_H + '" fill="#FBFAFF"/>' +
         '<text x="' + (PLAN_W / 2) + '" y="' + (PLAN_H - 14) + '" text-anchor="middle" font-family="Outfit,sans-serif" font-size="13" fill="#9CA3AF">Top of the room</text>' +
-        body + '</svg>';
+        items + body + '</svg>';
 }
 
 function renderFloorPlan() {
+    renderFixtures();
     const wrap = document.getElementById('floorplan-wrap');
     if (!wrap) return;
-    if (!S.tables.length) {
-        wrap.innerHTML = '<p class="text-sm text-gray-400 py-6 text-center">Add a table and it appears here to drag around.</p>';
+    if (!S.tables.length && !S.fixtures.length) {
+        wrap.innerHTML = '<p class="text-sm text-gray-400 py-6 text-center">Add a table, or put a stage or a bar in the room, and it appears here to drag around.</p>';
         return;
     }
     wrap.innerHTML = floorPlanSvg(false) +
-        '<p class="text-[11px] text-gray-500 mt-2 no-print">Drag to move a table. Double-click one to switch between round, long and head table.</p>';
+        '<p class="text-[11px] text-gray-500 mt-2 no-print">Drag anything to move it. Double-click a table to switch between round, long and head table; double-click a stage or a bar to make it round or square.</p>';
     attachPlanDrag();
 }
 
@@ -4435,24 +4788,28 @@ function attachPlanDrag() {
         return { x: (evt.clientX - r.left) / r.width * PLAN_W, y: (evt.clientY - r.top) / r.height * PLAN_H };
     };
 
-    svg.querySelectorAll('.plan-table').forEach(g => {
+    /* Tables and everything else in the room drag the same way; only the list
+       they live in and what a double-click means differ. */
+    const wire = (g, list, onDouble) => {
+        const find = () => list().find(x => x.id === g.dataset.id);
         g.addEventListener('pointerdown', evt => {
+            const item = find();
+            if (!item) return;
             dragId = g.dataset.id;
-            const t = S.tables.find(x => x.id === dragId);
             const pt = toPlan(evt);
-            offset = { dx: pt.x - t.x / 100 * PLAN_W, dy: pt.y - t.y / 100 * PLAN_H };
+            offset = { dx: pt.x - item.x / 100 * PLAN_W, dy: pt.y - item.y / 100 * PLAN_H };
             g.setPointerCapture(evt.pointerId);
             g.style.cursor = 'grabbing';
             evt.preventDefault();
         });
         g.addEventListener('pointermove', evt => {
             if (dragId !== g.dataset.id) return;
-            const t = S.tables.find(x => x.id === dragId);
-            if (!t) return;
+            const item = find();
+            if (!item) return;
             const pt = toPlan(evt);
-            t.x = Math.min(94, Math.max(6, (pt.x - offset.dx) / PLAN_W * 100));
-            t.y = Math.min(92, Math.max(6, (pt.y - offset.dy) / PLAN_H * 100));
-            g.setAttribute('transform', 'translate(' + (t.x / 100 * PLAN_W).toFixed(1) + ',' + (t.y / 100 * PLAN_H).toFixed(1) + ')');
+            item.x = Math.min(94, Math.max(6, (pt.x - offset.dx) / PLAN_W * 100));
+            item.y = Math.min(92, Math.max(6, (pt.y - offset.dy) / PLAN_H * 100));
+            g.setAttribute('transform', 'translate(' + (item.x / 100 * PLAN_W).toFixed(1) + ',' + (item.y / 100 * PLAN_H).toFixed(1) + ')');
         });
         const end = () => {
             if (dragId !== g.dataset.id) return;
@@ -4462,12 +4819,15 @@ function attachPlanDrag() {
         };
         g.addEventListener('pointerup', end);
         g.addEventListener('pointercancel', end);
-        g.addEventListener('dblclick', () => cycleShape(g.dataset.id));
-    });
+        g.addEventListener('dblclick', () => onDouble(g.dataset.id));
+    };
+
+    svg.querySelectorAll('.plan-table').forEach(g => wire(g, () => S.tables, cycleShape));
+    svg.querySelectorAll('.plan-item').forEach(g => wire(g, () => S.fixtures, fixtureShape));
 }
 
 function exportFloorPlan() {
-    if (!S.tables.length) { alert('Add a table first.'); return; }
+    if (!S.tables.length && !S.fixtures.length) { alert('Add a table or something else in the room first.'); return; }
     const svg = '<?xml version="1.0" encoding="UTF-8"?>\n' + floorPlanSvg(true);
     download(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }), 'floor-plan.svg');
 }
@@ -4476,6 +4836,7 @@ function exportFloorPlan() {
    PRINT PACK
    ========================================================= */
 const PRINT_DOCS = [
+    ['invite',      'The invitation',     'Your own picture, one to a page.'],
     ['placecards',  'Place cards',        'One card per seat, with table and meal.'],
     ['escortcards', 'Escort cards',       'Name and table, alphabetical, for the entrance table.'],
     ['tablenumbers','Table numbers',      'One per page, big enough to read across the room.'],
@@ -4533,7 +4894,13 @@ function printPack(kind) {
     const couple = [S.couple.partner1, S.couple.partner2].filter(Boolean).join(' & ');
     let html = '';
 
-    if (kind === 'placecards' || kind === 'escortcards') {
+    if (kind === 'invite') {
+        html = S.settings.invite.src
+            ? '<div style="text-align:center"><img src="' + esc(S.settings.invite.src) +
+              '" alt="Invitation" style="max-width:100%;max-height:230mm"></div>'
+            : '<p>No picture uploaded yet — add one on the Guest Page tab.</p>';
+
+    } else if (kind === 'placecards' || kind === 'escortcards') {
         const cards = [];
         attendingList().forEach(g => {
             const seats = Math.max(1, parseInt(g.party) || 1);
