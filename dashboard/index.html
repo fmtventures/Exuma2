@@ -26,6 +26,7 @@
     <header class="topbar">
       <h1 id="view-title">Overview</h1>
       <span class="topbar-meta" id="meta-updated"></span>
+      <span class="conf" id="mode-badge"></span>
       <div class="search">
         <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
              stroke-linecap="round" aria-hidden="true"><path d="M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13Zm4.6-1.9L20 20"/></svg>
@@ -37,9 +38,10 @@
       <div class="edits-bar" id="edits-bar" hidden>
         <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-9.5V16m0-8h.01"/></svg>
-        <span><strong id="edits-count"></strong> held in this browser only. Nothing is written to the repo until you send them to me.</span>
+        <span><strong id="edits-count"></strong> <span id="edits-note"></span></span>
         <span class="spacer"></span>
-        <button class="btn btn-sm btn-primary" id="copy-patch">Copy changes</button>
+        <button class="btn btn-sm btn-primary" id="bar-save" data-act="save" hidden>Save to registry.json</button>
+        <button class="btn btn-sm btn-primary" id="bar-copy-patch" data-act="copy-patch">Copy changes</button>
         <button class="btn btn-sm btn-ghost" id="discard-edits">Discard</button>
       </div>
     </div>

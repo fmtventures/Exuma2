@@ -194,6 +194,7 @@ svg { display: block; }
   text-transform: uppercase;
   color: var(--muted);
 }
+.spacer { margin-left: auto; }
 .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 .num  { font-variant-numeric: tabular-nums; }
 .dim  { color: var(--ink-2); }
@@ -403,6 +404,9 @@ svg { display: block; }
   transition: background 0.12s, border-color 0.12s;
 }
 .btn:hover { background: var(--surface-2); border-color: var(--muted); }
+.btn:disabled { opacity: 0.45; cursor: default; }
+.btn:disabled:hover { background: var(--surface); border-color: var(--line-strong); }
+.btn-primary:disabled:hover { background: var(--accent); border-color: var(--accent); }
 .btn .ico { width: 14px; height: 14px; }
 .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }

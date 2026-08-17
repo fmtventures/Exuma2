@@ -95,6 +95,7 @@
   let statusFilter = 'all';
   let openToolId = null;
   let chartMode = {}; // cardId -> 'chart' | 'table'
+  let LOCAL = false;  // true when served by serve.mjs, which can write to disk
 
   function loadEdits() {
     try { edits = JSON.parse(localStorage.getItem(LS_EDITS)) || {}; } catch { edits = {}; }
@@ -149,6 +150,9 @@
         impact: numOrNull(val(id, 'priority.impact')),
         effort: numOrNull(val(id, 'priority.effort')),
       },
+      nextActions: (t.nextActions || []).map((a, i) => ({
+        ...a, done: coerce('nextActions.done', val(id, `nextActions.${i}.done`)),
+      })),
     };
   }
 
@@ -156,6 +160,40 @@
     if (v === '' || v == null) return null;
     const n = Number(v);
     return isNaN(n) ? null : n;
+  }
+
+  /* Which registry paths are numbers, booleans, or nullable strings. Editing
+     happens through text inputs, so values need coercing before they go to disk
+     or a "60" would land in the file as a string. */
+  const NUMERIC_PATHS = new Set([
+    'percentComplete', 'effort.hours', 'effort.tokens', 'effort.sessions',
+    'priority.rank', 'priority.impact', 'priority.effort',
+  ]);
+  const NULLABLE_STRING_PATHS = new Set(['repo', 'liveUrl', 'lastTouched']);
+
+  function coerce(path, value) {
+    if (NUMERIC_PATHS.has(path)) return numOrNull(value);
+    if (path.endsWith('.done')) return value === true || value === 'true';
+    if (NULLABLE_STRING_PATHS.has(path)) return value === '' || value == null ? null : String(value);
+    return value;
+  }
+
+  /** Deep clone of the registry with every browser edit applied and coerced. */
+  function mergedRegistry() {
+    const out = JSON.parse(JSON.stringify(DATA));
+    Object.keys(edits).forEach((k) => {
+      const [id, path] = k.split('::');
+      const t = out.tools.find((x) => x.id === id);
+      if (!t) return;
+      const keys = path.split('.');
+      let node = t;
+      for (let i = 0; i < keys.length - 1; i++) {
+        if (node[keys[i]] == null || typeof node[keys[i]] !== 'object') node[keys[i]] = {};
+        node = node[keys[i]];
+      }
+      node[keys[keys.length - 1]] = coerce(path, edits[k]);
+    });
+    return out;
   }
 
   const allTools = () => DATA.tools.map((t) => tool(t.id));
@@ -894,14 +932,19 @@
       </div>
 
       <div class="panel-foot">
-        <button class="btn btn-primary btn-sm" id="copy-brief">${icon('copy')}Copy working brief</button>
-        <span class="hint faint" style="font-size:11px">Paste into a new chat to pick this tool up with full context.</span>
+        <button class="btn btn-sm" id="copy-brief">${icon('copy')}Copy working brief</button>
+        <span class="spacer"></span>
+        <span class="hint faint" id="panel-edit-note" style="font-size:11px"></span>
+        ${LOCAL
+          ? `<button class="btn btn-primary btn-sm" id="panel-save" data-act="save">Save to registry.json</button>`
+          : `<button class="btn btn-primary btn-sm" id="panel-save" data-act="copy-patch">Copy changes</button>`}
       </div>
     `;
 
     scrim.hidden = false;
     panel.hidden = false;
     panel.focus();
+    renderEditsBar(); /* sets the freshly-rendered panel button's state */
   }
 
   /** A paste-ready brief so a fresh chat starts with the full picture. */
@@ -962,8 +1005,51 @@
     const bar = $('#edits-bar');
     const n = Object.keys(edits).length;
     bar.hidden = n === 0;
+    $('#bar-save').hidden = !LOCAL;
+    $('#bar-copy-patch').hidden = LOCAL;
+    $('#edits-note').textContent = LOCAL
+      ? 'ready to write into registry.json'
+      : 'held in this browser only. Nothing reaches the repo until you send them to me.';
     if (n) {
       $('#edits-count').textContent = `${n} unsaved change${n === 1 ? '' : 's'}`;
+    }
+
+    /* The panel button is always present so a text edit does not need a full
+       panel re-render (which would steal focus mid-typing) — only its state changes. */
+    const ps = $('#panel-save');
+    if (ps) {
+      ps.disabled = n === 0;
+      $('#panel-edit-note').textContent = n === 0
+        ? 'No changes yet'
+        : `${n} change${n === 1 ? '' : 's'} pending`;
+    }
+  }
+
+  /** Local mode only: write the merged registry straight to disk. */
+  async function saveToDisk(btn) {
+    const label = btn.innerHTML;
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    try {
+      const res = await fetch('/api/registry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(mergedRegistry()),
+      });
+      const out = await res.json();
+      if (!res.ok || !out.ok) throw new Error(out.error || `HTTP ${res.status}`);
+
+      /* Edits are now the file's contents, so the overlay is no longer a diff. */
+      DATA = mergedRegistry();
+      edits = {};
+      saveEdits();
+      $('#meta-updated').textContent = `registry ${DATA.meta.version} · ${DATA.meta.updated}`;
+      render();
+      toast(`Saved to registry.json · ${out.tools} tools`);
+    } catch (err) {
+      btn.disabled = false;
+      btn.innerHTML = label;
+      toast('Save failed: ' + err.message);
     }
   }
 
@@ -1082,10 +1168,12 @@
         copy(buildBrief(tool(openToolId)), 'Brief copied — paste it into a new chat');
         return;
       }
-      if (e.target.closest('#copy-patch')) {
+      if (e.target.closest('[data-act="copy-patch"]')) {
         copy(buildPatch(), 'Patch copied — paste it to me and I will commit it');
         return;
       }
+      const saveBtn = e.target.closest('[data-act="save"]');
+      if (saveBtn) { saveToDisk(saveBtn); return; }
       if (e.target.closest('#discard-edits')) {
         if (confirm('Discard all local changes and go back to the committed registry?')) {
           edits = {}; saveEdits(); render(); toast('Local changes discarded');
@@ -1116,6 +1204,12 @@
       if (f && openToolId) {
         setEdit(openToolId, f.dataset.field, f.value);
         render();
+        return;
+      }
+      const box = e.target.closest('input[type="checkbox"][data-action]');
+      if (box && openToolId) {
+        setEdit(openToolId, `nextActions.${box.dataset.action}.done`, box.checked);
+        renderPanel();
       }
     });
 
@@ -1149,11 +1243,20 @@
 
   /* ================================================================== BOOT */
   async function boot() {
+    /* Is serve.mjs behind us? If so, edits can be written to disk directly.
+       Inlined single-file builds skip the probe — there is no server to ask. */
     const inline = $('#registry-data');
+    if (!inline) {
+      try {
+        const h = await fetch('/api/health', { cache: 'no-store' });
+        if (h.ok) LOCAL = (await h.json()).local === true;
+      } catch { LOCAL = false; }
+    }
+
     if (inline) {
       DATA = JSON.parse(inline.textContent);
     } else {
-      const res = await fetch('registry.json');
+      const res = await fetch('registry.json', { cache: 'no-store' });
       DATA = await res.json();
     }
 
@@ -1163,6 +1266,12 @@
     applyTheme(theme);
 
     $('#meta-updated').textContent = `registry ${DATA.meta.version} · ${DATA.meta.updated}`;
+    const modeEl = $('#mode-badge');
+    modeEl.textContent = LOCAL ? 'local · saves to file' : 'read-only';
+    modeEl.className = 'conf' + (LOCAL ? ' verified' : '');
+    modeEl.title = LOCAL
+      ? 'Served by serve.mjs — edits write straight into dashboard/registry.json.'
+      : 'Static copy. Edits stay in this browser and are exported as a patch.';
     wire();
     go(location.hash.slice(1) || 'overview');
   }

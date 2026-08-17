@@ -16,22 +16,40 @@ throwing anything away.
 | `index.html` | Page shell. |
 | `styles.css` | All styling. Light and dark themes are both defined as token sets. |
 | `app.js` | Rendering, filtering, editing, charts. |
+| `serve.mjs` | Local server. Run this and edits save straight to `registry.json`. |
 | `build.mjs` | Inlines the four files above into single-file builds. |
 | `dist/index.html` | Standalone build — open it directly in a browser. |
 | `dist/artifact.html` | Same page as content-only, for publishing as a Claude Artifact. |
 
-## Running it
+## Two ways to run it
 
-Open `dist/index.html` in a browser. Nothing to install.
+The page tells you which mode you are in — a badge next to the title in the top bar.
 
-To work on the source version, serve the folder so the browser is allowed to read
-`registry.json`:
+### Local mode — edits save to the file (recommended)
 
 ```sh
-npx serve dashboard      # then open the printed URL
+node dashboard/serve.mjs        # → http://127.0.0.1:4321
 ```
 
-After changing `registry.json`, rebuild:
+Requires Node 18+ and nothing else. No `npm install`. The badge reads
+**local · saves to file**, and the button in each tool panel says
+**Save to registry.json** — pressing it writes the file, keeps the previous
+version as `registry.json.bak`, and rebuilds `dist/` automatically.
+
+The server binds to `127.0.0.1` only, so it is not reachable from the network. It
+refuses to save anything that is not a structurally valid registry, which means a
+bad request cannot blank the file.
+
+Add `--port 8080` if 4321 is taken.
+
+### Read-only mode — a page you can open anywhere
+
+Open `dist/index.html` directly, host it, or use the published link. The badge
+reads **read-only**. Everything is still editable in the browser, but since there
+is no server to write to, the button says **Copy changes** and you use the patch
+loop below.
+
+After editing `registry.json` by hand, rebuild:
 
 ```sh
 node dashboard/build.mjs
@@ -41,9 +59,7 @@ The build validates the registry and reports any module or tool id that is
 referenced but not defined, so a typo shows up as a warning instead of a blank
 row on the page.
 
-## The editing loop
-
-There is no backend, so the page cannot write to the repo. Instead:
+## The editing loop without a server
 
 1. Open any tool and edit its fields. Changed fields are outlined in brass.
 2. A bar appears at the top of the page: **N unsaved changes**.
@@ -119,10 +135,12 @@ remember or by adding a log entry per session.
 
 ## What it does not do yet
 
-- **No persistence.** Edits go through the copy-patch loop above. Making them save
-  for real means a backend — Supabase would be about an afternoon.
+- **No shared persistence.** Local mode writes to the file on your machine. Two
+  people editing on two machines would need a real backend — Supabase would be
+  about an afternoon.
 - **No live status checks.** It does not ping the sites to see whether they are up.
-  Worth adding once the repos are linked.
+  Worth adding once the repos are linked, and it works from local mode where there
+  is no network policy in the way.
 - **No automatic token or time capture.** Claude account usage is not readable
   from here.
 - **It lives in the Exuma2 repo**, which is really the Sandy Palms portal's home.
