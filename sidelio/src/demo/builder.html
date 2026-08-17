@@ -155,6 +155,17 @@ button{font:inherit;cursor:pointer;color:inherit}
 .add-item:hover{border-color:var(--brand);color:var(--brand)}
 .emptyhint{padding:36px 20px;text-align:center;color:var(--muted);font-size:13px;line-height:1.6}
 .emptyhint .big{font-size:28px;margin-bottom:8px}
+.conns{display:flex;flex-direction:column;gap:8px}
+.conn{display:flex;align-items:center;gap:11px;border:1px solid var(--line);background:var(--panel-2);border-radius:11px;padding:11px}
+.conn.on{border-color:var(--good);background:var(--good-soft)}
+.conn-ic{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;font-size:19px;flex:none}
+.conn-body{flex:1;min-width:0}
+.conn-name{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:7px}
+.conn-badge{font-size:10px;font-weight:600;color:var(--good);background:var(--panel);border:1px solid var(--good);border-radius:20px;padding:1px 7px}
+.conn-desc{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.35}
+.conn-btn{border:0;background:var(--brand);color:#fff;border-radius:8px;padding:7px 13px;font-size:12.5px;font-weight:600;flex:none}
+.conn-btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--line-2)}
+.conn-btn:hover{filter:brightness(1.05)}
 
 /* Add-section menu */
 .menu{position:fixed;background:var(--panel);border:1px solid var(--line-2);border-radius:12px;box-shadow:var(--shadow-lg);padding:6px;z-index:60;width:210px;max-height:320px;overflow:auto;animation:fade .12s}
@@ -174,8 +185,12 @@ button{font:inherit;cursor:pointer;color:inherit}
 .onb p{color:var(--muted);font-size:16px;margin:0 auto 30px;max-width:44ch}
 .onb-box{border:1.5px solid var(--line-2);background:var(--panel);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:12px;text-align:left;transition:.14s}
 .onb-box:focus-within{border-color:var(--brand);box-shadow:0 0 0 4px var(--brand-soft),var(--shadow)}
-.onb-box textarea{border:0;background:transparent;color:var(--ink);resize:none;font:inherit;font-size:16px;outline:none;min-height:52px;line-height:1.45}
+.onb-box textarea{border:0;background:transparent;color:var(--ink);resize:none;font:inherit;font-size:16px;outline:none;min-height:52px;line-height:1.45;width:100%}
+.onb-box #onb-url{border:0;background:transparent;color:var(--ink);font:inherit;font-size:17px;outline:none;width:100%;padding:8px 0}
 .onb-box .r{display:flex;justify-content:space-between;align-items:center}
+.onb-modes{display:inline-flex;gap:3px;background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:4px;margin-bottom:16px}
+.onb-modes button{border:0;background:transparent;color:var(--muted);padding:8px 16px;border-radius:8px;font-size:13.5px;font-weight:500}
+.onb-modes button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:var(--shadow-sm)}
 .onb-ex{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:22px}
 .onb-ex .chip{background:var(--panel);font-size:13px}
 .build-anim{display:flex;flex-direction:column;gap:10px;align-items:center;color:var(--muted);font-size:14px}
@@ -206,13 +221,20 @@ button{font:inherit;cursor:pointer;color:inherit}
 <div class="onb" id="onb">
   <div class="onb-inner" id="onb-inner">
     <div class="logo"><span class="mark">S</span> Sidelio Studio</div>
-    <h1>Describe your business.<br><span class="g">Watch your site build itself.</span></h1>
-    <p>Tell Sidelio what you do in a sentence. It drafts a complete, on-brand website you can shape by talking to it — or by clicking straight onto the page.</p>
+    <h1>Already have a website?<br><span class="g">Paste it. We'll rebuild it.</span></h1>
+    <p>Point Sidelio at your current site and it comes back as a clean, editable website you own — copy, colours and sections intact. No site yet? Describe your business instead.</p>
+    <div class="onb-modes" id="onb-modes">
+      <button data-mode="import" aria-pressed="true">↗ Import my site</button>
+      <button data-mode="fresh" aria-pressed="false">✦ Start from scratch</button>
+    </div>
     <div class="onb-box" id="onb-box">
-      <textarea id="onb-input" placeholder="e.g. A family roofing company on Prince Edward Island…" rows="2"></textarea>
+      <div id="mode-import">
+        <input id="onb-url" type="text" placeholder="yourwebsite.com" autocomplete="off">
+      </div>
+      <textarea id="onb-input" placeholder="e.g. A family roofing company on Prince Edward Island…" rows="2" style="display:none"></textarea>
       <div class="r">
-        <span class="hintlabel" style="font-size:12px;color:var(--faint)">✦ AI drafts copy, layout, and design</span>
-        <button class="btn btn-primary" id="onb-go">Build my site →</button>
+        <span class="hintlabel" id="onb-hint" style="font-size:12px;color:var(--faint)">↗ We read your pages and rebuild them, editable</span>
+        <button class="btn btn-primary" id="onb-go">Rebuild my site →</button>
       </div>
     </div>
     <div class="onb-ex" id="onb-ex"></div>
@@ -248,6 +270,7 @@ button{font:inherit;cursor:pointer;color:inherit}
     <div class="dock-tabs">
       <button data-tab="assistant" aria-pressed="true">✦ Assistant</button>
       <button data-tab="edit" aria-pressed="false">✎ Edit</button>
+      <button data-tab="integrations" aria-pressed="false">⚡ Connect</button>
     </div>
     <div class="dock-body" id="dock-body"></div>
   </aside>
@@ -297,6 +320,8 @@ const BLOCK_META={
   pricing:{label:'Pricing',ic:'$',cat:'Content'},faq:{label:'FAQ',ic:'?',cat:'Content'},
   team:{label:'Team',ic:'☺',cat:'Content'},cta:{label:'Call to action',ic:'★',cat:'Convert'},
   contact:{label:'Contact',ic:'✆',cat:'Convert'},
+  map:{label:'Map',ic:'📍',cat:'Connect'},newsletter:{label:'Newsletter',ic:'✉',cat:'Connect'},
+  booking:{label:'Booking calendar',ic:'📅',cat:'Connect'},
 };
 function newBlock(type){
   const D={hero:{eyebrow:'Eyebrow',heading:'A bold new headline',sub:'One clear sentence about what you do and who it helps.',btn:'Get started',btn2:'Learn more',img:true},
@@ -309,7 +334,10 @@ function newBlock(type){
     faq:{heading:'Common questions',items:[{q:'How does it work?',a:'Explain the process simply.'},{q:'What does it cost?',a:'Set expectations here.'},{q:'How do I start?',a:'Point to the next step.'}]},
     team:{heading:'Meet the team',members:[{name:'Team member',role:'Founder'},{name:'Team member',role:'Lead'},{name:'Team member',role:'Support'}]},
     cta:{heading:'Ready to get started?',body:'A closing line that gently prompts the visitor to act.',btn:'Get in touch'},
-    contact:{heading:'Get in touch',phone:'902-555-0000',email:'hello@example.ca',address:'Street, City'}}[type];
+    contact:{heading:'Get in touch',phone:'902-555-0000',email:'hello@example.ca',address:'Street, City'},
+    map:{heading:'Find us',address:'119 Kent Street, Charlottetown PE',provider:'Google Maps'},
+    newsletter:{heading:'Stay in the loop',body:'Get occasional news and offers. No spam, unsubscribe any time.',btn:'Subscribe',provider:'Mailchimp'},
+    booking:{heading:'Book a time',body:'Pick a slot that works for you — it drops straight into our calendar.',btn:'See available times',provider:'Calendly'}}[type];
   return {id:uid(),type,props:JSON.parse(JSON.stringify(D))};
 }
 
@@ -359,14 +387,22 @@ const INDUSTRIES={
     ti:['Colour that suits your life','We build colour that looks intentional the day you leave and still looks great eight weeks later.'],
     quotes:['Best haircut I’ve had in years. They finally understood my hair.','Walked out glowing. Already booked my next three appointments.'],
     cta:['Your chair is waiting.','Same-week appointments available — book online in under a minute.','Book an appointment'],phone:'902-555-0455',email:'hello@lumenstudio.ca',address:'44 Grafton Street, Charlottetown'}},
-  photo:{match:['photo','photograph','videograph','film','portrait','wedding'],name:'Tessa Vane',design:'ironclad',accent:'#f59f00',spec:{
-    eyebrow:'Photography & film',heading:'The moments you’ll want to keep',sub:'Weddings, portraits and brand stories, shot with natural light and a quiet eye for the real thing.',btn:'Check availability',btn2:'See the portfolio',
-    stats:[['300+','Weddings shot'],['10 yrs','Behind the lens'],['48h','Sneak peeks'],['∞','Memories']],
-    svcHead:'What I shoot',svcIntro:'Every session is unhurried and yours.',
-    services:[['Weddings','Full-day coverage with a second shooter and a film option.'],['Portraits','Individual, family and graduation sessions.'],['Brand','Photography and reels for small businesses.'],['Events','Documentary coverage of the day as it happens.']],
-    ti:['Unposed, unhurried','I don’t bark commands or stage grins. I stay close, stay quiet, and catch the day as it actually unfolds.'],
-    quotes:['She caught moments we didn’t even know happened. We cried looking through them.','Every photo feels like us. That’s rare and I don’t take it for granted.'],
-    cta:['Let’s make something you’ll keep.','Booking a limited number of weddings for next season.','Check my availability'],phone:'902-555-0577',email:'hello@tessavane.com',address:'By appointment, Charlottetown'}},
+  production:{match:['production','productions','video','videograph','filmmak','cinema','media house','commercial video','drone'],name:'Foulkes Productions',design:'ironclad',accent:'#e11d48',spec:{
+    eyebrow:'Video & film production',heading:'Stories that hold the room',sub:'Commercials, documentaries and brand films made with a small crew and a big eye for the moment that matters.',btn:'Start a project',btn2:'Watch the reel',
+    stats:[['200+','Films delivered'],['15 yrs','Behind the camera'],['4K','& drone'],['★★★★★','Client-rated']],
+    svcHead:'What we make',svcIntro:'From first idea to final cut, handled in-house.',
+    services:[['Commercials','Short, sharp brand films built to sell.'],['Documentary','Long-form storytelling with a patient eye.'],['Events','Weddings, concerts and conferences, captured in full.'],['Aerial','Licensed drone cinematography over land and water.']],
+    ti:['One crew, whole story','We write, shoot, and edit under one roof — so the film that lands in your inbox is the one we all imagined at the start.'],
+    quotes:['They turned a dry corporate brief into something people actually shared.','The wedding film still makes us cry. Worth every cent.'],
+    cta:['Let’s make something.','Tell us the story you want told — the first call is always free.','Start a project'],phone:'902-555-0788',email:'hello@foulkesproductions.com',address:'Charlottetown, PEI'}},
+  photo:{match:['photo','foto','photograph','portrait','wedding','headshot','fotoshop','camera','prints'],name:'PEI Foto Shop',design:'ember',accent:'#0891b2',spec:{
+    eyebrow:'Studio · prints · portraits',heading:'Your photos, done properly',sub:'Portrait sessions, professional prints, framing and photo restoration — a real camera shop, run by people who care about the picture.',btn:'Book a session',btn2:'Our services',
+    stats:[['25 yrs','On the island'],['50k','Prints made'],['48h','Print turnaround'],['5.0★','Google rating']],
+    svcHead:'What we do',svcIntro:'Everything from the sitting to the frame on your wall.',
+    services:[['Portraits','Studio sessions for families, grads and professionals.'],['Printing','Archival prints from postcard to poster, colour-matched.'],['Framing','Custom framing and mounting, done in-house.'],['Restoration','Bringing damaged and faded old photos back to life.']],
+    ti:['A real shop, not an app','Upload sites lose the craft. We colour-correct, print on proper stock and check every frame by hand before it leaves the counter.'],
+    quotes:['They restored my grandmother’s only wedding photo. I cried at the counter.','Best print quality on the island, and lovely people too.'],
+    cta:['Come see us.','Drop in for a print, or book a portrait session online in a minute.','Book a session'],phone:'902-555-0577',email:'hello@peifotoshop.com',address:'119 Kent Street, Charlottetown'}},
   fitness:{match:['gym','fitness','trainer','crossfit','yoga','pilates','studio','strength','workout'],name:'Tidewater Strength',design:'seagrass',accent:'#0f766e',spec:{
     eyebrow:'Coaching & strength studio',heading:'Get strong. Stay strong.',sub:'Small-group and one-to-one coaching that meets you where you are and takes you somewhere better.',btn:'Start free week',btn2:'See classes',
     stats:[['600+','Members'],['30','Classes weekly'],['12','Coaches'],['4.9★','Rated']],
@@ -388,7 +424,7 @@ function genericSpec(label){return{eyebrow:label,heading:'Welcome to '+label,sub
 let site={design:'harbour',name:'a site',page:0,pages:[]};
 let selected=null,device='desktop',dockTab='assistant';
 const past=[],future=[];
-const snap=()=>JSON.parse(JSON.stringify({design:site.design,name:site.name,pages:site.pages}));
+const snap=()=>JSON.parse(JSON.stringify({design:site.design,name:site.name,pages:site.pages,integrations:site.integrations||{}}));
 function pushHist(){past.push(snap());if(past.length>80)past.shift();future.length=0;syncUndo();}
 function commit(){pushHist();}
 function undo(){if(!past.length)return;future.push(snap());const s=past.pop();Object.assign(site,s);selected=null;afterMutate(true);}
@@ -459,7 +495,24 @@ function siteCss(d){const c=d.c;return `
 .frame .cta h2{color:var(--onp);font-size:32px}.frame .cta p{color:var(--onp);opacity:.85;max-width:44ch;margin-inline:auto}
 .frame .cta .b1{background:var(--onp);color:var(--primary);margin-top:8px}
 .frame .contact .rows{display:flex;gap:32px;flex-wrap:wrap;color:var(--muted);font-size:15px}
-.frame .contact .rows b{display:block;color:var(--text);font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}`;}
+.frame .contact .rows b{display:block;color:var(--text);font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+.frame .viab{display:inline-block;font-size:11px;color:var(--muted);border:1px solid var(--border);border-radius:20px;padding:2px 10px;margin:-4px 0 14px;font-family:var(--fb)}
+.frame .viab::before{content:"⚡ ";opacity:.7}
+.frame .mapbox{margin-top:18px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);height:260px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;position:relative;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:32px 32px}
+.frame .mapbox .mappin{font-size:34px}.frame .mapbox .mapaddr{font-weight:600}
+.frame .mapbox .viab{position:absolute;bottom:12px;right:12px;margin:0;background:var(--bg)}
+.frame .nl{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:center}
+.frame.mobile .nl{grid-template-columns:1fr}
+.frame .nlform{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.frame .nlinput{flex:1;min-width:160px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px 16px;color:var(--muted)}
+.frame .nl .viab,.frame .bk .viab{margin:0}
+.frame .bk{display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:center}
+.frame.mobile .bk{grid-template-columns:1fr}
+.frame .bkcal{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px}
+.frame .bkhead{font-weight:600;text-align:center;margin-bottom:12px}
+.frame .bkgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.frame .bkgrid span{aspect-ratio:1;display:grid;place-items:center;font-size:12px;color:var(--muted);border-radius:6px}
+.frame .bkgrid span.on{background:var(--primary);color:var(--onp);font-weight:600}`;}
 
 function edx(path,tag,val,cls){return `<${tag} class="${cls||''}" data-edit data-path="${path}">${esc(val)}</${tag}>`;}
 function renderBlock(b,i){
@@ -471,13 +524,16 @@ function renderBlock(b,i){
   }else if(b.type==='stats'){inner=`<div class="stats"><ul>${p.items.map((it,j)=>`<li><div class="v" data-edit data-path="${base}.items.${j}.v">${esc(it.v)}</div><div class="l" data-edit data-path="${base}.items.${j}.l">${esc(it.l)}</div></li>`).join('')}</ul></div>`;
   }else if(b.type==='services'){inner=`<div>${edx(base+'.heading','h2',p.heading)}${p.intro?edx(base+'.intro','p',p.intro,'intro'):''}<ul class="grid">${p.items.map((it,j)=>`<li class="card">${edx(base+'.items.'+j+'.name','h3',it.name)}<p data-edit data-path="${base}.items.${j}.desc">${esc(it.desc)}</p></li>`).join('')}</ul></div>`;
   }else if(b.type==='text_image'){inner=`<div class="split ${p.side}"><div class="txt">${edx(base+'.heading','h2',p.heading)}<p data-edit data-path="${base}.body">${esc(p.body)}</p></div>${p.img?`<img src="${artwork(site.design,3,4/3)}" alt="">`:''}</div>`;
-  }else if(b.type==='gallery'){inner=`<div>${edx(base+'.heading','h2',p.heading)}<div class="gal">${Array.from({length:p.count}).map((_,j)=>`<img src="${artwork(site.design,10+j*7,4/3)}" alt="">`).join('')}</div></div>`;
-  }else if(b.type==='testimonials'){inner=`<div>${edx(base+'.heading','h2',p.heading)}<div class="tst">${p.items.map((it,j)=>`<div class="quote"><blockquote data-edit data-path="${base}.items.${j}.quote">${esc(it.quote)}</blockquote><cite data-edit data-path="${base}.items.${j}.author">${esc(it.author)}</cite></div>`).join('')}</div></div>`;
-  }else if(b.type==='pricing'){inner=`<div>${edx(base+'.heading','h2',p.heading)}<ul class="price">${p.tiers.map((t,j)=>`<li class="tier${t.hot?' hot':''}"><div class="tn" data-edit data-path="${base}.tiers.${j}.name">${esc(t.name)}</div><div class="tp"><span data-edit data-path="${base}.tiers.${j}.price">${esc(t.price)}</span> <small>/${esc(t.per)}</small></div><ul>${t.feats.map(f=>`<li>${esc(f)}</li>`).join('')}</ul></li>`).join('')}</ul></div>`;
+  }else if(b.type==='gallery'){inner=`<div>${edx(base+'.heading','h2',p.heading)}${p.source==='instagram'?'<span class="viab">Instagram</span>':''}<div class="gal">${Array.from({length:p.count}).map((_,j)=>`<img src="${artwork(site.design,10+j*7,4/3)}" alt="">`).join('')}</div></div>`;
+  }else if(b.type==='testimonials'){const gg=p.source==='google';inner=`<div>${edx(base+'.heading','h2',p.heading)}${gg?'<span class="viab">Google Reviews</span>':''}<div class="tst">${p.items.map((it,j)=>`<div class="quote">${gg?'<div style="color:#fbbc04;font-size:15px;letter-spacing:2px">★★★★★</div>':''}<blockquote data-edit data-path="${base}.items.${j}.quote">${esc(it.quote)}</blockquote><cite data-edit data-path="${base}.items.${j}.author">${esc(it.author)}</cite></div>`).join('')}</div></div>`;
+  }else if(b.type==='pricing'){inner=`<div>${edx(base+'.heading','h2',p.heading)}<ul class="price">${p.tiers.map((t,j)=>`<li class="tier${t.hot?' hot':''}"><div class="tn" data-edit data-path="${base}.tiers.${j}.name">${esc(t.name)}</div><div class="tp"><span data-edit data-path="${base}.tiers.${j}.price">${esc(t.price)}</span> <small>/${esc(t.per)}</small></div><ul>${t.feats.map(f=>`<li>${esc(f)}</li>`).join('')}</ul>${t.buy?'<span class="b1" style="margin-top:14px;width:100%;text-align:center">Buy now</span>':''}</li>`).join('')}</ul>${p.tiers.some(t=>t.buy)?'<span class="viab" style="margin-top:14px;display:inline-block">Secure payments by Stripe</span>':''}</div>`;
   }else if(b.type==='faq'){inner=`<div class="faq">${edx(base+'.heading','h2',p.heading)}${p.items.map((it,j)=>`<details${j===0?' open':''}><summary data-edit data-path="${base}.items.${j}.q">${esc(it.q)}</summary><p data-edit data-path="${base}.items.${j}.a">${esc(it.a)}</p></details>`).join('')}</div>`;
   }else if(b.type==='team'){inner=`<div>${edx(base+'.heading','h2',p.heading)}<ul class="team">${p.members.map((mb,j)=>`<li><img src="${artwork(site.design,50+j*11,1)}" alt=""><div class="mn" data-edit data-path="${base}.members.${j}.name">${esc(mb.name)}</div><div class="mr" data-edit data-path="${base}.members.${j}.role">${esc(mb.role)}</div></li>`).join('')}</ul></div>`;
   }else if(b.type==='cta'){inner=`<div class="cta">${edx(base+'.heading','h2',p.heading)}<p data-edit data-path="${base}.body">${esc(p.body)}</p><div class="btns" style="justify-content:center"><span class="b1" data-edit data-path="${base}.btn">${esc(p.btn)}</span></div></div>`;
-  }else if(b.type==='contact'){inner=`<div class="contact">${edx(base+'.heading','h2',p.heading)}<div class="rows"><div><b>Phone</b><span data-edit data-path="${base}.phone">${esc(p.phone)}</span></div><div><b>Email</b><span data-edit data-path="${base}.email">${esc(p.email)}</span></div><div><b>Address</b><span data-edit data-path="${base}.address">${esc(p.address)}</span></div></div></div>`;}
+  }else if(b.type==='contact'){inner=`<div class="contact">${edx(base+'.heading','h2',p.heading)}<div class="rows"><div><b>Phone</b><span data-edit data-path="${base}.phone">${esc(p.phone)}</span></div><div><b>Email</b><span data-edit data-path="${base}.email">${esc(p.email)}</span></div><div><b>Address</b><span data-edit data-path="${base}.address">${esc(p.address)}</span></div></div></div>`;
+  }else if(b.type==='map'){inner=`<div>${edx(base+'.heading','h2',p.heading)}<div class="mapbox"><div class="mappin">📍</div><div class="mapaddr" data-edit data-path="${base}.address">${esc(p.address)}</div><span class="viab">${esc(p.provider)}</span></div></div>`;
+  }else if(b.type==='newsletter'){inner=`<div class="nl"><div>${edx(base+'.heading','h2',p.heading)}<p data-edit data-path="${base}.body">${esc(p.body)}</p></div><div class="nlform"><span class="nlinput">you@email.com</span><span class="b1" data-edit data-path="${base}.btn">${esc(p.btn)}</span><span class="viab">${esc(p.provider)}</span></div></div>`;
+  }else if(b.type==='booking'){inner=`<div class="bk"><div>${edx(base+'.heading','h2',p.heading)}<p data-edit data-path="${base}.body">${esc(p.body)}</p><span class="b1" data-edit data-path="${base}.btn">${esc(p.btn)}</span></div><div class="bkcal"><div class="bkhead">‹ August 2026 ›</div><div class="bkgrid">${Array.from({length:28}).map((_,j)=>`<span class="${[3,4,10,11,17,18].includes(j)?'on':''}">${j+1}</span>`).join('')}</div><span class="viab">${esc(p.provider)}</span></div></div>`;}
   const m=BLOCK_META[b.type];
   return `<div class="insert" data-at="${i}"><button title="Insert section" data-insert="${i}">+</button></div><section class="sec${selected===b.id?' selected':''}${b._new?' sec-new':''}" data-id="${b.id}" draggable="false">
     <span class="sec-tag">${m.label}</span>
@@ -502,6 +558,7 @@ const chatLog=[];
 function renderDock(){
   const body=$('#dock-body');
   if(dockTab==='assistant'){ renderChat(); return; }
+  if(dockTab==='integrations'){ renderIntegrations(); return; }
   const block=curBlocks().find(b=>b.id===selected);
   let html=designPane();
   if(block)html+=blockPane(block);
@@ -556,6 +613,45 @@ function msgHtml(m){
 }
 function aiSay(text,did,chips){chatLog.push({role:'ai',text,did:did||[],chips:chips||[]});if(dockTab==='assistant')renderChat();}
 
+/* ---------------- Integrations ---------------- */
+const CONNECTORS=[
+  {id:'instagram',name:'Instagram',ic:'📸',tint:'#e1306c',desc:'Show your latest posts in a live feed.',connect:'Pull your grid into a gallery section',verb:'Connected — your posts now feed the gallery'},
+  {id:'google_reviews',name:'Google Reviews',ic:'⭐',tint:'#fbbc04',desc:'Display your real Google star reviews.',connect:'Show your Google reviews as testimonials',verb:'Connected — your Google reviews are live'},
+  {id:'google_maps',name:'Google Maps',ic:'🗺️',tint:'#34a853',desc:'Put an interactive map on your contact page.',connect:'Add a map to your site',verb:'Connected — a map now shows your location'},
+  {id:'stripe',name:'Stripe',ic:'💳',tint:'#635bff',desc:'Take card payments and sell online.',connect:'Enable checkout on your pricing',verb:'Connected — you can now take payments'},
+  {id:'calendly',name:'Calendly',ic:'📅',tint:'#006bff',desc:'Let visitors book time straight into your calendar.',connect:'Add a live booking calendar',verb:'Connected — visitors can book you online'},
+  {id:'mailchimp',name:'Mailchimp',ic:'✉️',tint:'#ffe01b',desc:'Grow an email list with a signup form.',connect:'Add a newsletter signup',verb:'Connected — a signup form now grows your list'},
+];
+function ensureIntegrations(){if(!site.integrations)site.integrations={};}
+function isConnected(id){return !!(site.integrations&&site.integrations[id]);}
+function connectorEffect(id){ // returns did[] describing changes; mutates blocks
+  const bs=curBlocks();ensureIntegrations();site.integrations[id]=true;
+  if(id==='instagram'){let g=bs.find(b=>b.type==='gallery');if(!g){g=newBlock('gallery');const ci=bs.findIndex(b=>b.type==='cta');bs.splice(ci<0?bs.length:ci,0,g);}g.props.source='instagram';g.props.heading='@'+(site.name||'us').toLowerCase().replace(/[^a-z0-9]/g,'')+' on Instagram';g._new=true;selected=g.id;return['Connected Instagram','Your feed now powers the gallery'];}
+  if(id==='google_reviews'){let t=bs.find(b=>b.type==='testimonials');if(!t){t=newBlock('testimonials');const ci=bs.findIndex(b=>b.type==='cta');bs.splice(ci<0?bs.length:ci,0,t);}t.props.source='google';t.props.heading='What our customers say on Google';t._new=true;selected=t.id;return['Connected Google Reviews','Your star reviews are shown as testimonials'];}
+  if(id==='google_maps'){let m=bs.find(b=>b.type==='map');if(!m){m=newBlock('map');const c=bs.find(b=>b.type==='contact');if(c)m.props.address=c.props.address;const ci=bs.findIndex(b=>b.type==='contact');bs.splice(ci<0?bs.length:ci+1,0,m);m._new=true;selected=m.id;}return['Connected Google Maps','A map now shows your location'];}
+  if(id==='calendly'){let bk=bs.find(b=>b.type==='booking');if(!bk){bk=newBlock('booking');const ci=bs.findIndex(b=>b.type==='cta');bs.splice(ci<0?bs.length:ci,0,bk);bk._new=true;selected=bk.id;}return['Connected Calendly','A live booking calendar is on your page'];}
+  if(id==='mailchimp'){let nl=bs.find(b=>b.type==='newsletter');if(!nl){nl=newBlock('newsletter');const ci=bs.findIndex(b=>b.type==='contact');bs.splice(ci<0?bs.length:ci,0,nl);nl._new=true;selected=nl.id;}return['Connected Mailchimp','A newsletter signup is on your page'];}
+  if(id==='stripe'){let pr=bs.find(b=>b.type==='pricing');if(!pr){pr=newBlock('pricing');const ci=bs.findIndex(b=>b.type==='cta');bs.splice(ci<0?bs.length:ci,0,pr);pr._new=true;selected=pr.id;}pr.props.tiers.forEach(t=>t.buy=true);return['Connected Stripe','Checkout is enabled on your pricing'];}
+  return['Connected '+id];
+}
+function connect(id){commit();ensureIntegrations();const did=connectorEffect(id);afterMutate(true);renderDock();const c=CONNECTORS.find(x=>x.id===id);toast(c.verb);
+  const el=selected&&$(`.sec[data-id="${selected}"]`);el&&el.scrollIntoView({behavior:'smooth',block:'center'});return did;}
+function disconnect(id){commit();ensureIntegrations();delete site.integrations[id];
+  const bs=curBlocks();
+  if(id==='google_maps'){const i=bs.findIndex(b=>b.type==='map');if(i>=0)bs.splice(i,1);}
+  if(id==='calendly'){const i=bs.findIndex(b=>b.type==='booking');if(i>=0)bs.splice(i,1);}
+  if(id==='mailchimp'){const i=bs.findIndex(b=>b.type==='newsletter');if(i>=0)bs.splice(i,1);}
+  if(id==='instagram'){const g=bs.find(b=>b.type==='gallery'&&b.props.source==='instagram');if(g)delete g.props.source;}
+  if(id==='google_reviews'){const t=bs.find(b=>b.type==='testimonials'&&b.props.source==='google');if(t)delete t.props.source;}
+  afterMutate(true);renderDock();toast(CONNECTORS.find(x=>x.id===id).name+' disconnected');}
+function renderIntegrations(){
+  ensureIntegrations();
+  $('#dock-body').innerHTML=`<div class="pane"><h3>Integrations</h3><p style="font-size:12.5px;color:var(--muted);margin:0 0 12px">Connect the tools you already use. Each one adds real functionality to your live site.</p>
+    <div class="conns">${CONNECTORS.map(c=>{const on=isConnected(c.id);return `<div class="conn${on?' on':''}"><div class="conn-ic" style="background:${c.tint}22;color:${c.tint}">${c.ic}</div>
+      <div class="conn-body"><div class="conn-name">${c.name}${on?'<span class="conn-badge">Connected</span>':''}</div><div class="conn-desc">${on?c.verb:c.desc}</div></div>
+      <button class="conn-btn${on?' ghost':''}" data-conn="${c.id}" data-on="${on}">${on?'Disconnect':'Connect'}</button></div>`;}).join('')}</div></div>`;
+}
+
 /* ---------------- The AI: interpret & apply ---------------- */
 const DESIGN_WORDS=[[['bold','strong','striking','heavy','impactful'],'ironclad'],[['dark','premium','luxury','moody','upscale','elegant and dark'],'ember'],[['classic','traditional','trust','established','professional','elegant'],'harbour'],[['clean','minimal','simple','modern','fresh'],'seagrass'],[['corporate','serious','business','sharp'],'atlas'],[['playful','bright','fun','energetic','vibrant','colourful','colorful'],'signal'],[['natural','organic','earthy','warm','green'],'verdant']];
 const COLOR_WORDS={blue:'#2563eb',navy:'#1f3a5f',teal:'#0f766e',green:'#4d7c0f',orange:'#c2410c',red:'#e11d48',pink:'#be185d',purple:'#6d28d9',black:'#111315',gold:'#b8860b'};
@@ -582,6 +678,11 @@ function interpret(text){
   if(/\b(remove|delete|drop|get rid of|take out)\b/.test(t)){
     for(const[w,type]of Object.entries(SECTION_WORDS))if(t.includes(w)){ops.push({op:'remove',type});break;}
   }
+  // connect an integration
+  const CONNW={instagram:'instagram',insta:'instagram','google review':'google_reviews','google reviews':'google_reviews',reviews:'google_reviews',map:'google_maps','google map':'google_maps',stripe:'stripe',payment:'stripe','take payment':'stripe',checkout:'stripe',sell:'stripe',calendly:'calendly',booking:'calendly','book online':'calendly',calendar:'calendly',mailchimp:'mailchimp',newsletter:'mailchimp','email list':'mailchimp',subscribe:'mailchimp'};
+  if(/\b(connect|add|enable|set up|integrate|hook up|take)\b/.test(t)){
+    for(const[w,id]of Object.entries(CONNW))if(t.includes(w)){ops.push({op:'connect',id});break;}
+  }
   // change headline
   const hm=text.match(/\b(headline|title|heading)\b[^"]*?["“](.+?)["”]/i)||text.match(/\b(headline|title|heading)\s+(?:to|say|reads?|:)\s+(.+)$/i);
   if(hm)ops.push({op:'headline',text:hm[2].trim()});
@@ -596,6 +697,7 @@ function applyOps(ops){
       site.name=ind?ind.name:(op.label?titleCase(op.label):'your business');
       site.pages=[ind?makePage(ind.spec):makePage(genericSpec(site.name))];
       if(ind&&ind.accent)DESIGNS[site.design]=withAccent(site.design,ind.accent);
+      site.integrations={};
       site.page=0;selected=null;touched=true;
       did.push(`Drafted a home page — ${curBlocks().length} sections`);
       did.push(`Chose the ${DESIGNS[site.design].name} design`);
@@ -605,6 +707,7 @@ function applyOps(ops){
     else if(op.op==='add'){const b=newBlock(op.type);b._new=true;curBlocks().push(b);selected=b.id;touched=true;did.push(`Added a ${BLOCK_META[op.type].label} section`);}
     else if(op.op==='remove'){const idx=curBlocks().findIndex(b=>b.type===op.type);if(idx>=0){curBlocks().splice(idx,1);touched=true;did.push(`Removed the ${BLOCK_META[op.type].label} section`);}}
     else if(op.op==='headline'){const h=curBlocks().find(b=>b.type==='hero');if(h){h.props.heading=op.text;touched=true;did.push(`Updated the headline`);}}
+    else if(op.op==='connect'){if(!isConnected(op.id)){const d=connectorEffect(op.id);touched=true;did.push(...d);}else did.push(`${CONNECTORS.find(c=>c.id===op.id).name} is already connected`);}
   }
   return {did,touched};
 }
@@ -637,7 +740,8 @@ function sendAI(text){
 }
 function composeReply(ops){
   const k=ops.map(o=>o.op);
-  if(k.includes('generate'))return {text:`Done — here's a starter site${site.name?` for ${site.name}`:''}. Everything is editable: click any text to rewrite it, or just tell me what to change.`,chips:['Add a booking section','Make it feel more premium','Add customer reviews','Change the colours']};
+  if(k.includes('generate'))return {text:`Done — here's a starter site${site.name?` for ${site.name}`:''}. Everything is editable: click any text to rewrite it, or just tell me what to change.`,chips:['Connect Instagram','Add customer reviews','Take payments','Add a booking calendar']};
+  if(k.includes('connect'))return {text:pick(["Connected — it's live on your page now.","Done, that's hooked up.","All connected."]),chips:['Connect Instagram','Add Google Reviews','Add a booking calendar','Take payments'].filter(()=>Math.random()<1).slice(0,3)};
   const chips=['Add a gallery','Add an FAQ','Make it bolder','Add a contact section'].filter(c=>Math.random()<1).slice(0,3);
   return {text:pick(["Done.","There you go.","All set.","Updated.","Nice — that's in."]),chips};
 }
@@ -690,6 +794,7 @@ $('#dock-body').addEventListener('click',e=>{
   const rm=e.target.closest('[data-rm]');if(rm){const b=curBlocks().find(x=>x.id===selected);const cfg=ITEM_FIELDS[b.type];commit();b.props[cfg.list].splice(+rm.dataset.rm,1);afterMutate(true);renderDock();return;}
   if(e.target.closest('[data-additem]')){const b=curBlocks().find(x=>x.id===selected);const cfg=ITEM_FIELDS[b.type];commit();b.props[cfg.list].push(JSON.parse(JSON.stringify(cfg.add)));afterMutate(true);renderDock();return;}
   if(e.target.closest('[data-deselect]')){selected=null;paintSel();renderDock();}
+  const cn=e.target.closest('[data-conn]');if(cn){cn.dataset.on==='true'?disconnect(cn.dataset.conn):connect(cn.dataset.conn);}
 });
 
 /* dock tabs */
@@ -753,33 +858,63 @@ document.addEventListener('keydown',e=>{
 });
 
 /* ---------------- Onboarding ---------------- */
-const EXAMPLES=['A family roofing company','A neighbourhood bakery & café','A law firm','A hair salon','A wedding photographer','A strength & fitness studio'];
-$('#onb-ex').innerHTML=EXAMPLES.map(x=>`<button class="chip" data-ex="${esc(x)}">${esc(x)}</button>`).join('');
-$('#onb-ex').addEventListener('click',e=>{const c=e.target.closest('[data-ex]');if(c){$('#onb-input').value=c.dataset.ex;startBuild(c.dataset.ex);}});
-$('#onb-go').addEventListener('click',()=>startBuild($('#onb-input').value));
-$('#onb-input').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey||!e.shiftKey)){e.preventDefault();startBuild($('#onb-input').value);}});
+let onbMode='import';
+const EXAMPLES_IMPORT=['peifotoshop.com','foulkesproductions.com','acmeroofing.ca','stoneandcrumb.ca'];
+const EXAMPLES_FRESH=['A family roofing company','A neighbourhood bakery','A law firm','A wedding photographer'];
+function renderOnbEx(){const list=onbMode==='import'?EXAMPLES_IMPORT:EXAMPLES_FRESH;
+  $('#onb-ex').innerHTML=`<span style="color:var(--faint);font-size:12.5px;align-self:center">${onbMode==='import'?'Try one:':'Or:'}</span>`+list.map(x=>`<button class="chip" data-ex="${esc(x)}">${esc(x)}</button>`).join('');}
+function setOnbMode(m){onbMode=m;$$('#onb-modes button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mode===m));
+  $('#mode-import').style.display=m==='import'?'block':'none';
+  $('#onb-input').style.display=m==='fresh'?'block':'none';
+  $('#onb-go').textContent=m==='import'?'Rebuild my site →':'Build my site →';
+  $('#onb-hint').textContent=m==='import'?'↗ We read your pages and rebuild them, editable':'✦ AI drafts copy, layout, and design';
+  renderOnbEx();setTimeout(()=>$(m==='import'?'#onb-url':'#onb-input').focus(),0);}
+$('#onb-modes').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(b)setOnbMode(b.dataset.mode);});
+$('#onb-ex').addEventListener('click',e=>{const c=e.target.closest('[data-ex]');if(!c)return;
+  if(onbMode==='import'){$('#onb-url').value=c.dataset.ex;startImport(c.dataset.ex);}else{$('#onb-input').value=c.dataset.ex;startBuild(c.dataset.ex);}});
+$('#onb-go').addEventListener('click',()=>onbMode==='import'?startImport($('#onb-url').value):startBuild($('#onb-input').value));
+$('#onb-url').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();startImport($('#onb-url').value);}});
+$('#onb-input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();startBuild($('#onb-input').value);}});
+renderOnbEx();
 
+function detectIndustry(text){text=(text||'').toLowerCase();for(const[k,v]of Object.entries(INDUSTRIES))if(v.match.some(m=>text.includes(m)))return k;return null;}
+function cleanHost(url){return String(url||'').trim().toLowerCase().replace(/^https?:\/\//,'').replace(/^www\./,'').replace(/[\/?#].*$/,'');}
+
+function runBuildAnim(title,steps,done){
+  const inner=$('#onb-inner');
+  inner.innerHTML=`<div class="logo"><span class="mark">S</span> Sidelio Studio</div><div class="build-anim"><div style="font-size:17px;color:var(--ink);font-weight:600;margin-bottom:4px">${esc(title)}</div><div class="build-steps" id="bs">${esc(steps[0])}</div><div class="bar"><i id="bar"></i></div></div>`;
+  let i=0;const tick=()=>{const pct=Math.round(((i+1)/steps.length)*100);$('#bar').style.width=pct+'%';$('#bs').textContent=steps[i];i++;if(i<steps.length)setTimeout(tick,360);else setTimeout(done,440);};tick();
+}
+function startImport(url){
+  const host=cleanHost(url)||'your-site.com';
+  const ind=detectIndustry(host)||detectIndustry(url);
+  window.__genInd=ind;window.__genText=host;window.__imported=true;
+  runBuildAnim('Rebuilding '+host,[`Fetching ${host}…`,'Found 5 pages · reading content…','Extracting your logo & brand colours…','Pulling your services and contact details…','Rebuilding as editable sections…'],finishBuild);
+}
 function startBuild(text){
   text=(text||'').trim();if(!text)text='A small local business';
-  let ind=null;for(const[k,v]of Object.entries(INDUSTRIES))if(v.match.some(m=>text.toLowerCase().includes(m))){ind=k;break;}
-  const inner=$('#onb-inner');
-  const steps=['Reading your description…','Drafting the copy…',`Choosing a design…`,'Laying out sections…','Polishing…'];
-  inner.innerHTML=`<div class="logo"><span class="mark">S</span> Sidelio Studio</div><div class="build-anim"><div style="font-size:17px;color:var(--ink);font-weight:600;margin-bottom:4px">Building your site</div><div class="build-steps" id="bs">${steps[0]}</div><div class="bar"><i id="bar"></i></div></div>`;
-  let i=0;const tick=()=>{const pct=Math.round(((i+1)/steps.length)*100);$('#bar').style.width=pct+'%';$('#bs').textContent=steps[i];i++;if(i<steps.length)setTimeout(tick,340);else setTimeout(finishBuild,420);};
-  tick();
-  window.__genInd=ind;window.__genText=text;
+  window.__genInd=detectIndustry(text);window.__genText=text;window.__imported=false;
+  runBuildAnim('Building your site',['Reading your description…','Drafting the copy…','Choosing a design…','Laying out sections…','Polishing…'],finishBuild);
 }
 function finishBuild(){
-  const ind=window.__genInd,text=window.__genText;
-  const {} = applyOps([{op:'generate',industry:ind,label:text.replace(/^(a|an)\s+/i,'')}]);
+  const ind=window.__genInd,text=window.__genText,imported=window.__imported;
+  applyOps([{op:'generate',industry:ind,label:text.replace(/^(a|an)\s+/i,'').replace(/\.(com|ca|net|org|io).*$/,'')}]);
+  ensureIntegrations();
   $('#app').style.visibility='visible';
   const onb=$('#onb');onb.classList.add('gone');setTimeout(()=>onb.style.display='none',420);
   renderCanvas();setTab('assistant');syncUndo();
   chatLog.length=0;
-  aiSay(`I've drafted a starter site${site.name&&site.name!=='your business'?` for ${site.name}`:''} — ${curBlocks().length} sections in the ${DESIGNS[site.design].name} design. Click any text on the page to rewrite it, or just tell me what to change.`,[],['Add a booking section','Make it feel more premium','Add customer reviews','Add a pricing section']);
+  if(imported){
+    aiSay(`I rebuilt ${site.name} from ${text} — ${curBlocks().length} editable sections in the ${DESIGNS[site.design].name} design. Everything's yours to change now: click any text to rewrite it, or connect the tools you already use.`,
+      ['Rebuilt the home page','Matched a design to your brand','Kept your services and contact details'],
+      ['Connect Instagram','Add Google Reviews','Take payments with Stripe','Add a booking calendar']);
+  }else{
+    aiSay(`I've drafted a starter site${site.name&&site.name!=='your business'?` for ${site.name}`:''} — ${curBlocks().length} sections in the ${DESIGNS[site.design].name} design. Click any text on the page to rewrite it, or tell me what to change.`,[],
+      ['Connect Instagram','Add a booking section','Make it feel more premium','Add a pricing section']);
+  }
   past.length=0;future.length=0;syncUndo();
 }
 
 /* boot: seed a default so the editor isn't empty if skipped */
-site.pages=[makePage(INDUSTRIES.roofing.spec)];site.design='harbour';site.name='Acme Roofing';
+site.pages=[makePage(INDUSTRIES.roofing.spec)];site.design='harbour';site.name='Acme Roofing';site.integrations={};
 </script>
