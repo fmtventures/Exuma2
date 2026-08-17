@@ -159,7 +159,7 @@
       "repo": "fmtventures/sidelio-site",
       "liveUrl": "https://sidelio.ca/app.html",
       "stack": [
-        "static site",
+        "monorepo (packages/core = @sidelio/core, modules/)",
         "PWA",
         "Capacitor (iOS/Android shell)",
         "Supabase"
@@ -183,21 +183,21 @@
       "consumes": [],
       "nextActions": [
         {
-          "text": "MOBILE-APP.md is blocked on your Apple/Google accounts and a build machine — that is the release path",
+          "text": "Back up the Sidelio app monorepo (Desktop/Rally/sidelio-app) to GitHub — it has no remote",
           "done": false
         },
         {
-          "text": "Reconcile docs/club-platform-modules.md against the Studio shelf — two module systems is the duplication the Studio was built to end",
+          "text": "MOBILE-APP.md store release is blocked on your Apple/Google accounts and a build machine",
           "done": false
         },
         {
-          "text": "Confirm sidelio-archive can be archived for good",
+          "text": "Reconcile the app's modules/ against the Studio shelf",
           "done": false
         }
       ],
       "blockers": [],
-      "notes": "NOTE: a next-gen monorepo app (see the Rally tool, /Users/ft/Desktop/Rally/sidelio-app) appears to be what this became — confirm which is current. Verified. Around 30 pages: registration builder, schedule generator, practice planner, officials, accounting, library, training, pricing, plus its own website/studio pages. One web app (app.html + sidelio-data.js) hardened as an installable PWA; Capacitor config, native bridge and icon sources are all in the repo. Supabase is referenced in app.html, sidelio-portal.html, sidelio-coach.js and the service worker. Note it has its own website and studio pages, which overlap the Studio's website module — worth resolving deliberately.",
-      "localPath": "/Volumes/SATECHI/sidelio-site"
+      "notes": "Rally was the original name; the product became Sidelio over time, so the folder /Users/ft/Desktop/Rally/sidelio-app IS the current Sidelio app — a monorepo with packages/core (@sidelio/core) and a modules/ folder. The GitHub repo fmtventures/sidelio-site is the older static marketing site; the live app is this monorepo, which has no GitHub remote and is therefore unbacked up. Supabase project \"sidelio\" (ca-central-1) is its backend. Store-submission runbook is in MOBILE-APP.md.",
+      "localPath": "/Users/ft/Desktop/Rally/sidelio-app"
     },
     {
       "id": "lighthouse",
@@ -492,7 +492,7 @@
       "name": "Claire 80",
       "tagline": "A birthday presentation — \"Claire — 80 ans d'amour\" (80 years of love).",
       "platformId": "ftventures",
-      "status": "live",
+      "status": "building",
       "health": "good",
       "percentComplete": null,
       "repo": null,
@@ -522,7 +522,7 @@
         }
       ],
       "blockers": [],
-      "notes": "Found on the SATECHI drive: /Volumes/SATECHI/Claire 80/ with several versions (Claire80-Presentation, \"Presentation Claire 80\", and a _to_delete/Presentation-V1). A 80th-birthday presentation in French, not a product. Mystery from earlier sessions resolved.",
+      "notes": "IN PROGRESS — Francis, 2026-08-17. Found on the SATECHI drive: /Volumes/SATECHI/Claire 80/ with several versions (Claire80-Presentation, \"Presentation Claire 80\", and a _to_delete/Presentation-V1). A 80th-birthday presentation in French, not a product. Mystery from earlier sessions resolved.",
       "localPath": "/Volumes/SATECHI/Claire 80/Claire80-Presentation"
     },
     {
@@ -598,54 +598,6 @@
       "notes": "No pushes since January 2026. The Studio's CRM / Lead Book module is a superset of this."
     },
     {
-      "id": "rally",
-      "name": "Rally",
-      "platformId": "sidelio",
-      "tagline": "Next-generation Sidelio — a proper monorepo app. \"One platform for your whole club. Any sport.\"",
-      "status": "building",
-      "health": "good",
-      "percentComplete": null,
-      "repo": null,
-      "liveUrl": null,
-      "localPath": "/Users/ft/Desktop/Rally/sidelio-app",
-      "stack": [
-        "monorepo",
-        "packages/core (@sidelio/core)",
-        "modules"
-      ],
-      "confidence": "assumed",
-      "lastTouched": "2026-08-17",
-      "effort": {
-        "hours": null,
-        "tokens": null,
-        "sessions": null
-      },
-      "priority": {
-        "rank": 2,
-        "impact": 5,
-        "effort": 4,
-        "rationale": "Appears to be the real, current Sidelio app — a structured monorepo, not the old static site. If so, this is where sports-product effort actually goes."
-      },
-      "provides": [],
-      "consumes": [],
-      "nextActions": [
-        {
-          "text": "Confirm: is Rally the rebrand/next version of Sidelio, replacing sidelio-site?",
-          "done": false
-        },
-        {
-          "text": "Get it into GitHub — it is a monorepo with no remote, so it is unbacked up",
-          "done": false
-        },
-        {
-          "text": "Map @sidelio/core and the modules/ folder against the Studio shelf",
-          "done": false
-        }
-      ],
-      "blockers": [],
-      "notes": "Found on the local scan at /Users/ft/Desktop/Rally/sidelio-app with packages/core (@sidelio/core) and a modules/ folder, plus RALLY-titled bundles in Downloads (files 3, files 6). Not on GitHub. The board previously treated fmtventures/sidelio-site as \"Sidelio\"; this looks like the actual app it became."
-    },
-    {
       "id": "starliner",
       "name": "Starliner (client site)",
       "platformId": "ftventures",
@@ -683,7 +635,7 @@
         }
       ],
       "blockers": [],
-      "notes": "Client site found on the local scan (Desktop/Starliner, plus Downloads/files 2). A restaurant in Jamaica — the first client outside PEI."
+      "notes": "DONE (delivered) — Francis, 2026-08-17. Client site found on the local scan (Desktop/Starliner, plus Downloads/files 2). A restaurant in Jamaica — the first client outside PEI."
     },
     {
       "id": "saggo",
@@ -846,7 +798,7 @@
         }
       ],
       "blockers": [],
-      "notes": "Found at /Users/ft/stratford-gelato (with a _backup-2026-07-02 subfolder). The Studio's staff/inventory/shopcms modules all credit their idea to \"AlotGelato\" — this is that business."
+      "notes": "DONE FOR NOW (delivered, no active work) — Francis, 2026-08-17. Found at /Users/ft/stratford-gelato (with a _backup-2026-07-02 subfolder). The Studio's staff/inventory/shopcms modules all credit their idea to \"AlotGelato\" — this is that business."
     }
   ],
   "modules": [
@@ -1457,12 +1409,12 @@
     },
     {
       "id": "q16",
-      "toolId": "rally",
-      "text": "Back up the local-only repos to GitHub (Rally, Saggo, PEI Video, Service RH, SATECHI/lhouse)",
+      "toolId": "sidelio",
+      "text": "Back up the local-only repos to GitHub (Sidelio app, Saggo, PEI Video, Service RH, SATECHI/lhouse)",
       "status": "queued",
       "size": "M",
       "added": "2026-08-17",
-      "note": "Several real projects — including the Rally app and three client sites — are git repos with no remote, or not repos at all. They exist on one Mac and one external drive. A drive failure loses paid client work."
+      "note": "The Sidelio app monorepo (Desktop/Rally/sidelio-app) and three client sites are git repos with no remote, or not repos at all — on one Mac and one external drive. A drive failure loses paid client work."
     },
     {
       "id": "q17",
@@ -1472,15 +1424,6 @@
       "size": "S",
       "added": "2026-08-17",
       "note": "The GitHub Lighthouse is behind the local working copy."
-    },
-    {
-      "id": "q18",
-      "toolId": "rally",
-      "text": "Confirm Rally vs sidelio-site — which is the real Sidelio now?",
-      "status": "blocked",
-      "size": "S",
-      "added": "2026-08-17",
-      "note": "Changes how the whole sports line is tracked."
     }
   ],
   "decisions": [
@@ -1568,10 +1511,10 @@
       "id": "d8",
       "date": "2026-08-17",
       "title": "The portfolio is bigger than the eight GitHub repos — real client work exists",
-      "decision": "A local scan found projects never on GitHub: a Rally monorepo (likely next-gen Sidelio), four external client websites (Starliner, Saggo, PEI Video, Service RH), and A Lot o Gelato. Several client repos have no GitHub remote and are unbacked up.",
+      "decision": "A local scan found projects never on GitHub: the current Sidelio app as a monorepo (in a folder still named Rally, its original name), four external client websites (Starliner, Saggo, PEI Video, Service RH), and A Lot o Gelato. Several client repos have no GitHub remote and are unbacked up.",
       "why": "Answers the highest-value open question — yes, the website capability is doing paid external work — and reveals that the real Sidelio app and several client sites live only on local disk and an external drive.",
       "toolIds": [
-        "rally",
+        "sidelio",
         "starliner",
         "saggo",
         "pei-video",
@@ -1590,6 +1533,17 @@
         "claire-80"
       ],
       "status": "settled"
+    },
+    {
+      "id": "d10",
+      "date": "2026-08-17",
+      "title": "Rally is Sidelio — same product, original name",
+      "decision": "Rally was the working name; the product became Sidelio. The Desktop/Rally/sidelio-app monorepo is the current Sidelio app. fmtventures/sidelio-site is the older static marketing site. There is no separate \"Rally\" tool.",
+      "why": "Francis: \"Rally changed to sidelio over time.\" Corrects an earlier misread that treated Rally as a distinct next-gen product.",
+      "toolIds": [
+        "sidelio"
+      ],
+      "status": "settled"
     }
   ],
   "sessions": [
@@ -1598,6 +1552,15 @@
       "date": "2026-08-17",
       "toolId": "dev-dashboard",
       "summary": "Built the Build Board: registry model, views, module matrix, local server with save-to-file, the module sync from The Ship, and the Now/Decisions workbench. Read three repos and corrected the seeded data — BF turned out to be BrokerFlow.",
+      "hours": null,
+      "tokens": null,
+      "by": "Claude + Francis"
+    },
+    {
+      "id": "s2",
+      "date": "2026-08-17",
+      "toolId": "sidelio",
+      "summary": "Local scan folded into the board: 6 tools added then Rally merged into Sidelio (same product, original name). Status set from Francis: A Lot o Gelato and Starliner delivered, Claire 80 in progress.",
       "hours": null,
       "tokens": null,
       "by": "Claude + Francis"
