@@ -22,6 +22,8 @@ import { detectIndustry, generateSite, generateThreeConcepts } from '../generate
 import { auditPageSeo, renderHead } from '../render/seo.ts';
 import { summaryLines } from '../import/review.ts';
 import { AppStore, DEV_ACTOR, ORG_ID, SITE_ID, USER_ID } from './store.ts';
+import { BUSINESS_ROUTES } from './business-routes.ts';
+import { counterIds, seedBusiness, type BusinessState } from './business-store.ts';
 
 /**
  * Admin API.
@@ -893,6 +895,44 @@ route('POST', '/api/concepts/apply', async ({ store, body }) => {
 
   return { changeSet: applied.value, pages: store.pages().length };
 });
+
+/* ------------------------------------------------------------------ */
+/* Business modules                                                    */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Commerce, scheduling, CRM, automations, publishing and analytics are
+ * registered onto the same route table rather than a second server, so they
+ * inherit the identical authorize -> act -> audit lifecycle. A parallel router
+ * would be the obvious place for one of them to quietly skip a permission
+ * check.
+ */
+const businessIds = counterIds();
+let businessState: BusinessState | undefined;
+
+export function businessStateFor(store: AppStore): BusinessState {
+  businessState ??= seedBusiness(SITE_ID, ORG_ID, USER_ID, new Date());
+  void store;
+  return businessState;
+}
+
+/** Reset between tests, so one test's orders cannot leak into the next. */
+export function resetBusinessState(): void {
+  businessState = undefined;
+}
+
+for (const businessRoute of BUSINESS_ROUTES) {
+  route(businessRoute.method, businessRoute.path, async (ctx) => businessRoute.handler({
+    store: ctx.store,
+    business: businessStateFor(ctx.store),
+    params: ctx.params,
+    body: ctx.body,
+    res: ctx.res,
+    now: new Date(),
+    makeId: businessIds,
+    authorize,
+  }));
+}
 
 /* ------------------------------------------------------------------ */
 /* Preview rendering                                                   */

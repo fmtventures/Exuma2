@@ -102,10 +102,12 @@ src/
   publishing/ domains, DNS verification, certificates, redirects, versions
   analytics/  cookieless metrics, plan metering, agency roll-up
   db/         schema.sql, rls.sql
-  api/        HTTP API over the domain modules
+  api/        HTTP API over the domain modules (site + business routes
+              share one table, so every request takes the same
+              authorize -> act -> audit path)
   admin/      admin + visual editor (no framework, no build step)
   demo/       runnable end-to-end walkthrough
-tests/        507 tests, including full-journey and HTTP integration tests
+tests/        536 tests, including full-journey and HTTP integration tests
 docs/         architecture and module specifications
 ```
 
