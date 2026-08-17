@@ -6,6 +6,7 @@ import {
   mergeIntervals, openWindowsOn, overlaps, resolveLocalTime, zoneOffsetMinutes,
   type Schedule, type SlotRules,
 } from '../src/scheduling/availability.ts';
+import type { EventOccurrence } from '../src/scheduling/bookings.ts';
 import {
   cancelBooking, createBooking, dueReminders, expandOccurrences, promoteFromWaitlist,
   register, rescheduleBooking, seatsRemaining, toIcs,
@@ -342,7 +343,7 @@ describe('events', () => {
   });
 
   it('counts capacity and refuses when full', () => {
-    const occurrence = (expandOccurrences(event) as { value: { id: string; start: string; capacity?: number }[] }).value[0]!;
+    const occurrence = (expandOccurrences(event) as { value: EventOccurrence[] }).value[0]!;
     const existing: Registration[] = [{
       id: 'r1', siteId: SITE, eventId: 'evt_1', occurrenceId: occurrence.id, ticketTypeId: 'tt_1',
       name: 'A', email: 'a@b.co', quantity: 9, status: 'confirmed', createdAt: NOW.toISOString(),
@@ -360,7 +361,7 @@ describe('events', () => {
 
   it('waitlists instead of failing when the event allows it', () => {
     const waitlisted = { ...event, waitlistEnabled: true, capacity: 1 };
-    const occurrence = (expandOccurrences(waitlisted) as { value: { id: string }[] }).value[0]!;
+    const occurrence = (expandOccurrences(waitlisted) as { value: EventOccurrence[] }).value[0]!;
     const existing: Registration[] = [{
       id: 'r1', siteId: SITE, eventId: 'evt_1', occurrenceId: occurrence.id, ticketTypeId: 'tt_1',
       name: 'A', email: 'a@b.co', quantity: 1, status: 'confirmed', createdAt: NOW.toISOString(),
@@ -373,7 +374,7 @@ describe('events', () => {
   });
 
   it('promotes whole waitlist entries oldest first, never splitting a party', () => {
-    const occurrence = { id: 'occ', eventId: 'evt_1', date: '2026-06-01', start: '2026-06-01T22:00:00Z', end: '2026-06-01T23:30:00Z', capacity: 3 };
+    const occurrence: EventOccurrence = { id: 'occ', eventId: 'evt_1', date: '2026-06-01', start: '2026-06-01T22:00:00Z', end: '2026-06-01T23:30:00Z', capacity: 3 };
     const registrations: Registration[] = [
       { id: 'w1', siteId: SITE, eventId: 'evt_1', occurrenceId: 'occ', ticketTypeId: 'tt_1', name: 'Party of 4', email: 'a@b.co', quantity: 4, status: 'waitlisted', createdAt: '2026-05-01T00:00:00Z' },
       { id: 'w2', siteId: SITE, eventId: 'evt_1', occurrenceId: 'occ', ticketTypeId: 'tt_1', name: 'Pair', email: 'c@d.co', quantity: 2, status: 'waitlisted', createdAt: '2026-05-02T00:00:00Z' },
@@ -384,7 +385,7 @@ describe('events', () => {
   });
 
   it('refuses registration for an event that has started', () => {
-    const occurrence = (expandOccurrences(event) as { value: { id: string; start: string }[] }).value[0]!;
+    const occurrence = (expandOccurrences(event) as { value: EventOccurrence[] }).value[0]!;
     const after = new Date(Date.parse(occurrence.start) + 60000);
     const r = register({
       siteId: SITE, event, occurrence, ticketTypeId: 'tt_1', name: 'A', email: 'a@b.co',
@@ -394,12 +395,12 @@ describe('events', () => {
   });
 
   it('honours ticket sales windows and per-order limits', () => {
-    const occurrence = (expandOccurrences(event) as { value: { id: string }[] }).value[0]!;
+    const occurrence = (expandOccurrences(event) as { value: EventOccurrence[] }).value[0]!;
     const limited = {
       ...event,
       ticketTypes: [{ id: 'tt_1', name: 'General', price: money(2000, 'CAD'), maxPerOrder: 2, salesEnd: '2026-04-01T00:00:00Z' }],
-    };
-    const base = { siteId: SITE, event: limited, occurrence, ticketTypeId: 'tt_1', name: 'A', email: 'a@b.co', existing: [], now: NOW, makeId };
+    } satisfies EventDefinition;
+    const base = { siteId: SITE, event: limited, occurrence, ticketTypeId: 'tt_1', name: 'A', email: 'a@b.co', existing: [] as Registration[], now: NOW, makeId };
     expect(register({ ...base, quantity: 3 }).ok).toBe(false);
     expect(register({ ...base, quantity: 1 }).ok).toBe(false); // sales closed
   });
@@ -409,7 +410,7 @@ describe('ics feed', () => {
   it('emits CRLF endings and folds long lines', () => {
     // Outlook rejects feeds that get folding or line endings wrong.
     const long = { ...event, title: 'A'.repeat(200) };
-    const occurrences = (expandOccurrences(long) as { value: never[] }).value;
+    const occurrences = (expandOccurrences(long) as { value: EventOccurrence[] }).value;
     const ics = toIcs(long, occurrences, 'https://example.com');
     expect(ics).toContain('\r\n');
     expect(ics.startsWith('BEGIN:VCALENDAR')).toBe(true);
