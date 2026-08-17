@@ -1,0 +1,517 @@
+<title>Sidelio Builder</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+/* ---- Editor chrome: theme-aware tool UI ---- */
+:root{
+  --bg:#eef0f2; --panel:#ffffff; --panel-2:#f6f7f9; --ink:#161b20; --muted:#5c6773;
+  --line:#e0e4e8; --line-2:#cfd5db; --brand:#b8590c; --brand-soft:#f3e5d5;
+  --sel:#2f6fed; --sel-soft:#e5edfd; --good:#2f8f5b;
+  --shadow:0 1px 2px rgba(20,27,34,.06),0 6px 20px rgba(20,27,34,.08);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0a0d10; --panel:#12171c; --panel-2:#171d23; --ink:#e8ecef; --muted:#93a0ab;
+  --line:#232a31; --line-2:#2f3841; --brand:#e08a3c; --brand-soft:#33261a;
+  --sel:#5b8bf0; --sel-soft:#182234; --good:#4bbd82;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+}}
+:root[data-theme="dark"]{
+  --bg:#0a0d10; --panel:#12171c; --panel-2:#171d23; --ink:#e8ecef; --muted:#93a0ab;
+  --line:#232a31; --line-2:#2f3841; --brand:#e08a3c; --brand-soft:#33261a;
+  --sel:#5b8bf0; --sel-soft:#182234; --good:#4bbd82;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden;}
+button{font:inherit;cursor:pointer}
+.app{display:grid;grid-template-columns:216px 1fr 288px;grid-template-rows:52px 1fr;height:100vh;}
+
+/* Top bar */
+.topbar{grid-column:1/-1;display:flex;align-items:center;gap:14px;padding:0 16px;background:var(--panel);border-bottom:1px solid var(--line);z-index:20;}
+.logo{display:flex;align-items:center;gap:9px;font-weight:700;letter-spacing:-.01em;}
+.logo .mark{width:26px;height:26px;border-radius:7px;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:800;font-size:15px;font-family:"Helvetica Neue",Arial,sans-serif;}
+.top-mid{margin:0 auto;display:flex;align-items:center;gap:4px;background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:3px;}
+.top-mid button{border:0;background:transparent;color:var(--muted);padding:5px 11px;border-radius:6px;font-size:13px;display:flex;align-items:center;gap:6px;}
+.top-mid button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08);}
+.top-right{display:flex;align-items:center;gap:8px;}
+.btn{border:1px solid var(--line-2);background:var(--panel);color:var(--ink);border-radius:8px;padding:7px 13px;font-size:13px;font-weight:500;display:inline-flex;align-items:center;gap:6px;}
+.btn:hover{border-color:var(--muted)}
+.btn:disabled{opacity:.4;cursor:default}
+.btn-primary{background:var(--brand);border-color:var(--brand);color:#fff;}
+.btn-primary:hover{filter:brightness(1.05);border-color:var(--brand)}
+.btn-ghost{border-color:transparent;background:transparent;padding:7px 9px;color:var(--muted)}
+.btn-ghost:hover{background:var(--panel-2);color:var(--ink)}
+
+/* Left rail */
+.rail{background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;padding:14px 12px;}
+.rail h3{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:16px 8px 8px;font-weight:600;}
+.rail h3:first-child{margin-top:2px}
+.page-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:8px;font-size:13.5px;color:var(--ink);}
+.page-item[aria-current="true"]{background:var(--brand-soft);color:var(--brand);font-weight:600;}
+.page-item .dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.5}
+.add-list{display:flex;flex-direction:column;gap:2px;}
+.add-list button{display:flex;align-items:center;gap:9px;width:100%;text-align:left;border:0;background:transparent;color:var(--ink);padding:7px 9px;border-radius:8px;font-size:13px;}
+.add-list button:hover{background:var(--panel-2)}
+.add-list .ic{width:22px;height:22px;border-radius:6px;background:var(--panel-2);border:1px solid var(--line);display:grid;place-items:center;font-size:12px;color:var(--muted);flex:none}
+
+/* Canvas */
+.stage{overflow:auto;padding:26px;display:flex;justify-content:center;align-items:flex-start;background:
+  radial-gradient(circle at 1px 1px, var(--line) 1px, transparent 0) 0 0/22px 22px;}
+.frame{background:#fff;border-radius:12px;box-shadow:var(--shadow);width:100%;max-width:960px;transition:max-width .25s ease;overflow:hidden;}
+.frame.mobile{max-width:390px}
+.frame.tablet{max-width:720px}
+
+/* Selection overlay on canvas */
+.sec{position:relative;outline:2px solid transparent;outline-offset:-2px;transition:outline-color .12s;}
+.sec:hover{outline-color:var(--sel-soft)}
+.sec.selected{outline-color:var(--sel)}
+.sec-tools{position:absolute;top:0;right:0;transform:translateY(-100%);display:none;gap:2px;background:var(--sel);border-radius:7px 7px 0 0;padding:3px;z-index:5;}
+.sec.selected>.sec-tools{display:flex}
+.sec-tools button{border:0;background:transparent;color:#fff;width:26px;height:24px;border-radius:5px;display:grid;place-items:center;font-size:13px;opacity:.85}
+.sec-tools button:hover{background:rgba(255,255,255,.18);opacity:1}
+.sec-tag{position:absolute;top:0;left:0;transform:translateY(-100%);display:none;background:var(--sel);color:#fff;font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:7px 7px 0 0;z-index:5;}
+.sec.selected>.sec-tag{display:block}
+[data-edit]{outline:none;border-radius:3px}
+[data-edit]:focus{box-shadow:0 0 0 2px var(--sel), 0 0 0 5px var(--sel-soft)}
+.empty-canvas{padding:80px 24px;text-align:center;color:var(--muted)}
+
+/* Inspector */
+.insp{background:var(--panel);border-left:1px solid var(--line);overflow-y:auto;}
+.insp-sec{padding:14px 15px;border-bottom:1px solid var(--line);}
+.insp-sec h3{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0 0 11px;font-weight:600;display:flex;justify-content:space-between;align-items:center;}
+.field{margin-bottom:11px}
+.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;}
+.field input[type=text],.field textarea,.field select{width:100%;border:1px solid var(--line-2);background:var(--panel-2);color:var(--ink);border-radius:7px;padding:7px 9px;font:inherit;font-size:13px;}
+.field textarea{resize:vertical;min-height:56px;line-height:1.45}
+.field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--sel);box-shadow:0 0 0 3px var(--sel-soft)}
+.seg{display:flex;gap:3px;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:3px}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);padding:6px;border-radius:6px;font-size:12.5px}
+.seg button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.swatches{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}
+.swatches button{aspect-ratio:1;border-radius:7px;border:2px solid transparent;cursor:pointer}
+.swatches button[aria-pressed="true"]{border-color:var(--ink);box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--ink)}
+.design-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.design-card{border:1px solid var(--line-2);border-radius:9px;overflow:hidden;text-align:left;background:var(--panel-2);padding:0;}
+.design-card[aria-pressed="true"]{border-color:var(--sel);box-shadow:0 0 0 2px var(--sel-soft)}
+.design-card .prev{height:38px;display:flex}
+.design-card .prev i{flex:1}
+.design-card .meta{padding:6px 8px}
+.design-card .dn{font-size:12px;font-weight:600}
+.design-card .dt{font-size:10.5px;color:var(--muted);margin-top:1px}
+.items-editor .item{background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:9px;margin-bottom:7px;position:relative}
+.items-editor .item .rm{position:absolute;top:6px;right:6px;border:0;background:transparent;color:var(--muted);font-size:14px;width:20px;height:20px;border-radius:4px}
+.items-editor .item .rm:hover{background:var(--line);color:var(--ink)}
+.add-item{width:100%;border:1px dashed var(--line-2);background:transparent;color:var(--muted);border-radius:8px;padding:8px;font-size:12.5px}
+.add-item:hover{border-color:var(--sel);color:var(--sel)}
+.hint{padding:40px 18px;text-align:center;color:var(--muted);font-size:13px;line-height:1.6}
+.hint .big{font-size:26px;margin-bottom:6px}
+
+/* Toast */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:10px;font-size:13.5px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.25s;display:flex;align-items:center;gap:9px;z-index:50}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast .ok{width:16px;height:16px;border-radius:50%;background:var(--good);color:#fff;display:grid;place-items:center;font-size:10px}
+
+@media (max-width:860px){
+  .app{grid-template-columns:1fr;grid-template-rows:52px 1fr}
+  .rail,.insp{display:none}
+}
+</style>
+
+<div class="app">
+  <div class="topbar">
+    <div class="logo"><span class="mark">S</span> Sidelio</div>
+    <div class="top-mid" id="device">
+      <button data-d="desktop" aria-pressed="true">▭ Desktop</button>
+      <button data-d="tablet" aria-pressed="false">▢ Tablet</button>
+      <button data-d="mobile" aria-pressed="false">▯ Mobile</button>
+    </div>
+    <div class="top-right">
+      <button class="btn-ghost btn" id="undo" title="Undo" aria-label="Undo" disabled>↶</button>
+      <button class="btn-ghost btn" id="redo" title="Redo" aria-label="Redo" disabled>↷</button>
+      <button class="btn" id="theme" title="Toggle editor theme">◐</button>
+      <button class="btn btn-primary" id="publish">Publish</button>
+    </div>
+  </div>
+
+  <aside class="rail">
+    <h3>Pages</h3>
+    <div id="pages"></div>
+    <h3>Add a section</h3>
+    <div class="add-list" id="add-list"></div>
+  </aside>
+
+  <main class="stage" id="stage">
+    <div class="frame" id="frame"></div>
+  </main>
+
+  <aside class="insp" id="insp"></aside>
+</div>
+
+<div class="toast" id="toast"><span class="ok">✓</span><span id="toast-msg"></span></div>
+
+<script>
+"use strict";
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------------------------------------------------------------- */
+/* Designs — a slice of the real 26-design library                   */
+/* ---------------------------------------------------------------- */
+const DESIGNS = {
+  harbour: { name:'Harbour', tag:'Classic & trust-led', scheme:'light',
+    c:{bg:'#ffffff',surface:'#f4f2ee',text:'#1c232b',muted:'#54606c',primary:'#1f3a5f',accent:'#8a6f48',border:'#dcd8d0',onPrimary:'#fff'},
+    fh:'"Iowan Old Style",Palatino,Georgia,serif', fb:'system-ui,sans-serif', radius:'4px', hero:'left', caps:false, weight:700 },
+  ironclad: { name:'Ironclad', tag:'Heavy & high-contrast', scheme:'dark',
+    c:{bg:'#111315',surface:'#1c1f22',text:'#f5f3f0',muted:'#b3b8bd',primary:'#f59f00',accent:'#ff6b35',border:'#32383d',onPrimary:'#111315'},
+    fh:'"Helvetica Neue",Arial,sans-serif', fb:'system-ui,sans-serif', radius:'0', hero:'full', caps:true, weight:800 },
+  seagrass: { name:'Seagrass', tag:'Clean & current', scheme:'light',
+    c:{bg:'#ffffff',surface:'#f0fdfa',text:'#111f22',muted:'#4b5f63',primary:'#0f766e',accent:'#f59e0b',border:'#d5e7e4',onPrimary:'#fff'},
+    fh:'"Avenir Next",Avenir,system-ui,sans-serif', fb:'"Avenir Next",system-ui,sans-serif', radius:'16px', hero:'centered', caps:false, weight:700 },
+  ember: { name:'Ember', tag:'Low-light & appetite', scheme:'dark',
+    c:{bg:'#12100e',surface:'#1e1a17',text:'#f5f0ea',muted:'#b0a498',primary:'#f97316',accent:'#fbbf24',border:'#3a322c',onPrimary:'#12100e'},
+    fh:'"Iowan Old Style",Palatino,Georgia,serif', fb:'"Avenir Next",system-ui,sans-serif', radius:'3px', hero:'full', caps:false, weight:600 },
+  signal: { name:'Signal', tag:'Bright & energetic', scheme:'light',
+    c:{bg:'#ffffff',surface:'#fdf2f4',text:'#1a0f13',muted:'#6b5560',primary:'#e11d48',accent:'#f97316',border:'#f3d9df',onPrimary:'#fff'},
+    fh:'Inter,system-ui,sans-serif', fb:'Inter,system-ui,sans-serif', radius:'14px', hero:'centered', caps:false, weight:700 },
+};
+
+/* Deterministic brand-tinted artwork, mirroring sample-content.ts */
+function artwork(design, seed, ratio=4/3){
+  const w=800,h=Math.round(w/ratio),c=DESIGNS[design].c;
+  let t=(seed*2654435761)>>>0; const rnd=()=>{t=(t+0x6d2b79f5)>>>0;let r=Math.imul(t^(t>>>15),1|t);r=(r+Math.imul(r^(r>>>7),61|r))^r;return((r^(r>>>14))>>>0)/4294967296;};
+  const pal=[c.primary,c.accent,c.muted]; const pick=()=>pal[Math.floor(rnd()*pal.length)];
+  let s=`<rect width='${w}' height='${h}' fill='${c.surface}'/>`;
+  s+=`<rect width='${w}' height='${h}' fill='${pick()}' opacity='0.10'/>`;
+  for(let i=0;i<5;i++){const f=pick(),o=(0.16+rnd()*0.4).toFixed(2),k=Math.floor(rnd()*3);
+    if(k===0)s+=`<circle cx='${(rnd()*w)|0}' cy='${(rnd()*h)|0}' r='${(h*(0.25+rnd()*0.4))|0}' fill='${f}' opacity='${o}'/>`;
+    else if(k===1)s+=`<rect x='${(rnd()*w)|0}' y='${(rnd()*h)|0}' width='${(w*(0.3+rnd()*0.4))|0}' height='${(h*(0.25+rnd()*0.5))|0}' fill='${f}' opacity='${o}'/>`;
+    else{const x=(rnd()*w)|0,y=(rnd()*h)|0,z=(h*(0.4+rnd()*0.4))|0;s+=`<path d='M${x} ${y} l${z} 0 l${-z/2|0} ${z} z' fill='${f}' opacity='${o}'/>`;}}
+  return `data:image/svg+xml,`+encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${w} ${h}'>${s}</svg>`);
+}
+
+/* ---------------------------------------------------------------- */
+/* Seed site — Acme Roofing, same content as everything else         */
+/* ---------------------------------------------------------------- */
+const uid = (p='b') => p+'_'+Math.random().toString(36).slice(2,8);
+function seedSite(){
+  return { design:'harbour', page:0, pages:[{ name:'Home', blocks:[
+    { id:uid(), type:'hero', props:{ eyebrow:'Roofing on PEI since 1998', heading:'Roofs that outlast the weather', sub:'Residential and commercial roofing, done by our own crews and guaranteed for ten years.', btn:'Get a free quote', btn2:'Call 902-555-0148', img:true } },
+    { id:uid(), type:'stats', props:{ items:[{v:'20+',l:'Years in business'},{v:'4,000',l:'Roofs completed'},{v:'4.9',l:'Average rating'},{v:'24h',l:'Emergency response'}] } },
+    { id:uid(), type:'services', props:{ heading:'What we do', intro:'One crew, start to finish — never subcontracted.', items:[
+      {name:'Inspection',desc:'A full survey with photographs and a fixed written quote.'},
+      {name:'Replacement',desc:'Complete tear-off and re-roof to manufacturer spec.'},
+      {name:'Repair',desc:'Fast response for leaks and storm damage, cover the same day.'},
+      {name:'Maintenance',desc:'Scheduled checks that catch faults before they become claims.'} ] } },
+    { id:uid(), type:'text_image', props:{ heading:'Built for Maritime winters', body:'Ice damming and wind uplift are what fail a roof here. We detail every valley and edge for the weather this island actually gets, not a catalogue photo.', side:'right', img:true } },
+    { id:uid(), type:'gallery', props:{ heading:'Recent work', count:6 } },
+    { id:uid(), type:'testimonials', props:{ heading:'What clients say', items:[
+      {quote:'Arrived when they said, finished a day early, left the site cleaner than they found it.',author:'Sample review'},
+      {quote:'The quote was the price. No surprises at the end, which is not something I can say about the last three trades I used.',author:'Sample review'} ] } },
+    { id:uid(), type:'cta', props:{ heading:'Ready to get started?', body:'Talk to Acme Roofing today for a free, no-obligation quote.', btn:'Book an inspection' } },
+    { id:uid(), type:'contact', props:{ heading:'Get in touch', phone:'902-555-0148', email:'dan@acmeroofing.ca', address:'14 Mill Road, Charlottetown PE' } },
+  ]}] };
+}
+
+const BLOCK_META = {
+  hero:{label:'Hero',ic:'H'}, stats:{label:'Stats band',ic:'#'}, services:{label:'Services',ic:'▤'},
+  text_image:{label:'Text & image',ic:'◧'}, gallery:{label:'Gallery',ic:'▦'}, testimonials:{label:'Testimonials',ic:'❝'},
+  cta:{label:'Call to action',ic:'★'}, contact:{label:'Contact',ic:'✆'},
+};
+
+/* ---------------------------------------------------------------- */
+/* State + history                                                   */
+/* ---------------------------------------------------------------- */
+let site = seedSite();
+let selected = null;
+let device = 'desktop';
+const past=[], future=[];
+const snapshot = () => JSON.parse(JSON.stringify(site));
+function commit(){ past.push(snapshot()); if(past.length>60)past.shift(); future.length=0; syncUndo(); }
+function undo(){ if(!past.length)return; future.push(snapshot()); site=past.pop(); afterMutate(true); }
+function redo(){ if(!future.length)return; past.push(snapshot()); site=future.pop(); afterMutate(true); }
+function syncUndo(){ $('#undo').disabled=!past.length; $('#redo').disabled=!future.length; }
+const curPage = () => site.pages[site.page];
+const curBlocks = () => curPage().blocks;
+
+/* ---------------------------------------------------------------- */
+/* Render the site into the canvas                                   */
+/* ---------------------------------------------------------------- */
+function siteCss(d){
+  const c=d.c;
+  return `
+  .frame{--bg:${c.bg};--surface:${c.surface};--text:${c.text};--muted:${c.muted};--primary:${c.primary};--accent:${c.accent};--border:${c.border};--onp:${c.onPrimary};--r:${d.radius};--fh:${d.fh};--fb:${d.fb};--w:${d.weight};background:var(--bg);color:var(--text);font-family:var(--fb);}
+  .frame .sec>*{padding:56px 48px;max-width:960px;margin:0 auto}
+  .frame.mobile .sec>*{padding:34px 22px}
+  .frame h1,.frame h2,.frame h3{font-family:var(--fh);font-weight:var(--w);letter-spacing:-.02em;margin:0 0 .5em;line-height:1.08;${d.caps?'text-transform:uppercase;':''}}
+  .frame p{margin:0 0 1em;color:var(--text)}
+  .frame .eyebrow{text-transform:uppercase;letter-spacing:.15em;font-size:12px;color:var(--primary);font-weight:600;margin-bottom:14px}
+  .frame .lead{font-size:19px;color:var(--muted);max-width:56ch}
+  .frame .btns{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
+  .frame .b1{background:var(--primary);color:var(--onp);border-radius:var(--r);padding:13px 22px;font-weight:600;display:inline-block;text-decoration:none}
+  .frame .b2{border:1.5px solid var(--primary);color:var(--primary);border-radius:var(--r);padding:12px 20px;font-weight:600;display:inline-block}
+  .frame .hero h1{font-size:clamp(30px,5vw,52px);max-width:16ch}
+  .frame.mobile .hero h1{font-size:30px}
+  .frame .hero.full{position:relative;min-height:440px;display:flex;align-items:center;overflow:hidden}
+  .frame .hero.full .bgimg{position:absolute;inset:0;object-fit:cover;width:100%;height:100%;opacity:.5}
+  .frame .hero.full .scrim{position:absolute;inset:0;background:linear-gradient(90deg,var(--bg) 20%,transparent)}
+  .frame .hero.full>div{position:relative}
+  .frame .hero.centered{text-align:center}
+  .frame .hero.centered .lead{margin-inline:auto}
+  .frame .hero.centered .btns{justify-content:center}
+  .frame .hero .heroimg{width:100%;border-radius:var(--r);margin-top:28px;aspect-ratio:16/7;object-fit:cover}
+  .frame .stats{background:var(--surface)}
+  .frame .stats ul{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;list-style:none;padding:0;margin:0}
+  .frame.mobile .stats ul{grid-template-columns:1fr 1fr}
+  .frame .stats .v{font-size:38px;font-weight:800;font-family:var(--fh);color:var(--primary);line-height:1}
+  .frame .stats .l{font-size:13px;color:var(--muted);margin-top:6px}
+  .frame .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;list-style:none;padding:0;margin:18px 0 0}
+  .frame.mobile .grid{grid-template-columns:1fr}
+  .frame .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:22px}
+  .frame .card h3{font-size:18px;margin-bottom:8px}
+  .frame .card p{color:var(--muted);font-size:14px;margin:0}
+  .frame .intro{color:var(--muted);font-size:16px;max-width:52ch}
+  .frame .split{display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:center}
+  .frame.mobile .split{grid-template-columns:1fr}
+  .frame .split.right .txt{order:-1}
+  .frame .split img{width:100%;border-radius:var(--r);aspect-ratio:4/3;object-fit:cover}
+  .frame .gal{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}
+  .frame.mobile .gal{grid-template-columns:1fr 1fr}
+  .frame .gal img{width:100%;border-radius:var(--r);aspect-ratio:4/3;object-fit:cover}
+  .frame .tst{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px}
+  .frame.mobile .tst{grid-template-columns:1fr}
+  .frame .quote{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px}
+  .frame .quote blockquote{margin:0 0 12px;font-size:17px;font-style:italic}
+  .frame .quote cite{color:var(--muted);font-size:13px;font-style:normal}
+  .frame .cta{background:var(--primary);color:var(--onp);text-align:center}
+  .frame .cta h2{color:var(--onp);font-size:32px}
+  .frame .cta p{color:var(--onp);opacity:.85;max-width:44ch;margin-inline:auto}
+  .frame .cta .b1{background:var(--onp);color:var(--primary);margin-top:8px}
+  .frame .contact .rows{display:flex;gap:32px;flex-wrap:wrap;color:var(--muted);font-size:15px}
+  .frame .contact .rows b{display:block;color:var(--text);font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+  `;
+}
+
+function ed(path, tag, val, cls){ return `<${tag} class="${cls||''}" data-edit data-path="${path}">${esc(val)}</${tag}>`; }
+
+function renderBlock(b, i){
+  const p=b.props, d=DESIGNS[site.design], base=`blocks.${i}.props`;
+  let inner='';
+  if(b.type==='hero'){
+    const cls='hero '+d.hero;
+    const bg = (d.hero==='full'&&p.img) ? `<img class="bgimg" src="${artwork(site.design,1,16/9)}" alt=""><div class="scrim"></div>`:'';
+    const heroImg = (d.hero!=='full'&&p.img) ? `<img class="heroimg" src="${artwork(site.design,1,16/7)}" alt="">`:'';
+    inner=`<div class="${cls}">${bg}<div>
+      ${p.eyebrow?ed(base+'.eyebrow','p',p.eyebrow,'eyebrow'):''}
+      ${ed(base+'.heading','h1',p.heading)}
+      ${ed(base+'.sub','p',p.sub,'lead')}
+      <div class="btns">${p.btn?`<span class="b1" data-edit data-path="${base}.btn">${esc(p.btn)}</span>`:''}${p.btn2?`<span class="b2" data-edit data-path="${base}.btn2">${esc(p.btn2)}</span>`:''}</div>
+      ${heroImg}
+    </div></div>`;
+  } else if(b.type==='stats'){
+    inner=`<div class="stats"><ul>${p.items.map((it,j)=>`<li><div class="v" data-edit data-path="${base}.items.${j}.v">${esc(it.v)}</div><div class="l" data-edit data-path="${base}.items.${j}.l">${esc(it.l)}</div></li>`).join('')}</ul></div>`;
+  } else if(b.type==='services'){
+    inner=`<div>${ed(base+'.heading','h2',p.heading)}${p.intro?ed(base+'.intro','p',p.intro,'intro'):''}
+      <ul class="grid">${p.items.map((it,j)=>`<li class="card">${ed(base+'.items.'+j+'.name','h3',it.name)}<p data-edit data-path="${base}.items.${j}.desc">${esc(it.desc)}</p></li>`).join('')}</ul></div>`;
+  } else if(b.type==='text_image'){
+    inner=`<div class="split ${p.side}"><div class="txt">${ed(base+'.heading','h2',p.heading)}<p data-edit data-path="${base}.body">${esc(p.body)}</p></div>${p.img?`<img src="${artwork(site.design,3,4/3)}" alt="">`:''}</div>`;
+  } else if(b.type==='gallery'){
+    inner=`<div>${ed(base+'.heading','h2',p.heading)}<div class="gal">${Array.from({length:p.count}).map((_,j)=>`<img src="${artwork(site.design,10+j*7,4/3)}" alt="">`).join('')}</div></div>`;
+  } else if(b.type==='testimonials'){
+    inner=`<div>${ed(base+'.heading','h2',p.heading)}<div class="tst">${p.items.map((it,j)=>`<div class="quote"><blockquote data-edit data-path="${base}.items.${j}.quote">${esc(it.quote)}</blockquote><cite data-edit data-path="${base}.items.${j}.author">${esc(it.author)}</cite></div>`).join('')}</div></div>`;
+  } else if(b.type==='cta'){
+    inner=`<div class="cta">${ed(base+'.heading','h2',p.heading)}<p data-edit data-path="${base}.body">${esc(p.body)}</p><div class="btns" style="justify-content:center"><span class="b1" data-edit data-path="${base}.btn">${esc(p.btn)}</span></div></div>`;
+  } else if(b.type==='contact'){
+    inner=`<div class="contact">${ed(base+'.heading','h2',p.heading)}<div class="rows">
+      <div><b>Phone</b><span data-edit data-path="${base}.phone">${esc(p.phone)}</span></div>
+      <div><b>Email</b><span data-edit data-path="${base}.email">${esc(p.email)}</span></div>
+      <div><b>Address</b><span data-edit data-path="${base}.address">${esc(p.address)}</span></div></div></div>`;
+  }
+  const meta=BLOCK_META[b.type];
+  return `<section class="sec${selected===b.id?' selected':''}" data-id="${b.id}">
+    <span class="sec-tag">${meta.label}</span>
+    <div class="sec-tools">
+      <button data-act="up" title="Move up">↑</button>
+      <button data-act="down" title="Move down">↓</button>
+      <button data-act="dup" title="Duplicate">⧉</button>
+      <button data-act="del" title="Delete">🗑</button>
+    </div>${inner}</section>`;
+}
+
+function renderCanvas(){
+  const frame=$('#frame');
+  frame.className='frame'+(device!=='desktop'?' '+device:'');
+  const blocks=curBlocks();
+  frame.innerHTML=`<style>${siteCss(DESIGNS[site.design])}</style>`+
+    (blocks.length?blocks.map(renderBlock).join(''):`<div class="empty-canvas">This page is empty. Add a section from the left.</div>`);
+}
+
+/* ---------------------------------------------------------------- */
+/* Path helpers                                                      */
+/* ---------------------------------------------------------------- */
+function getPath(path){ return path.split('.').reduce((o,k)=>o?.[/^\d+$/.test(k)?+k:k], curPage()); }
+function setPath(path, val){ const keys=path.split('.'); const last=keys.pop();
+  const obj=keys.reduce((o,k)=>o[/^\d+$/.test(k)?+k:k], curPage()); obj[/^\d+$/.test(last)?+last:last]=val; }
+
+/* ---------------------------------------------------------------- */
+/* Inspector                                                         */
+/* ---------------------------------------------------------------- */
+function renderInspector(){
+  const insp=$('#insp');
+  const block = curBlocks().find(b=>b.id===selected);
+  let html = designPanel();
+  if(block) html += blockPanel(block);
+  else html += `<div class="hint"><div class="big">☝</div>Select any section on the canvas to edit it, or click the text directly to type.</div>`;
+  insp.innerHTML = html;
+}
+
+function designPanel(){
+  const cur=DESIGNS[site.design];
+  return `<div class="insp-sec"><h3>Design</h3>
+    <div class="design-grid">${Object.entries(DESIGNS).map(([id,d])=>`
+      <button class="design-card" data-design="${id}" aria-pressed="${id===site.design}">
+        <span class="prev"><i style="background:${d.c.bg}"></i><i style="background:${d.c.primary}"></i><i style="background:${d.c.accent}"></i><i style="background:${d.c.surface}"></i></span>
+        <span class="meta"><span class="dn">${d.name}</span><span class="dt">${d.tag}</span></span>
+      </button>`).join('')}</div>
+    <div class="field" style="margin-top:12px"><label>Brand colour</label>
+      <div class="swatches">${['#1f3a5f','#0f766e','#b8590c','#e11d48','#7c3aed','#111315'].map(col=>`<button data-accent="${col}" style="background:${col}" aria-pressed="${col.toLowerCase()===cur.c.primary.toLowerCase()}"></button>`).join('')}</div>
+    </div>
+  </div>`;
+}
+
+const ITEM_FIELDS = {
+  services:{ list:'items', label:'Services', add:{name:'New service',desc:'Describe it here.'}, fields:[['name','Name','text'],['desc','Description','area']] },
+  stats:{ list:'items', label:'Figures', add:{v:'0',l:'New figure'}, fields:[['v','Value','text'],['l','Label','text']] },
+  testimonials:{ list:'items', label:'Quotes', add:{quote:'A new quote.',author:'Sample review'}, fields:[['quote','Quote','area'],['author','Attribution','text']] },
+};
+
+function blockPanel(b){
+  const meta=BLOCK_META[b.type], p=b.props;
+  const i=curBlocks().indexOf(b), base=`blocks.${i}.props`;
+  let f='';
+  const text=(key,label,area)=> `<div class="field"><label>${label}</label>${area?`<textarea data-in="${base}.${key}">${esc(p[key]??'')}</textarea>`:`<input type="text" data-in="${base}.${key}" value="${esc(p[key]??'')}">`}</div>`;
+  if(b.type==='hero'){ f=text('eyebrow','Eyebrow')+text('heading','Heading')+text('sub','Sub-heading',1)+text('btn','Primary button')+text('btn2','Secondary button')+toggle('img','Show image',base,p.img); }
+  else if(b.type==='text_image'){ f=text('heading','Heading')+text('body','Body',1)+`<div class="field"><label>Image side</label><div class="seg" data-seg="${base}.side"><button data-v="left" aria-pressed="${p.side==='left'}">Left</button><button data-v="right" aria-pressed="${p.side==='right'}">Right</button></div></div>`+toggle('img','Show image',base,p.img); }
+  else if(b.type==='gallery'){ f=text('heading','Heading')+`<div class="field"><label>Images: ${p.count}</label><div class="seg" data-seg="${base}.count">${[3,6,9].map(n=>`<button data-v="${n}" aria-pressed="${p.count===n}">${n}</button>`).join('')}</div></div>`; }
+  else if(b.type==='cta'){ f=text('heading','Heading')+text('body','Body',1)+text('btn','Button'); }
+  else if(b.type==='contact'){ f=text('heading','Heading')+text('phone','Phone')+text('email','Email')+text('address','Address',1); }
+  else { f=text('heading','Heading')+(p.intro!==undefined?text('intro','Intro',1):''); }
+
+  let items='';
+  const cfg=ITEM_FIELDS[b.type];
+  if(cfg){
+    items=`<div class="insp-sec"><h3>${cfg.label}</h3><div class="items-editor">${p[cfg.list].map((it,j)=>`
+      <div class="item">${cfg.fields.map(([k,l,t])=>`<div class="field"><label>${l}</label>${t==='area'?`<textarea data-in="${base}.${cfg.list}.${j}.${k}">${esc(it[k])}</textarea>`:`<input type="text" data-in="${base}.${cfg.list}.${j}.${k}" value="${esc(it[k])}">`}</div>`).join('')}
+      ${p[cfg.list].length>1?`<button class="rm" data-rm="${j}" title="Remove">✕</button>`:''}</div>`).join('')}
+      <button class="add-item" data-additem>+ Add ${cfg.label.toLowerCase().replace(/s$/,'')}</button></div></div>`;
+  }
+  return `<div class="insp-sec"><h3>${meta.label}<button class="btn-ghost btn" data-deselect style="padding:2px 6px;font-size:12px">Done</button></h3>${f}</div>${items}`;
+}
+function toggle(key,label,base,on){ return `<div class="field"><label>${label}</label><div class="seg" data-seg="${base}.${key}"><button data-v="true" aria-pressed="${!!on}">On</button><button data-v="false" aria-pressed="${!on}">Off</button></div></div>`; }
+
+/* ---------------------------------------------------------------- */
+/* Left rail                                                         */
+/* ---------------------------------------------------------------- */
+function renderRail(){
+  $('#pages').innerHTML = site.pages.map((pg,i)=>`<div class="page-item" data-page="${i}" aria-current="${i===site.page}"><span class="dot"></span>${esc(pg.name)}</div>`).join('');
+  $('#add-list').innerHTML = Object.entries(BLOCK_META).map(([t,m])=>`<button data-add="${t}"><span class="ic">${m.ic}</span>${m.label}</button>`).join('');
+}
+
+/* ---------------------------------------------------------------- */
+/* Mutations                                                         */
+/* ---------------------------------------------------------------- */
+function newBlock(type){
+  const D={ hero:{eyebrow:'Eyebrow',heading:'A new headline',sub:'Supporting sentence goes here.',btn:'Get started',btn2:'',img:true},
+    stats:{items:[{v:'100',l:'Label one'},{v:'24h',l:'Label two'},{v:'99%',l:'Label three'}]},
+    services:{heading:'Section heading',intro:'A short introduction.',items:[{name:'One',desc:'Describe it.'},{name:'Two',desc:'Describe it.'},{name:'Three',desc:'Describe it.'}]},
+    text_image:{heading:'A heading',body:'A paragraph of supporting copy about this business.',side:'right',img:true},
+    gallery:{heading:'Gallery',count:6}, testimonials:{heading:'Testimonials',items:[{quote:'A kind word.',author:'Sample review'}]},
+    cta:{heading:'Ready to go?',body:'A closing line that prompts action.',btn:'Contact us'},
+    contact:{heading:'Get in touch',phone:'902-555-0000',email:'hello@example.ca',address:'Street, City'} }[type];
+  return { id:uid(), type, props:JSON.parse(JSON.stringify(D)) };
+}
+function afterMutate(full){ renderCanvas(); renderInspector(); renderRail(); if(full!==true)commit(); syncUndo(); }
+
+function addBlock(type){ commit(); const b=newBlock(type); curBlocks().push(b); selected=b.id; renderCanvas(); renderInspector(); renderRail(); syncUndo();
+  const el=$(`.sec[data-id="${b.id}"]`); el&&el.scrollIntoView({behavior:'smooth',block:'center'}); toast(BLOCK_META[type].label+' added'); }
+function blockAct(id,act){ const bs=curBlocks(),i=bs.findIndex(b=>b.id===id); if(i<0)return; commit();
+  if(act==='up'&&i>0){[bs[i-1],bs[i]]=[bs[i],bs[i-1]];}
+  else if(act==='down'&&i<bs.length-1){[bs[i+1],bs[i]]=[bs[i],bs[i+1]];}
+  else if(act==='dup'){const c=JSON.parse(JSON.stringify(bs[i]));c.id=uid();bs.splice(i+1,0,c);selected=c.id;}
+  else if(act==='del'){bs.splice(i,1);if(selected===id)selected=null;}
+  renderCanvas();renderInspector();renderRail();syncUndo(); }
+
+function toast(msg){ $('#toast-msg').textContent=msg; const t=$('#toast'); t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),2200); }
+
+/* ---------------------------------------------------------------- */
+/* Events                                                            */
+/* ---------------------------------------------------------------- */
+// Inline editing on canvas — write to state without re-render (keep caret),
+// and mirror the change into the inspector field in place so the two stay in
+// sync without either one being rebuilt under the cursor.
+$('#frame').addEventListener('input', e=>{ const el=e.target.closest('[data-edit]'); if(!el)return;
+  setPath(el.dataset.path, el.textContent);
+  const twin=$(`[data-in="${CSS.escape(el.dataset.path)}"]`,$('#insp')); if(twin&&twin.value!==el.textContent)twin.value=el.textContent; });
+let editing=false;
+$('#frame').addEventListener('focusin', e=>{ if(e.target.closest('[data-edit]')){ if(!editing){past.push(snapshot());if(past.length>60)past.shift();future.length=0;} editing=true; syncUndo(); }});
+$('#frame').addEventListener('focusout', e=>{ if(e.target.closest('[data-edit]'))editing=false; });
+// make edit targets editable after each render
+const origRender=renderCanvas;
+renderCanvas=function(){ origRender(); $$('[data-edit]',$('#frame')).forEach(el=>{el.setAttribute('contenteditable','true');el.spellcheck=false;}); };
+
+// Canvas selection + section tools. Selection toggles a class in place rather
+// than re-rendering, so clicking directly on text selects the section AND
+// keeps the caret for editing.
+function paintSelection(){ $$('.sec',$('#frame')).forEach(s=>s.classList.toggle('selected', s.dataset.id===selected)); }
+$('#frame').addEventListener('click', e=>{
+  const tool=e.target.closest('.sec-tools button');
+  if(tool){ const sec=e.target.closest('.sec'); blockAct(sec.dataset.id, tool.dataset.act); toast('Section '+({up:'moved up',down:'moved down',dup:'duplicated',del:'deleted'}[tool.dataset.act])); e.stopPropagation(); return; }
+  const sec=e.target.closest('.sec');
+  const id=sec?sec.dataset.id:null;
+  if(selected!==id){ selected=id; paintSelection(); renderInspector(); }
+});
+
+// Inspector interactions (event-delegated)
+// One before-edit snapshot per typing burst, taken at the first keystroke —
+// so undo returns to the state before the edit, not to a debounced snapshot of
+// the already-edited state.
+let inspBurst=false, inspTimer;
+$('#insp').addEventListener('input', e=>{
+  const inp=e.target.closest('[data-in]'); if(!inp)return;
+  if(!inspBurst){ past.push(snapshot()); if(past.length>60)past.shift(); future.length=0; inspBurst=true; syncUndo(); }
+  clearTimeout(inspTimer); inspTimer=setTimeout(()=>{inspBurst=false;}, 500);
+  setPath(inp.dataset.in, inp.value);
+  // Update the matching canvas node in place — no full re-render, so neither
+  // the inspector caret nor the canvas is rebuilt on every keystroke.
+  const twin=$(`[data-edit][data-path="${CSS.escape(inp.dataset.in)}"]`,$('#frame'));
+  if(twin&&twin.textContent!==inp.value)twin.textContent=inp.value;
+});
+$('#insp').addEventListener('click', e=>{
+  const dc=e.target.closest('[data-design]'); if(dc){ commit(); site.design=dc.dataset.design; afterMutate(true); toast('Design: '+DESIGNS[site.design].name); return; }
+  const ac=e.target.closest('[data-accent]'); if(ac){ commit(); DESIGNS[site.design].c.primary=ac.dataset.accent; afterMutate(true); toast('Brand colour updated'); return; }
+  const seg=e.target.closest('[data-seg] button'); if(seg){ const wrap=seg.closest('[data-seg]'); let v=seg.dataset.v; if(v==='true'||v==='false')v=v==='true'; else if(/^\d+$/.test(v))v=+v; commit(); setPath(wrap.dataset.seg,v); afterMutate(true); return; }
+  const rm=e.target.closest('[data-rm]'); if(rm){ const b=curBlocks().find(x=>x.id===selected); const cfg=ITEM_FIELDS[b.type]; commit(); b.props[cfg.list].splice(+rm.dataset.rm,1); afterMutate(true); return; }
+  if(e.target.closest('[data-additem]')){ const b=curBlocks().find(x=>x.id===selected); const cfg=ITEM_FIELDS[b.type]; commit(); b.props[cfg.list].push(JSON.parse(JSON.stringify(cfg.add))); afterMutate(true); return; }
+  if(e.target.closest('[data-deselect]')){ selected=null; renderCanvas(); renderInspector(); }
+});
+
+// left rail
+$('#add-list').addEventListener('click', e=>{ const b=e.target.closest('[data-add]'); if(b)addBlock(b.dataset.add); });
+$('#pages').addEventListener('click', e=>{ const p=e.target.closest('[data-page]'); if(p){ site.page=+p.dataset.page; selected=null; afterMutate(true); } });
+
+// device
+$('#device').addEventListener('click', e=>{ const b=e.target.closest('[data-d]'); if(!b)return; device=b.dataset.d; $$('#device button').forEach(x=>x.setAttribute('aria-pressed',x===b)); renderCanvas(); });
+
+// top bar
+$('#undo').addEventListener('click', undo);
+$('#redo').addEventListener('click', redo);
+$('#theme').addEventListener('click', ()=>{ const r=document.documentElement; const cur=r.getAttribute('data-theme'); const sys=matchMedia('(prefers-color-scheme:dark)').matches; r.setAttribute('data-theme', cur? (cur==='dark'?'light':'dark') : (sys?'light':'dark')); });
+$('#publish').addEventListener('click', ()=>{ const n=curBlocks().length; toast(`Published — acmeroofing.sidelio.site · ${site.pages.length} page, ${n} sections`); });
+
+document.addEventListener('keydown', e=>{ if((e.metaKey||e.ctrlKey)&&e.key==='z'&&!e.shiftKey){ if(document.activeElement.hasAttribute&&document.activeElement.hasAttribute('data-edit'))return; e.preventDefault(); undo(); } if((e.metaKey||e.ctrlKey)&&(e.key==='y'||(e.shiftKey&&e.key==='z'))){ e.preventDefault(); redo(); } });
+
+/* boot */
+renderRail(); renderCanvas(); renderInspector(); syncUndo();
+</script>
