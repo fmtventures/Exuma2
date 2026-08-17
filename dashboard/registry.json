@@ -1,0 +1,437 @@
+{
+  "meta": {
+    "name": "FT Ventures Development Dashboard",
+    "version": "0.1.0",
+    "updated": "2026-08-17",
+    "owner": "Francis Theriault",
+    "confidenceLegend": {
+      "verified": "Confirmed by reading the repo or the running code.",
+      "assumed": "Francis named it or a repo exists, but details are my inference. Correct me.",
+      "unknown": "Placeholder. Needs Francis to fill in."
+    },
+    "effortNote": "Hours and tokens are null wherever they were never measured. Nothing here is estimated or invented — an empty cell means untracked, and tracking starts from the first entry in the log."
+  },
+
+  "platforms": [
+    {
+      "id": "peiagents",
+      "name": "PEIAGENTS Realty",
+      "kind": "brokerage",
+      "note": "Real-estate brokerage. Agents are the internal users; the skill suite and CMA tooling serve them."
+    },
+    {
+      "id": "ftventures",
+      "name": "FT Ventures",
+      "kind": "holding",
+      "note": "Holding company. Owns the commercial portfolio and is the umbrella for the software products."
+    },
+    {
+      "id": "sidelio",
+      "name": "Sidelio",
+      "kind": "product",
+      "note": "Sports product line. sidelio.ca and sports.sidelio.ca."
+    },
+    {
+      "id": "fotoshop",
+      "name": "PEI Fotoshop",
+      "kind": "product",
+      "note": "Photo product line. peifotoshop.com plus an admin surface."
+    },
+    {
+      "id": "simpliseaty",
+      "name": "SimpliSeaty",
+      "kind": "product",
+      "note": "Short-term rental / bookings. Referenced by the planner and deal-analyzer tooling."
+    },
+    {
+      "id": "sandypalms",
+      "name": "Sandy Palms",
+      "kind": "asset",
+      "note": "Great Exuma, Bahamas investment project."
+    }
+  ],
+
+  "tools": [
+    {
+      "id": "website-builder",
+      "name": "Website Builder",
+      "tagline": "Build-a-site tool intended to be sold standalone and attached to other products as a module.",
+      "platformId": "ftventures",
+      "status": "building",
+      "health": "good",
+      "percentComplete": null,
+      "repo": null,
+      "liveUrl": null,
+      "stack": [],
+      "confidence": "assumed",
+      "lastTouched": "2026-08-17",
+      "effort": { "hours": null, "tokens": null, "sessions": null },
+      "priority": { "rank": 1, "impact": 5, "effort": 4, "rationale": "Active build, and it is the first tool designed to be resold as a module inside BF and bundled into the platforms. Gets the module model right for everything after it." },
+      "provides": ["site-builder"],
+      "consumes": [],
+      "nextActions": [
+        { "text": "Confirm which repo this lives in", "done": false },
+        { "text": "Define the module contract for embedding into BF (auth, billing, entitlement)", "done": false },
+        { "text": "Decide free-tier vs paid-addon split", "done": false }
+      ],
+      "blockers": [],
+      "notes": "Francis: 'the website builder should have one or another connection with existing tools like BF, where people can add this module when they buy the tool, or we could provide some modules for free as part of the other platforms.'"
+    },
+    {
+      "id": "bf",
+      "name": "BF",
+      "tagline": "Existing tool with paying customers. Intended host for add-on modules.",
+      "platformId": "ftventures",
+      "status": "live",
+      "health": "unknown",
+      "percentComplete": null,
+      "repo": null,
+      "liveUrl": null,
+      "stack": [],
+      "confidence": "unknown",
+      "lastTouched": null,
+      "effort": { "hours": null, "tokens": null, "sessions": null },
+      "priority": { "rank": 2, "impact": 5, "effort": 2, "rationale": "It already has customers, which makes it the highest-leverage place to attach paid modules. Blocked only on me knowing what it is." },
+      "provides": [],
+      "consumes": ["site-builder"],
+      "nextActions": [
+        { "text": "Francis: tell me what BF stands for, where it runs, and who its customers are", "done": false }
+      ],
+      "blockers": [
+        { "text": "I do not know what BF is yet — name, repo, and stack all unknown", "since": "2026-08-17" }
+      ],
+      "notes": "Named twice as the example of a tool people buy, then add modules to. Everything about it is a placeholder until Francis fills it in."
+    },
+    {
+      "id": "ftventures-dashboard",
+      "name": "FT Ventures Dashboard",
+      "tagline": "Existing operations dashboard at dashboard.ftventures.ca.",
+      "platformId": "ftventures",
+      "status": "live",
+      "health": "unknown",
+      "percentComplete": null,
+      "repo": null,
+      "liveUrl": "https://dashboard.ftventures.ca/",
+      "stack": [],
+      "confidence": "assumed",
+      "lastTouched": null,
+      "effort": { "hours": null, "tokens": null, "sessions": null },
+      "priority": { "rank": 6, "impact": 3, "effort": 2, "rationale": "Already running. Main question is whether this dev dashboard should live inside it rather than beside it." },
+      "provides": [],
+      "consumes": [],
+      "nextActions": [
+        { "text": "Decide: fold this development dashboard into dashboard.ftventures.ca, or keep it separate", "done": false }
+      ],
+      "blockers": [],
+      "notes": "Could not inspect it — this environment's network policy blocks outbound requests to the domain."
+    },
+    {
+      "id": "lighthouse-dashboard",
+      "name": "Lighthouse Dashboard",
+      "tagline": "Commission, trust-account and financial tracking, plus a task list.",
+      "platformId": "peiagents",
+      "status": "live",
+      "health": "good",
+      "percentComplete": null,
+      "repo": "fmtventures/lighthouse-dashboard",
+      "liveUrl": null,
+      "stack": [],
+      "confidence": "assumed",
+      "lastTouched": "2026-07-26",
+      "effort": { "hours": null, "tokens": null, "sessions": null },
+      "priority": { "rank": 5, "impact": 4, "effort": 3, "rationale": "Real-money tracking for the brokerage, and several skills already hand off to it. Worth keeping current." },
+      "provides": ["commission-tracking", "task-list"],
+      "consumes": [],
+      "nextActions": [
+        { "text": "Confirm whether Lighthouse is the intended home for brokerage financials long-term", "done": false }
+      ],
+      "blockers": [],
+      "notes": "The realestate-ops-pei and daily-weekly-planner skills both explicitly defer to Lighthouse for financial tracking and tasks, so it is already a dependency of the skill suite."
+    },
+    {
+      "id": "sidelio",
+      "name": "Sidelio",
+      "tagline": "Sports product. Web app at sidelio.ca/app.html and sports.sidelio.ca.",
+      "platformId": "sidelio",
+      "status": "live",
+      "health": "unknown",
+      "percentComplete": null,
+      "repo": "fmtventures/sidelio-site",
+      "liveUrl": "https://sidelio.ca/app.html",
+      "stack": [],
+      "confidence": "assumed",
+      "lastTouched": "2026-08-16",
+      "effort": { "hours": null, "tokens": null, "sessions": null },
+      "priority": { "rank": 4, "impact": 4, "effort": 3, "rationale": "Second most recently touched repo, so it is live work. Also a candidate host for the website-builder module." },
+      "provides": [],
+      "consumes": ["site-builder"],
+      "nextActions": [
+        { "text": "Confirm sidelio-site vs sidelio-archive — which is current", "done": false },
+        { "text": "Clarify what the sports app does and who uses it", "done": false }
+      ],
+      "blockers": [],
+      "notes": "Two repos exist: fmtventures/sidelio-site (pushed 2026-08-16) and fmtventures/sidelio-archive (pushed 2026-08-07). I have assumed -site is current and -archive is the predecessor."
+    },
+    {
+      "id": "pei-fotoshop",
+      "name": "PEI Fotoshop",
+      "tagline": "Photo product with a customer site and an admin surface.",
+      "platformId": "fotoshop",
+      "status": "live",
+      "health": "unknown",
+      "percentComplete": null,
+      "repo": null,
+      "liveUrl": "https://peifotoshop.com/",
+      "adminUrl": "https://peifotoshop.com/admin",
+      "stack": [],
+      "confidence": "assumed",
+      "lastTouched": null,
+      "effort": { "hours": null, "tokens": null, "sessions": null },
+      "priority": { "rank": 7, "impact": 3, "effort": 3, "rationale": "Running with an admin panel, so it has real users. Needs a repo link before we can develop it from here." },
+      "provides": ["photo-pipeline"],
+      "consumes": ["site-builder"],
+      "nextActions": [
+        { "text": "Point me at the repo behind peifotoshop.com", "done": false },
+        { "text": "Clarify the relationship to pelotphotos.com — same codebase or separate", "done": false }
+      ],
+      "blockers": [],
+      "notes": "Has a distinct /admin surface, which suggests real accounts and content management behind it."
+    },
+    {
+      "id": "pelot-photos",
+      "name": "Pelot Photos",
+      "tagline": "Photo site at pelotphotos.com.",
+      "platformId": "fotoshop",
+      "status": "live",
+      "health": "unknown",
+      "percentComplete": null,
+      "repo": null,
+      "liveUrl": "https://pelotphotos.com/",
+      "stack": [],
+      "confidence": "unknown",
+      "lastTouched": null,
+      "effort": { "hours": null, "tokens": null, "sessions": null },
+      "priority": { "rank": 9, "impact": 2, "effort": 2, "rationale": "Listed but unexplained. Might be a client site rather than a product, which would change how we treat it." },
+      "provides": [],
+      "consumes": ["site-builder"],
+      "nextActions": [
+        { "text": "Is this a product, or a client site built with the builder?", "done": false }
+      ],
+      "blockers": [],
+      "notes": "Named in the same breath as PEI Fotoshop. Unclear whether it shares a codebase or is a separate delivery."
+    },
+    {
+      "id": "claire-80",
+      "name": "Claire 80",
+      "tagline": "Presentations tool.",
+      "platformId": "ftventures",
+      "status": "unknown",
+      "health": "unknown",
+      "percentComplete": null,
+      "repo": null,
+      "liveUrl": null,
+      "stack": [],
+      "confidence": "unknown",
+      "lastTouched": null,
+      "effort": { "hours": null, "tokens": null, "sessions": null },
+      "priority": { "rank": 10, "impact": 2, "effort": 2, "rationale": "Not enough known to rank properly. Placed low until described." },
+      "provides": ["presentation-engine"],
+      "consumes": [],
+      "nextActions": [
+        { "text": "What is Claire 80 — who is it for and what stage is it at?", "done": false }
+      ],
+      "blockers": [
+        { "text": "Described only as '(presentations)'", "since": "2026-08-17" }
+      ],
+      "notes": "Francis listed it as 'Claire 80 (presentations)'."
+    },
+    {
+      "id": "financial-tool",
+      "name": "Financial Tool",
+      "tagline": "Investment underwriting: cap rate, cash-on-cash, NOI, DSCR, multi-year projections.",
+      "platformId": "ftventures",
+      "status": "beta",
+      "health": "good",
+      "percentComplete": null,
+      "repo": "fmtventures/Financial-tool",
+      "liveUrl": null,
+      "stack": [],
+      "confidence": "assumed",
+      "lastTouched": "2026-08-04",
+      "effort": { "hours": null, "tokens": null, "sessions": null },
+      "priority": { "rank": 8, "impact": 4, "effort": 3, "rationale": "The maths already exists in the deal-analyzer skill and in the Sandy Palms portal. Consolidating one engine would stop three copies drifting apart." },
+      "provides": ["deal-analyzer"],
+      "consumes": [],
+      "nextActions": [
+        { "text": "Decide whether this becomes the single underwriting engine for the portal and the skill", "done": false }
+      ],
+      "blockers": [],
+      "notes": "Overlaps with the deal-analyzer skill and with the financial model built into the Sandy Palms portal. Duplication risk worth resolving."
+    },
+    {
+      "id": "sandy-palms-portal",
+      "name": "Sandy Palms Investor Portal",
+      "tagline": "Interactive Bahamas investment business plan: comps, 30-year projection, financing scenarios, PDF export.",
+      "platformId": "sandypalms",
+      "status": "live",
+      "health": "good",
+      "percentComplete": null,
+      "repo": "fmtventures/Exuma2",
+      "liveUrl": null,
+      "stack": ["single-file HTML", "Tailwind CDN", "Chart.js", "jsPDF", "html2canvas"],
+      "confidence": "verified",
+      "lastTouched": "2026-08-17",
+      "effort": { "hours": null, "tokens": null, "sessions": null },
+      "priority": { "rank": 3, "impact": 4, "effort": 2, "rationale": "Investor-facing, so quality is visible to outside parties. Most recently touched of the older repos." },
+      "provides": ["investor-portal"],
+      "consumes": ["deal-analyzer"],
+      "nextActions": [
+        { "text": "Consolidate three Exuma repos (Exuma, Exuma2, Sandypalms) into one", "done": false },
+        { "text": "Consider swapping the embedded model for the shared deal-analyzer engine", "done": false }
+      ],
+      "blockers": [],
+      "notes": "Verified by reading the source. 70KB single-file app, five tabs (General, Financial, Model, Structure, Steps), a live financial model with sliders, three Chart.js charts and PDF export. Brand tokens: sand #F5F2EA, teal #2A9D8F, navy #264653, gold #E9C46A."
+    },
+    {
+      "id": "exuma-contacts",
+      "name": "Exuma Contacts",
+      "tagline": "Contact list for the Exuma project.",
+      "platformId": "sandypalms",
+      "status": "paused",
+      "health": "warning",
+      "percentComplete": null,
+      "repo": "fmtventures/Exumacontacts",
+      "liveUrl": null,
+      "stack": [],
+      "confidence": "assumed",
+      "lastTouched": "2026-01-15",
+      "effort": { "hours": null, "tokens": null, "sessions": null },
+      "priority": { "rank": 12, "impact": 1, "effort": 1, "rationale": "Untouched for seven months. Likely finished or abandoned — needs a keep-or-archive call." },
+      "provides": ["contact-crm"],
+      "consumes": [],
+      "nextActions": [
+        { "text": "Keep, fold into another tool, or archive", "done": false }
+      ],
+      "blockers": [],
+      "notes": "No pushes since January 2026."
+    },
+    {
+      "id": "peiagents-skills",
+      "name": "PEIAGENTS Skill Suite",
+      "tagline": "Around twenty Claude skills covering listings, CMAs, marketing, follow-up, leases and daily ops.",
+      "platformId": "peiagents",
+      "status": "live",
+      "health": "good",
+      "percentComplete": null,
+      "repo": null,
+      "liveUrl": null,
+      "stack": ["Claude skills"],
+      "confidence": "verified",
+      "lastTouched": "2026-08-17",
+      "effort": { "hours": null, "tokens": null, "sessions": null },
+      "priority": { "rank": 11, "impact": 4, "effort": 2, "rationale": "Already in daily use and the widest-reach thing built so far. Mostly needs versioning discipline, not new features." },
+      "provides": ["cma-engine", "listing-marketing", "deal-analyzer", "presentation-engine"],
+      "consumes": ["commission-tracking", "task-list"],
+      "nextActions": [
+        { "text": "Get these into a repo so they are versioned rather than living only in the account", "done": false },
+        { "text": "Resolve overlap: deal-analyzer skill vs Financial Tool repo", "done": false }
+      ],
+      "blockers": [],
+      "notes": "Verified present in this session: cma-pei, easycma-pei, listing-marketing-engine, listing-writer-pei, photo-to-listing, deal-analyzer, realestate-ops-pei, peiagents-ops, tour-builder-pei, just-sold-pei, neighbourhood-guide-pei, open-house-kit-pei, client-followup-pei, commercial-lease-pei, home-eval-campaign-pei, weeklynews-peiagents, command-center, daily-weekly-planner, morning, deep-search and others. Not currently in version control."
+    },
+    {
+      "id": "dev-dashboard",
+      "name": "Development Dashboard",
+      "tagline": "This tool. One place for every tool, its status, its modules, priorities and effort.",
+      "platformId": "ftventures",
+      "status": "building",
+      "health": "good",
+      "percentComplete": 60,
+      "repo": "fmtventures/Exuma2",
+      "liveUrl": null,
+      "stack": ["single-file HTML", "vanilla JS", "no dependencies"],
+      "confidence": "verified",
+      "lastTouched": "2026-08-17",
+      "effort": { "hours": null, "tokens": null, "sessions": 1 },
+      "priority": { "rank": 0, "impact": 5, "effort": 2, "rationale": "Everything else is easier to decide once this exists. Francis is currently tracking ten chats by memory." },
+      "provides": [],
+      "consumes": [],
+      "nextActions": [
+        { "text": "Francis corrects the seeded data and fills the unknowns", "done": false },
+        { "text": "Move it out of the Exuma2 repo into its own home", "done": false },
+        { "text": "Decide whether to add a Supabase backend so edits persist for real", "done": false }
+      ],
+      "blockers": [],
+      "notes": "Built in this session. No backend: the registry is a JSON file in git, and in-browser edits are held in localStorage and copied back out as a patch."
+    }
+  ],
+
+  "modules": [
+    { "id": "site-builder", "name": "Site Builder", "ownerToolId": "website-builder", "kind": "feature", "description": "Drag-and-build website creation, intended to be embedded in other products." },
+    { "id": "deal-analyzer", "name": "Deal Analyzer", "ownerToolId": "financial-tool", "kind": "engine", "description": "Investment underwriting maths: cap rate, cash-on-cash, NOI, DSCR, projections." },
+    { "id": "cma-engine", "name": "CMA Engine", "ownerToolId": "peiagents-skills", "kind": "engine", "description": "Comparative market analysis, both the 3-page quick version and the full report." },
+    { "id": "listing-marketing", "name": "Listing Marketing", "ownerToolId": "peiagents-skills", "kind": "feature", "description": "Ads, captions, reel scripts and hashtags for a listing." },
+    { "id": "commission-tracking", "name": "Commission & Trust Tracking", "ownerToolId": "lighthouse-dashboard", "kind": "engine", "description": "Brokerage financial tracking." },
+    { "id": "task-list", "name": "Task List", "ownerToolId": "lighthouse-dashboard", "kind": "feature", "description": "Shared task tracking that the planner skills read from." },
+    { "id": "contact-crm", "name": "Contact CRM", "ownerToolId": "exuma-contacts", "kind": "feature", "description": "Contact storage and lookup." },
+    { "id": "photo-pipeline", "name": "Photo Pipeline", "ownerToolId": "pei-fotoshop", "kind": "engine", "description": "Photo intake, selection and delivery." },
+    { "id": "investor-portal", "name": "Investor Portal", "ownerToolId": "sandy-palms-portal", "kind": "surface", "description": "Interactive investor-facing business plan with a live financial model." },
+    { "id": "presentation-engine", "name": "Presentation Engine", "ownerToolId": "claire-80", "kind": "engine", "description": "Deck and presentation generation." },
+    { "id": "booking-engine", "name": "Booking Engine", "ownerToolId": null, "kind": "engine", "description": "Short-term rental bookings for SimpliSeaty. No repo identified yet." }
+  ],
+
+  "connections": [
+    { "moduleId": "site-builder", "toToolId": "bf", "type": "paid-addon", "status": "planned", "notes": "Francis's primary example: customers buy BF, then add the website builder as a module." },
+    { "moduleId": "site-builder", "toToolId": "peiagents-skills", "type": "bundled-free", "status": "planned", "notes": "The other half of the example: ship the builder free as part of the platform offering." },
+    { "moduleId": "site-builder", "toToolId": "pei-fotoshop", "type": "paid-addon", "status": "idea", "notes": "Photographers wanting a portfolio site is a natural attach." },
+    { "moduleId": "site-builder", "toToolId": "sidelio", "type": "bundled-free", "status": "idea", "notes": "Clubs and teams needing a site." },
+    { "moduleId": "site-builder", "toToolId": "pelot-photos", "type": "bundled-free", "status": "idea", "notes": "Depends on whether Pelot is a product or a client site." },
+    { "moduleId": "deal-analyzer", "toToolId": "sandy-palms-portal", "type": "api", "status": "planned", "notes": "The portal has its own embedded model. Replacing it with the shared engine removes a duplicate." },
+    { "moduleId": "deal-analyzer", "toToolId": "peiagents-skills", "type": "bundled-free", "status": "live", "notes": "The deal-analyzer skill already does this, separately from the Financial Tool repo." },
+    { "moduleId": "commission-tracking", "toToolId": "peiagents-skills", "type": "api", "status": "live", "notes": "realestate-ops-pei explicitly hands financial tracking to Lighthouse." },
+    { "moduleId": "task-list", "toToolId": "peiagents-skills", "type": "api", "status": "live", "notes": "daily-weekly-planner reads Lighthouse tasks." },
+    { "moduleId": "cma-engine", "toToolId": "peiagents-skills", "type": "bundled-free", "status": "live", "notes": "Available to every PEIAGENTS agent." },
+    { "moduleId": "presentation-engine", "toToolId": "peiagents-skills", "type": "planned", "status": "idea", "notes": "If Claire 80 generates decks, listing presentations are the obvious consumer." }
+  ],
+
+  "clients": [
+    {
+      "id": "peiagents-agents",
+      "name": "PEIAGENTS agents",
+      "type": "internal",
+      "toolIds": ["peiagents-skills", "lighthouse-dashboard"],
+      "since": null,
+      "confidence": "assumed",
+      "notes": "The brokerage's own agents. Count unknown."
+    },
+    {
+      "id": "francis",
+      "name": "Francis (owner)",
+      "type": "internal",
+      "toolIds": ["command-center", "lighthouse-dashboard", "financial-tool", "sandy-palms-portal", "dev-dashboard"],
+      "since": null,
+      "confidence": "verified",
+      "notes": "Primary user of the daily-ops and financial tooling."
+    },
+    {
+      "id": "bf-customers",
+      "name": "BF customers",
+      "type": "paying",
+      "toolIds": ["bf"],
+      "since": null,
+      "confidence": "unknown",
+      "notes": "Francis referred to 'people who buy the tool'. Number and names unknown — this is the row that matters most to fill in, since it is the only confirmed paying cohort."
+    },
+    {
+      "id": "sandy-palms-investors",
+      "name": "Sandy Palms investors",
+      "type": "external",
+      "toolIds": ["sandy-palms-portal"],
+      "since": null,
+      "confidence": "assumed",
+      "notes": "Audience for the investor portal."
+    }
+  ],
+
+  "log": []
+}

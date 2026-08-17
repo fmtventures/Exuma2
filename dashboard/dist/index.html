@@ -1,0 +1,2007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Build Board</title>
+<meta name="description" content="Every tool FT Ventures is building, what state it is in, how the modules connect, and what to work on next.">
+<style>
+/* ==========================================================================
+   FT Ventures Development Dashboard
+   Palette: parchment / harbour-navy ground, brass accent.
+   Light is the bare :root default; dark is redefined under both the OS media
+   query and an explicit [data-theme="dark"] stamp so the toggle wins either way.
+   Every colour is a token. Nothing is declared only inside a media block.
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* grounds & structure */
+  --plane:        #F2EFE6;
+  --surface:      #FBFAF6;
+  --surface-2:    #EAE6D9;
+  --surface-3:    #E1DCCB;
+  --line:         #DCD7C7;
+  --line-strong:  #C4BCA4;
+
+  /* ink */
+  --ink:          #12222E;
+  --ink-2:        #47585F;
+  --muted:        #74838C;
+
+  /* accent — brass. Used only for active nav, primary action, focus. */
+  --accent:       #7E6318;
+  --accent-hover: #5F4A11;
+  --accent-ink:   #FFFFFF;
+  --accent-soft:  rgba(126, 99, 24, 0.10);
+  --accent-line:  rgba(126, 99, 24, 0.30);
+
+  /* status — fixed, mode-invariant. Always paired with an icon + label. */
+  --good:      #0ca30c;
+  --warn:      #fab219;
+  --serious:   #ec835a;
+  --critical:  #d03b3b;
+  --good-ink:  #006300;
+
+  /* lifecycle — ordinal blue ramp, strongest = furthest from the ground */
+  --life-idea:     #86b6ef;
+  --life-building: #5598e7;
+  --life-beta:     #2a78d6;
+  --life-live:     #184f95;
+  --life-paused:   #9AA6AD;
+  --life-unknown:  #9AA6AD;
+
+  /* chart series — validated against --surface for this mode */
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+
+  /* chart chrome */
+  --grid:     #E3DED0;
+  --axis:     #C4BCA4;
+  --axis-ink: #74838C;
+
+  --shadow: 0 1px 2px rgba(18, 34, 46, 0.05), 0 4px 12px rgba(18, 34, 46, 0.04);
+  --shadow-lift: 0 2px 4px rgba(18, 34, 46, 0.07), 0 12px 28px rgba(18, 34, 46, 0.09);
+
+  /* type */
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono", Menlo, Consolas, monospace;
+
+  --r-sm: 3px;
+  --r:    5px;
+  --r-lg: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+
+    --plane:        #0C1720;
+    --surface:      #132330;
+    --surface-2:    #1B303F;
+    --surface-3:    #23404F;
+    --line:         #22384A;
+    --line-strong:  #33556B;
+
+    --ink:          #F0EDE4;
+    --ink-2:        #A9B7C0;
+    --muted:        #7C8C96;
+
+    --accent:       #D9B44A;
+    --accent-hover: #EBC862;
+    --accent-ink:   #12222E;
+    --accent-soft:  rgba(217, 180, 74, 0.14);
+    --accent-line:  rgba(217, 180, 74, 0.38);
+
+    --good-ink:     #0ca30c;
+
+    --life-idea:     #256abf;
+    --life-building: #3987e5;
+    --life-beta:     #6da7ec;
+    --life-live:     #b7d3f6;
+    --life-paused:   #5C6E79;
+    --life-unknown:  #5C6E79;
+
+    --s1: #3987e5;
+    --s2: #d95926;
+    --s3: #199e70;
+
+    --grid:     #1E3444;
+    --axis:     #2F4A5E;
+    --axis-ink: #7C8C96;
+
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.28);
+    --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.4), 0 12px 28px rgba(0, 0, 0, 0.42);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --plane:        #0C1720;
+  --surface:      #132330;
+  --surface-2:    #1B303F;
+  --surface-3:    #23404F;
+  --line:         #22384A;
+  --line-strong:  #33556B;
+
+  --ink:          #F0EDE4;
+  --ink-2:        #A9B7C0;
+  --muted:        #7C8C96;
+
+  --accent:       #D9B44A;
+  --accent-hover: #EBC862;
+  --accent-ink:   #12222E;
+  --accent-soft:  rgba(217, 180, 74, 0.14);
+  --accent-line:  rgba(217, 180, 74, 0.38);
+
+  --good-ink:     #0ca30c;
+
+  --life-idea:     #256abf;
+  --life-building: #3987e5;
+  --life-beta:     #6da7ec;
+  --life-live:     #b7d3f6;
+  --life-paused:   #5C6E79;
+  --life-unknown:  #5C6E79;
+
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+
+  --grid:     #1E3444;
+  --axis:     #2F4A5E;
+  --axis-ink: #7C8C96;
+
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.28);
+  --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.4), 0 12px 28px rgba(0, 0, 0, 0.42);
+}
+
+/* ---------- reset ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--plane);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4 { margin: 0; font-weight: 650; text-wrap: balance; letter-spacing: -0.011em; }
+p { margin: 0; }
+ul, ol { margin: 0; padding: 0; list-style: none; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+input, select, textarea { font: inherit; color: inherit; }
+a { color: var(--accent); text-decoration-color: var(--accent-line); text-underline-offset: 2px; }
+a:hover { text-decoration-color: currentColor; }
+svg { display: block; }
+
+/* Default icon box. Every more specific rule below overrides it — without this,
+   an icon in a bare flex container stretches to fill the row. */
+.ico { width: 16px; height: 16px; flex: none; }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* ---------- shared type roles ---------- */
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.num  { font-variant-numeric: tabular-nums; }
+.dim  { color: var(--ink-2); }
+.faint { color: var(--muted); }
+
+/* ==========================================================================
+   Shell — persistent rail + main column
+   ========================================================================== */
+.shell {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.rail {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 20px 12px 12px;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  overflow-y: auto;
+}
+
+.brand { padding: 0 8px 16px; display: flex; flex-direction: column; gap: 3px; }
+.brand-mark {
+  display: flex; align-items: baseline; gap: 7px;
+  font-size: 15px; font-weight: 700; letter-spacing: -0.02em;
+}
+.brand-mark .beacon {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  flex: none; align-self: center;
+}
+.brand-sub { font-family: var(--mono); font-size: 10.5px; color: var(--muted); letter-spacing: 0.02em; }
+
+.nav-group { margin-top: 10px; }
+.nav-group > .eyebrow { padding: 0 8px 6px; display: block; }
+
+.nav-item {
+  width: 100%;
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 8px;
+  border-radius: var(--r);
+  color: var(--ink-2);
+  text-align: left;
+  font-size: 13.5px;
+  transition: background 0.12s, color 0.12s;
+}
+.nav-item:hover { background: var(--surface-2); color: var(--ink); }
+.nav-item .ico { flex: none; width: 15px; height: 15px; opacity: 0.75; }
+.nav-item .count {
+  margin-left: auto;
+  font-family: var(--mono); font-size: 11px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.nav-item[aria-current="page"] {
+  background: var(--accent-soft);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.nav-item[aria-current="page"] .ico { opacity: 1; color: var(--accent); }
+
+.rail-foot { margin-top: auto; padding: 12px 8px 0; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
+
+/* main column */
+.main { min-width: 0; display: flex; flex-direction: column; }
+
+.topbar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 24px;
+  background: color-mix(in srgb, var(--plane) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.topbar h1 { font-size: 17px; }
+.topbar-meta { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+.search {
+  margin-left: auto;
+  position: relative;
+  display: flex; align-items: center;
+}
+.search input {
+  width: 210px;
+  padding: 6px 10px 6px 30px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  font-size: 13px;
+}
+.search input::placeholder { color: var(--muted); }
+.search input:focus { border-color: var(--accent-line); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+.search .ico { position: absolute; left: 9px; width: 14px; height: 14px; color: var(--muted); pointer-events: none; }
+
+.view { padding: 22px 24px 64px; display: flex; flex-direction: column; gap: 22px; }
+.view[hidden] { display: none; }
+
+/* ==========================================================================
+   Primitives
+   ========================================================================== */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+}
+.card-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.card-head h2 { font-size: 13.5px; }
+.card-head > svg.ico { width: 15px; height: 15px; color: var(--muted); }
+.card-head .spacer { margin-left: auto; }
+.card-body { padding: 16px; }
+
+.section-title { display: flex; align-items: baseline; gap: 10px; }
+.section-title h2 { font-size: 15px; }
+.section-note { font-size: 12.5px; color: var(--muted); max-width: 62ch; }
+
+/* stat tiles */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(158px, 1fr));
+  gap: 12px;
+}
+.tile {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 13px 15px 14px;
+  display: flex; flex-direction: column; gap: 5px;
+  box-shadow: var(--shadow);
+}
+.tile-val { font-size: 27px; font-weight: 660; letter-spacing: -0.025em; line-height: 1.05; }
+.tile-val.untracked { color: var(--muted); font-size: 20px; font-weight: 500; letter-spacing: 0; }
+.tile-sub { font-size: 11.5px; color: var(--muted); }
+
+/* pills */
+.pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 2px 8px 2px 6px;
+  border-radius: 999px;
+  font-size: 11.5px; font-weight: 550;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2);
+  color: var(--ink);
+  white-space: nowrap;
+}
+.pill .dot { width: 6px; height: 6px; border-radius: 50%; flex: none; background: var(--life-unknown); }
+.pill.live     .dot { background: var(--life-live); }
+.pill.beta     .dot { background: var(--life-beta); }
+.pill.building .dot { background: var(--life-building); }
+.pill.idea     .dot { background: var(--life-idea); }
+.pill.paused   .dot { background: var(--life-unknown); }
+.pill.unknown  .dot { background: var(--life-unknown); }
+
+/* health chip — icon + label, never colour alone */
+.health { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 550; }
+.health .ico { width: 13px; height: 13px; flex: none; }
+.health.good     { color: var(--good-ink); }
+.health.warning  { color: var(--ink); }
+.health.warning  .ico { color: var(--warn); }
+.health.serious  { color: var(--ink); }
+.health.serious  .ico { color: var(--serious); }
+.health.critical { color: var(--critical); }
+.health.unknown  { color: var(--muted); }
+
+/* confidence badge */
+.conf {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 2px 6px; border-radius: var(--r-sm);
+  border: 1px dashed var(--line-strong);
+  color: var(--muted);
+}
+.conf.verified { border-style: solid; border-color: var(--accent-line); color: var(--accent); }
+.conf.unknown  { border-color: var(--serious); color: var(--serious); }
+
+.tag {
+  display: inline-block;
+  font-family: var(--mono); font-size: 10.5px;
+  padding: 1px 6px; border-radius: var(--r-sm);
+  background: var(--surface-2); color: var(--ink-2);
+  border: 1px solid var(--line);
+}
+
+/* buttons */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 11px;
+  border-radius: var(--r);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12.5px; font-weight: 550;
+  transition: background 0.12s, border-color 0.12s;
+}
+.btn:hover { background: var(--surface-2); border-color: var(--muted); }
+.btn .ico { width: 14px; height: 14px; }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.btn-sm { padding: 4px 8px; font-size: 11.5px; }
+.btn-ghost { border-color: transparent; background: transparent; color: var(--ink-2); }
+.btn-ghost:hover { background: var(--surface-2); color: var(--ink); }
+
+/* filter bar */
+.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+.chip {
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+.chip:hover { border-color: var(--muted); color: var(--ink); }
+.chip[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--ink);
+  font-weight: 600;
+}
+.chip .n { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-left: 4px; }
+
+/* ==========================================================================
+   Tool grid
+   ========================================================================== */
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 13px;
+}
+.tool-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 0;
+  display: flex; flex-direction: column;
+  text-align: left;
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.14s, border-color 0.14s, transform 0.14s;
+  overflow: hidden;
+}
+.tool-card:hover { box-shadow: var(--shadow-lift); border-color: var(--line-strong); transform: translateY(-1px); }
+.tool-card .stripe { height: 3px; background: var(--life-unknown); }
+.tool-card.live     .stripe { background: var(--life-live); }
+.tool-card.beta     .stripe { background: var(--life-beta); }
+.tool-card.building .stripe { background: var(--life-building); }
+.tool-card.idea     .stripe { background: var(--life-idea); }
+
+.tool-card-inner { padding: 13px 15px 14px; display: flex; flex-direction: column; gap: 9px; flex: 1; }
+.tool-card-top { display: flex; align-items: flex-start; gap: 8px; }
+.tool-card h3 { font-size: 14.5px; line-height: 1.25; }
+.tool-card .tagline {
+  font-size: 12.5px; color: var(--ink-2);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.tool-card-rowline { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+.tool-card-foot {
+  margin-top: auto; padding-top: 10px; border-top: 1px solid var(--line);
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--mono); font-size: 10.5px; color: var(--muted);
+}
+.tool-card-foot .sep { margin-left: auto; }
+
+.stale-flag { color: var(--serious); font-weight: 600; }
+
+/* progress meter */
+.meter { display: flex; align-items: center; gap: 7px; }
+.meter-track { flex: 1; height: 5px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
+.meter-fill { height: 100%; border-radius: 999px; background: var(--life-beta); }
+.meter-val { font-family: var(--mono); font-size: 11px; color: var(--ink-2); min-width: 30px; text-align: right; }
+.meter-val.none { color: var(--muted); }
+
+/* ==========================================================================
+   Tables
+   ========================================================================== */
+.table-wrap { overflow-x: auto; }
+table.data { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+table.data th, table.data td {
+  padding: 8px 11px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+table.data thead th {
+  position: sticky; top: 0;
+  background: var(--surface-2);
+  font-family: var(--mono); font-size: 10px; font-weight: 650;
+  letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+  border-bottom: 1px solid var(--line-strong);
+}
+table.data tbody tr:hover { background: var(--surface-2); }
+table.data tbody tr:last-child td { border-bottom: 0; }
+table.data td.n { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+table.data th.n { text-align: right; }
+
+/* connection matrix */
+.matrix-wrap { overflow-x: auto; }
+table.matrix { border-collapse: separate; border-spacing: 2px; font-size: 12px; }
+table.matrix th, table.matrix td { padding: 0; }
+table.matrix thead th {
+  vertical-align: bottom;
+  padding: 0 3px 7px;
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+  text-align: center;
+  min-width: 82px;
+}
+table.matrix tbody th {
+  text-align: left; padding-right: 12px;
+  font-size: 12.5px; font-weight: 550;
+  white-space: nowrap;
+}
+table.matrix tbody th .owner { display: block; font-family: var(--mono); font-size: 10px; color: var(--muted); font-weight: 400; }
+.cell {
+  display: flex; align-items: center; justify-content: center;
+  height: 34px; border-radius: var(--r);
+  background: var(--surface-2);
+  border: 1px solid transparent;
+  font-family: var(--mono); font-size: 9.5px; font-weight: 650;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.cell.empty { background: transparent; border: 1px dashed var(--line); }
+.cell.live      { background: var(--life-live);     color: var(--surface); border-color: var(--life-live); }
+.cell.planned   { background: var(--accent-soft);   color: var(--ink); border-color: var(--accent-line); }
+.cell.idea      { background: transparent;          color: var(--ink-2); border: 1px dashed var(--line-strong); }
+.cell.self      { background: var(--surface-3); color: var(--muted); }
+:root[data-theme="dark"] .cell.live { color: #0C1720; }
+
+.legend-row { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; font-size: 11.5px; color: var(--ink-2); }
+.legend-key { display: inline-flex; align-items: center; gap: 6px; }
+.legend-swatch { width: 11px; height: 11px; border-radius: 3px; flex: none; border: 1px solid var(--line-strong); }
+
+/* ==========================================================================
+   Charts
+   ========================================================================== */
+.chart { width: 100%; }
+.chart text { font-family: var(--sans); }
+.chart .grid-line { stroke: var(--grid); stroke-width: 1; }
+.chart .axis-line { stroke: var(--axis); stroke-width: 1; }
+.chart .tick { fill: var(--axis-ink); font-size: 10.5px; }
+.chart .bar-label { fill: var(--ink); font-size: 11px; font-variant-numeric: tabular-nums; }
+.chart .cat-label { fill: var(--ink-2); font-size: 11.5px; }
+.chart .dot-label { fill: var(--ink); font-size: 10.5px; }
+.chart .quad-label { fill: var(--muted); font-size: 10px; font-family: var(--mono); letter-spacing: 0.06em; text-transform: uppercase; }
+.bar { rx: 4; }
+.bar-hit { fill: transparent; cursor: pointer; }
+.bar-hit:hover + .bar, .bar.hovered { opacity: 0.82; }
+.dot-mark { stroke: var(--surface); stroke-width: 2; cursor: pointer; }
+
+.empty-state {
+  display: flex; flex-direction: column; gap: 8px;
+  align-items: flex-start;
+  padding: 26px 20px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-lg);
+  background: var(--surface-2);
+}
+.empty-state h3 { font-size: 13.5px; }
+.empty-state p { font-size: 12.5px; color: var(--ink-2); max-width: 66ch; }
+
+/* ==========================================================================
+   Detail panel
+   ========================================================================== */
+.scrim {
+  position: fixed; inset: 0; z-index: 40;
+  background: rgba(6, 14, 20, 0.42);
+  backdrop-filter: blur(2px);
+  animation: fade 0.14s ease-out;
+}
+.scrim[hidden] { display: none; }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+.panel {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 41;
+  width: min(560px, 100%);
+  background: var(--surface);
+  border-left: 1px solid var(--line);
+  box-shadow: var(--shadow-lift);
+  display: flex; flex-direction: column;
+  animation: slide 0.18s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.panel[hidden] { display: none; }
+@keyframes slide { from { transform: translateX(14px); opacity: 0.5; } to { transform: none; opacity: 1; } }
+
+.panel-head {
+  padding: 16px 18px 13px;
+  border-bottom: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.panel-head-top { display: flex; align-items: flex-start; gap: 10px; }
+.panel-head h2 { font-size: 18px; letter-spacing: -0.02em; }
+.panel-body { padding: 16px 18px 40px; overflow-y: auto; flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 20px; }
+.panel-foot {
+  margin-top: auto; padding: 11px 18px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
+  display: flex; gap: 8px; align-items: center;
+}
+
+.field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field > label { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
+.field input, .field select, .field textarea {
+  padding: 6px 9px;
+  background: var(--plane);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r);
+  font-size: 13px;
+  width: 100%;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  outline: none; border-color: var(--accent-line); box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.field input.edited, .field select.edited, .field textarea.edited {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.field textarea { resize: vertical; min-height: 62px; font-family: var(--sans); }
+.field .hint { font-size: 11px; color: var(--muted); }
+
+.sub { display: flex; flex-direction: column; gap: 9px; }
+.sub > .eyebrow { display: block; }
+
+.checklist { display: flex; flex-direction: column; gap: 4px; }
+.checklist li { display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; }
+.checklist input[type="checkbox"] { margin-top: 2px; accent-color: var(--accent); flex: none; }
+.checklist li.done span { color: var(--muted); text-decoration: line-through; }
+
+.blocker {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 9px 11px;
+  border-radius: var(--r);
+  background: var(--surface-2);
+  border-left: 3px solid var(--critical);
+  font-size: 12.5px;
+}
+.blocker .ico { width: 14px; height: 14px; color: var(--critical); flex: none; margin-top: 1px; }
+
+.note-block {
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.linklist { display: flex; flex-wrap: wrap; gap: 7px; }
+
+/* toast */
+.toast {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  z-index: 60;
+  padding: 9px 15px;
+  background: var(--ink);
+  color: var(--plane);
+  border-radius: 999px;
+  font-size: 12.5px; font-weight: 550;
+  box-shadow: var(--shadow-lift);
+  animation: pop 0.16s ease-out;
+}
+.toast[hidden] { display: none; }
+@keyframes pop { from { opacity: 0; transform: translate(-50%, 6px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+/* unsaved-edits banner */
+.edits-bar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 14px;
+  border-radius: var(--r-lg);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+  font-size: 12.5px;
+}
+.edits-bar[hidden] { display: none; }
+.edits-bar .ico { width: 15px; height: 15px; color: var(--accent); flex: none; }
+.edits-bar .spacer { margin-left: auto; }
+
+/* two-column layout helper */
+.split { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+
+/* attention list */
+.attn { display: flex; flex-direction: column; }
+.attn li { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.attn li:last-child { border-bottom: 0; }
+.attn .ico { width: 15px; height: 15px; flex: none; margin-top: 1px; }
+.attn .body { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.attn .who { font-size: 13px; font-weight: 600; }
+.attn .what { font-size: 12px; color: var(--ink-2); }
+.attn button.jump { margin-left: auto; flex: none; }
+
+/* priority board rows */
+.prio { display: flex; flex-direction: column; }
+.prio li {
+  display: flex; align-items: center; gap: 11px;
+  padding: 9px 0; border-bottom: 1px solid var(--line);
+}
+.prio li:last-child { border-bottom: 0; }
+.prio .rank {
+  width: 24px; height: 24px; flex: none;
+  display: grid; place-items: center;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  font-family: var(--mono); font-size: 11px; font-weight: 650;
+  color: var(--ink-2);
+}
+.prio li:nth-child(-n+3) .rank { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.prio .body { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.prio .who { font-size: 13.5px; font-weight: 600; }
+.prio .why { font-size: 12px; color: var(--ink-2); }
+.prio .ie { display: flex; gap: 12px; flex: none; }
+.prio .ie div { text-align: right; }
+.prio .ie .k { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.prio .ie .v { font-family: var(--mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+@media (max-width: 1080px) {
+  .split { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 860px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .rail {
+    position: static; height: auto;
+    flex-direction: row; align-items: center; gap: 6px;
+    overflow-x: auto; padding: 10px 12px;
+    border-right: 0; border-bottom: 1px solid var(--line);
+  }
+  .brand { padding: 0 10px 0 4px; flex: none; }
+  .brand-sub { display: none; }
+  .nav-group { margin-top: 0; display: flex; gap: 4px; flex: none; }
+  .nav-group > .eyebrow { display: none; }
+  .nav-item { white-space: nowrap; padding: 6px 10px; }
+  .nav-item[aria-current="page"] { box-shadow: inset 0 -2px 0 var(--accent); }
+  .nav-item .count { display: none; }
+  .rail-foot { margin-top: 0; margin-left: auto; padding: 0 0 0 10px; border-top: 0; border-left: 1px solid var(--line); flex-direction: row; flex: none; }
+  .topbar { padding: 12px 16px; flex-wrap: wrap; }
+  .topbar-meta { display: none; }
+  .search { margin-left: auto; }
+  .search input { width: 150px; }
+  .view { padding: 16px 16px 56px; }
+  .field-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media print {
+  .rail, .topbar .search, .rail-foot, .panel, .scrim { display: none; }
+  .shell { grid-template-columns: 1fr; }
+  .card, .tile, .tool-card { box-shadow: none; break-inside: avoid; }
+}
+
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <nav class="rail" aria-label="Sections">
+    <div class="brand">
+      <span class="brand-mark"><span class="beacon"></span>Build Board</span>
+      <span class="brand-sub">FT Ventures</span>
+    </div>
+    <div class="nav-group" id="nav"></div>
+    <div class="rail-foot">
+      <button class="btn btn-sm btn-ghost" id="theme-toggle" aria-label="Switch colour theme"></button>
+    </div>
+  </nav>
+
+  <main class="main">
+    <header class="topbar">
+      <h1 id="view-title">Overview</h1>
+      <span class="topbar-meta" id="meta-updated"></span>
+      <div class="search">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+             stroke-linecap="round" aria-hidden="true"><path d="M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13Zm4.6-1.9L20 20"/></svg>
+        <input id="q" type="search" placeholder="Search tools  /" aria-label="Search tools">
+      </div>
+    </header>
+
+    <div style="padding:0 24px">
+      <div class="edits-bar" id="edits-bar" hidden>
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-9.5V16m0-8h.01"/></svg>
+        <span><strong id="edits-count"></strong> held in this browser only. Nothing is written to the repo until you send them to me.</span>
+        <span class="spacer"></span>
+        <button class="btn btn-sm btn-primary" id="copy-patch">Copy changes</button>
+        <button class="btn btn-sm btn-ghost" id="discard-edits">Discard</button>
+      </div>
+    </div>
+
+    <div class="view" id="view"></div>
+  </main>
+
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="panel" id="panel" hidden tabindex="-1" aria-label="Tool detail">
+  <div id="panel-content" style="display:flex;flex-direction:column;height:100%;min-height:0"></div>
+</aside>
+
+<div class="toast" id="toast" hidden role="status"></div>
+<script type="application/json" id="registry-data">{"meta":{"name":"FT Ventures Development Dashboard","version":"0.1.0","updated":"2026-08-17","owner":"Francis Theriault","confidenceLegend":{"verified":"Confirmed by reading the repo or the running code.","assumed":"Francis named it or a repo exists, but details are my inference. Correct me.","unknown":"Placeholder. Needs Francis to fill in."},"effortNote":"Hours and tokens are null wherever they were never measured. Nothing here is estimated or invented — an empty cell means untracked, and tracking starts from the first entry in the log."},"platforms":[{"id":"peiagents","name":"PEIAGENTS Realty","kind":"brokerage","note":"Real-estate brokerage. Agents are the internal users; the skill suite and CMA tooling serve them."},{"id":"ftventures","name":"FT Ventures","kind":"holding","note":"Holding company. Owns the commercial portfolio and is the umbrella for the software products."},{"id":"sidelio","name":"Sidelio","kind":"product","note":"Sports product line. sidelio.ca and sports.sidelio.ca."},{"id":"fotoshop","name":"PEI Fotoshop","kind":"product","note":"Photo product line. peifotoshop.com plus an admin surface."},{"id":"simpliseaty","name":"SimpliSeaty","kind":"product","note":"Short-term rental / bookings. Referenced by the planner and deal-analyzer tooling."},{"id":"sandypalms","name":"Sandy Palms","kind":"asset","note":"Great Exuma, Bahamas investment project."}],"tools":[{"id":"website-builder","name":"Website Builder","tagline":"Build-a-site tool intended to be sold standalone and attached to other products as a module.","platformId":"ftventures","status":"building","health":"good","percentComplete":null,"repo":null,"liveUrl":null,"stack":[],"confidence":"assumed","lastTouched":"2026-08-17","effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":1,"impact":5,"effort":4,"rationale":"Active build, and it is the first tool designed to be resold as a module inside BF and bundled into the platforms. Gets the module model right for everything after it."},"provides":["site-builder"],"consumes":[],"nextActions":[{"text":"Confirm which repo this lives in","done":false},{"text":"Define the module contract for embedding into BF (auth, billing, entitlement)","done":false},{"text":"Decide free-tier vs paid-addon split","done":false}],"blockers":[],"notes":"Francis: 'the website builder should have one or another connection with existing tools like BF, where people can add this module when they buy the tool, or we could provide some modules for free as part of the other platforms.'"},{"id":"bf","name":"BF","tagline":"Existing tool with paying customers. Intended host for add-on modules.","platformId":"ftventures","status":"live","health":"unknown","percentComplete":null,"repo":null,"liveUrl":null,"stack":[],"confidence":"unknown","lastTouched":null,"effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":2,"impact":5,"effort":2,"rationale":"It already has customers, which makes it the highest-leverage place to attach paid modules. Blocked only on me knowing what it is."},"provides":[],"consumes":["site-builder"],"nextActions":[{"text":"Francis: tell me what BF stands for, where it runs, and who its customers are","done":false}],"blockers":[{"text":"I do not know what BF is yet — name, repo, and stack all unknown","since":"2026-08-17"}],"notes":"Named twice as the example of a tool people buy, then add modules to. Everything about it is a placeholder until Francis fills it in."},{"id":"ftventures-dashboard","name":"FT Ventures Dashboard","tagline":"Existing operations dashboard at dashboard.ftventures.ca.","platformId":"ftventures","status":"live","health":"unknown","percentComplete":null,"repo":null,"liveUrl":"https://dashboard.ftventures.ca/","stack":[],"confidence":"assumed","lastTouched":null,"effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":6,"impact":3,"effort":2,"rationale":"Already running. Main question is whether this dev dashboard should live inside it rather than beside it."},"provides":[],"consumes":[],"nextActions":[{"text":"Decide: fold this development dashboard into dashboard.ftventures.ca, or keep it separate","done":false}],"blockers":[],"notes":"Could not inspect it — this environment's network policy blocks outbound requests to the domain."},{"id":"lighthouse-dashboard","name":"Lighthouse Dashboard","tagline":"Commission, trust-account and financial tracking, plus a task list.","platformId":"peiagents","status":"live","health":"good","percentComplete":null,"repo":"fmtventures/lighthouse-dashboard","liveUrl":null,"stack":[],"confidence":"assumed","lastTouched":"2026-07-26","effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":5,"impact":4,"effort":3,"rationale":"Real-money tracking for the brokerage, and several skills already hand off to it. Worth keeping current."},"provides":["commission-tracking","task-list"],"consumes":[],"nextActions":[{"text":"Confirm whether Lighthouse is the intended home for brokerage financials long-term","done":false}],"blockers":[],"notes":"The realestate-ops-pei and daily-weekly-planner skills both explicitly defer to Lighthouse for financial tracking and tasks, so it is already a dependency of the skill suite."},{"id":"sidelio","name":"Sidelio","tagline":"Sports product. Web app at sidelio.ca/app.html and sports.sidelio.ca.","platformId":"sidelio","status":"live","health":"unknown","percentComplete":null,"repo":"fmtventures/sidelio-site","liveUrl":"https://sidelio.ca/app.html","stack":[],"confidence":"assumed","lastTouched":"2026-08-16","effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":4,"impact":4,"effort":3,"rationale":"Second most recently touched repo, so it is live work. Also a candidate host for the website-builder module."},"provides":[],"consumes":["site-builder"],"nextActions":[{"text":"Confirm sidelio-site vs sidelio-archive — which is current","done":false},{"text":"Clarify what the sports app does and who uses it","done":false}],"blockers":[],"notes":"Two repos exist: fmtventures/sidelio-site (pushed 2026-08-16) and fmtventures/sidelio-archive (pushed 2026-08-07). I have assumed -site is current and -archive is the predecessor."},{"id":"pei-fotoshop","name":"PEI Fotoshop","tagline":"Photo product with a customer site and an admin surface.","platformId":"fotoshop","status":"live","health":"unknown","percentComplete":null,"repo":null,"liveUrl":"https://peifotoshop.com/","adminUrl":"https://peifotoshop.com/admin","stack":[],"confidence":"assumed","lastTouched":null,"effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":7,"impact":3,"effort":3,"rationale":"Running with an admin panel, so it has real users. Needs a repo link before we can develop it from here."},"provides":["photo-pipeline"],"consumes":["site-builder"],"nextActions":[{"text":"Point me at the repo behind peifotoshop.com","done":false},{"text":"Clarify the relationship to pelotphotos.com — same codebase or separate","done":false}],"blockers":[],"notes":"Has a distinct /admin surface, which suggests real accounts and content management behind it."},{"id":"pelot-photos","name":"Pelot Photos","tagline":"Photo site at pelotphotos.com.","platformId":"fotoshop","status":"live","health":"unknown","percentComplete":null,"repo":null,"liveUrl":"https://pelotphotos.com/","stack":[],"confidence":"unknown","lastTouched":null,"effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":9,"impact":2,"effort":2,"rationale":"Listed but unexplained. Might be a client site rather than a product, which would change how we treat it."},"provides":[],"consumes":["site-builder"],"nextActions":[{"text":"Is this a product, or a client site built with the builder?","done":false}],"blockers":[],"notes":"Named in the same breath as PEI Fotoshop. Unclear whether it shares a codebase or is a separate delivery."},{"id":"claire-80","name":"Claire 80","tagline":"Presentations tool.","platformId":"ftventures","status":"unknown","health":"unknown","percentComplete":null,"repo":null,"liveUrl":null,"stack":[],"confidence":"unknown","lastTouched":null,"effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":10,"impact":2,"effort":2,"rationale":"Not enough known to rank properly. Placed low until described."},"provides":["presentation-engine"],"consumes":[],"nextActions":[{"text":"What is Claire 80 — who is it for and what stage is it at?","done":false}],"blockers":[{"text":"Described only as '(presentations)'","since":"2026-08-17"}],"notes":"Francis listed it as 'Claire 80 (presentations)'."},{"id":"financial-tool","name":"Financial Tool","tagline":"Investment underwriting: cap rate, cash-on-cash, NOI, DSCR, multi-year projections.","platformId":"ftventures","status":"beta","health":"good","percentComplete":null,"repo":"fmtventures/Financial-tool","liveUrl":null,"stack":[],"confidence":"assumed","lastTouched":"2026-08-04","effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":8,"impact":4,"effort":3,"rationale":"The maths already exists in the deal-analyzer skill and in the Sandy Palms portal. Consolidating one engine would stop three copies drifting apart."},"provides":["deal-analyzer"],"consumes":[],"nextActions":[{"text":"Decide whether this becomes the single underwriting engine for the portal and the skill","done":false}],"blockers":[],"notes":"Overlaps with the deal-analyzer skill and with the financial model built into the Sandy Palms portal. Duplication risk worth resolving."},{"id":"sandy-palms-portal","name":"Sandy Palms Investor Portal","tagline":"Interactive Bahamas investment business plan: comps, 30-year projection, financing scenarios, PDF export.","platformId":"sandypalms","status":"live","health":"good","percentComplete":null,"repo":"fmtventures/Exuma2","liveUrl":null,"stack":["single-file HTML","Tailwind CDN","Chart.js","jsPDF","html2canvas"],"confidence":"verified","lastTouched":"2026-08-17","effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":3,"impact":4,"effort":2,"rationale":"Investor-facing, so quality is visible to outside parties. Most recently touched of the older repos."},"provides":["investor-portal"],"consumes":["deal-analyzer"],"nextActions":[{"text":"Consolidate three Exuma repos (Exuma, Exuma2, Sandypalms) into one","done":false},{"text":"Consider swapping the embedded model for the shared deal-analyzer engine","done":false}],"blockers":[],"notes":"Verified by reading the source. 70KB single-file app, five tabs (General, Financial, Model, Structure, Steps), a live financial model with sliders, three Chart.js charts and PDF export. Brand tokens: sand #F5F2EA, teal #2A9D8F, navy #264653, gold #E9C46A."},{"id":"exuma-contacts","name":"Exuma Contacts","tagline":"Contact list for the Exuma project.","platformId":"sandypalms","status":"paused","health":"warning","percentComplete":null,"repo":"fmtventures/Exumacontacts","liveUrl":null,"stack":[],"confidence":"assumed","lastTouched":"2026-01-15","effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":12,"impact":1,"effort":1,"rationale":"Untouched for seven months. Likely finished or abandoned — needs a keep-or-archive call."},"provides":["contact-crm"],"consumes":[],"nextActions":[{"text":"Keep, fold into another tool, or archive","done":false}],"blockers":[],"notes":"No pushes since January 2026."},{"id":"peiagents-skills","name":"PEIAGENTS Skill Suite","tagline":"Around twenty Claude skills covering listings, CMAs, marketing, follow-up, leases and daily ops.","platformId":"peiagents","status":"live","health":"good","percentComplete":null,"repo":null,"liveUrl":null,"stack":["Claude skills"],"confidence":"verified","lastTouched":"2026-08-17","effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":11,"impact":4,"effort":2,"rationale":"Already in daily use and the widest-reach thing built so far. Mostly needs versioning discipline, not new features."},"provides":["cma-engine","listing-marketing","deal-analyzer","presentation-engine"],"consumes":["commission-tracking","task-list"],"nextActions":[{"text":"Get these into a repo so they are versioned rather than living only in the account","done":false},{"text":"Resolve overlap: deal-analyzer skill vs Financial Tool repo","done":false}],"blockers":[],"notes":"Verified present in this session: cma-pei, easycma-pei, listing-marketing-engine, listing-writer-pei, photo-to-listing, deal-analyzer, realestate-ops-pei, peiagents-ops, tour-builder-pei, just-sold-pei, neighbourhood-guide-pei, open-house-kit-pei, client-followup-pei, commercial-lease-pei, home-eval-campaign-pei, weeklynews-peiagents, command-center, daily-weekly-planner, morning, deep-search and others. Not currently in version control."},{"id":"dev-dashboard","name":"Development Dashboard","tagline":"This tool. One place for every tool, its status, its modules, priorities and effort.","platformId":"ftventures","status":"building","health":"good","percentComplete":60,"repo":"fmtventures/Exuma2","liveUrl":null,"stack":["single-file HTML","vanilla JS","no dependencies"],"confidence":"verified","lastTouched":"2026-08-17","effort":{"hours":null,"tokens":null,"sessions":1},"priority":{"rank":0,"impact":5,"effort":2,"rationale":"Everything else is easier to decide once this exists. Francis is currently tracking ten chats by memory."},"provides":[],"consumes":[],"nextActions":[{"text":"Francis corrects the seeded data and fills the unknowns","done":false},{"text":"Move it out of the Exuma2 repo into its own home","done":false},{"text":"Decide whether to add a Supabase backend so edits persist for real","done":false}],"blockers":[],"notes":"Built in this session. No backend: the registry is a JSON file in git, and in-browser edits are held in localStorage and copied back out as a patch."}],"modules":[{"id":"site-builder","name":"Site Builder","ownerToolId":"website-builder","kind":"feature","description":"Drag-and-build website creation, intended to be embedded in other products."},{"id":"deal-analyzer","name":"Deal Analyzer","ownerToolId":"financial-tool","kind":"engine","description":"Investment underwriting maths: cap rate, cash-on-cash, NOI, DSCR, projections."},{"id":"cma-engine","name":"CMA Engine","ownerToolId":"peiagents-skills","kind":"engine","description":"Comparative market analysis, both the 3-page quick version and the full report."},{"id":"listing-marketing","name":"Listing Marketing","ownerToolId":"peiagents-skills","kind":"feature","description":"Ads, captions, reel scripts and hashtags for a listing."},{"id":"commission-tracking","name":"Commission & Trust Tracking","ownerToolId":"lighthouse-dashboard","kind":"engine","description":"Brokerage financial tracking."},{"id":"task-list","name":"Task List","ownerToolId":"lighthouse-dashboard","kind":"feature","description":"Shared task tracking that the planner skills read from."},{"id":"contact-crm","name":"Contact CRM","ownerToolId":"exuma-contacts","kind":"feature","description":"Contact storage and lookup."},{"id":"photo-pipeline","name":"Photo Pipeline","ownerToolId":"pei-fotoshop","kind":"engine","description":"Photo intake, selection and delivery."},{"id":"investor-portal","name":"Investor Portal","ownerToolId":"sandy-palms-portal","kind":"surface","description":"Interactive investor-facing business plan with a live financial model."},{"id":"presentation-engine","name":"Presentation Engine","ownerToolId":"claire-80","kind":"engine","description":"Deck and presentation generation."},{"id":"booking-engine","name":"Booking Engine","ownerToolId":null,"kind":"engine","description":"Short-term rental bookings for SimpliSeaty. No repo identified yet."}],"connections":[{"moduleId":"site-builder","toToolId":"bf","type":"paid-addon","status":"planned","notes":"Francis's primary example: customers buy BF, then add the website builder as a module."},{"moduleId":"site-builder","toToolId":"peiagents-skills","type":"bundled-free","status":"planned","notes":"The other half of the example: ship the builder free as part of the platform offering."},{"moduleId":"site-builder","toToolId":"pei-fotoshop","type":"paid-addon","status":"idea","notes":"Photographers wanting a portfolio site is a natural attach."},{"moduleId":"site-builder","toToolId":"sidelio","type":"bundled-free","status":"idea","notes":"Clubs and teams needing a site."},{"moduleId":"site-builder","toToolId":"pelot-photos","type":"bundled-free","status":"idea","notes":"Depends on whether Pelot is a product or a client site."},{"moduleId":"deal-analyzer","toToolId":"sandy-palms-portal","type":"api","status":"planned","notes":"The portal has its own embedded model. Replacing it with the shared engine removes a duplicate."},{"moduleId":"deal-analyzer","toToolId":"peiagents-skills","type":"bundled-free","status":"live","notes":"The deal-analyzer skill already does this, separately from the Financial Tool repo."},{"moduleId":"commission-tracking","toToolId":"peiagents-skills","type":"api","status":"live","notes":"realestate-ops-pei explicitly hands financial tracking to Lighthouse."},{"moduleId":"task-list","toToolId":"peiagents-skills","type":"api","status":"live","notes":"daily-weekly-planner reads Lighthouse tasks."},{"moduleId":"cma-engine","toToolId":"peiagents-skills","type":"bundled-free","status":"live","notes":"Available to every PEIAGENTS agent."},{"moduleId":"presentation-engine","toToolId":"peiagents-skills","type":"planned","status":"idea","notes":"If Claire 80 generates decks, listing presentations are the obvious consumer."}],"clients":[{"id":"peiagents-agents","name":"PEIAGENTS agents","type":"internal","toolIds":["peiagents-skills","lighthouse-dashboard"],"since":null,"confidence":"assumed","notes":"The brokerage's own agents. Count unknown."},{"id":"francis","name":"Francis (owner)","type":"internal","toolIds":["command-center","lighthouse-dashboard","financial-tool","sandy-palms-portal","dev-dashboard"],"since":null,"confidence":"verified","notes":"Primary user of the daily-ops and financial tooling."},{"id":"bf-customers","name":"BF customers","type":"paying","toolIds":["bf"],"since":null,"confidence":"unknown","notes":"Francis referred to 'people who buy the tool'. Number and names unknown — this is the row that matters most to fill in, since it is the only confirmed paying cohort."},{"id":"sandy-palms-investors","name":"Sandy Palms investors","type":"external","toolIds":["sandy-palms-portal"],"since":null,"confidence":"assumed","notes":"Audience for the investor portal."}],"log":[]}</script>
+<script>
+/* ==========================================================================
+   FT Ventures Development Dashboard
+   No dependencies. Data comes from registry.json (or an inlined copy of it).
+   Edits made in the browser are held in localStorage and copied back out as a
+   patch — there is no backend, so nothing here silently mutates the registry.
+   ========================================================================== */
+
+(() => {
+  'use strict';
+
+  const LS_EDITS = 'ftv-dash-edits-v1';
+  const LS_THEME = 'ftv-dash-theme-v1';
+
+  const STATUS_ORDER = ['live', 'beta', 'building', 'paused', 'idea', 'unknown'];
+  const STATUS_LABEL = {
+    live: 'Live', beta: 'Beta', building: 'Building',
+    paused: 'Paused', idea: 'Idea', unknown: 'Unknown',
+  };
+  const HEALTH_LABEL = {
+    good: 'Healthy', warning: 'Needs attention', serious: 'At risk',
+    critical: 'Broken', unknown: 'Unknown',
+  };
+  const CONN_LABEL = {
+    'paid-addon': 'Paid add-on', 'bundled-free': 'Bundled free',
+    api: 'API link', planned: 'Planned', idea: 'Idea',
+  };
+  const CONN_SHORT = { 'paid-addon': 'PAID', 'bundled-free': 'FREE', api: 'API', planned: 'PLAN', idea: 'IDEA' };
+
+  const STALE_DAYS = 45;
+
+  /* ---------------------------------------------------------------- icons */
+  const ICON = {
+    gauge: 'M12 13a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Zm0 0 3.5-3.5M12 3a9 9 0 0 1 9 9M3 12a9 9 0 0 1 9-9M3.5 16.5A9 9 0 0 1 3 12m17.5 4.5A9 9 0 0 0 21 12',
+    grid: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',
+    link: 'M9.5 14.5 14.5 9.5M10.5 6.5l1.6-1.6a4 4 0 0 1 5.7 5.7l-1.6 1.6M13.5 17.5l-1.6 1.6a4 4 0 0 1-5.7-5.7l1.6-1.6',
+    flag: 'M5 21V4m0 0 5.5 2L16 4l3 1.5V14l-3-1.5-5.5 2L5 12.5',
+    users: 'M16 20v-1.5a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4V20M9.5 10.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM21 20v-1.5a4 4 0 0 0-3-3.87M15.5 3.75a3.5 3.5 0 0 1 0 6.5',
+    clock: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-13.5V12l3 2',
+    search: 'M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13Zm4.6-1.9L20 20',
+    check: 'M4 12.5 9 17.5 20 6.5',
+    alert: 'M12 8.5v5m0 3h.01M10.3 3.9 2.6 17.2A2 2 0 0 0 4.3 20h15.4a2 2 0 0 0 1.7-2.8L13.7 3.9a2 2 0 0 0-3.4 0Z',
+    info: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-9.5V16m0-8h.01',
+    copy: 'M9 9V5.5A1.5 1.5 0 0 1 10.5 4h8A1.5 1.5 0 0 1 20 5.5v8a1.5 1.5 0 0 1-1.5 1.5H15M5.5 9h8A1.5 1.5 0 0 1 15 10.5v8A1.5 1.5 0 0 1 13.5 20h-8A1.5 1.5 0 0 1 4 18.5v-8A1.5 1.5 0 0 1 5.5 9Z',
+    x: 'M6 6l12 12M18 6 6 18',
+    ext: 'M14 4h6v6M20 4l-8.5 8.5M18 14v4.5A1.5 1.5 0 0 1 16.5 20h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10',
+    sun: 'M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10ZM12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.5 1.5m11.2 11.2 1.5 1.5M19.1 4.9l-1.5 1.5M6.4 17.6l-1.5 1.5',
+    moon: 'M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z',
+    box: 'M12 3 3 7.5v9L12 21l9-4.5v-9L12 3Zm0 0v18M3 7.5 12 12l9-4.5',
+    pause: 'M9.5 5v14M14.5 5v14',
+  };
+
+  function icon(name, cls) {
+    return `<svg class="ico ${cls || ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${ICON[name]}"/></svg>`;
+  }
+
+  /* ---------------------------------------------------------------- utils */
+  const $ = (sel, root) => (root || document).querySelector(sel);
+  const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  const fmtInt = (n) => (n == null ? null : n.toLocaleString('en-CA'));
+
+  function fmtTokens(n) {
+    if (n == null) return null;
+    if (n >= 1e6) return (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + 'M';
+    if (n >= 1e3) return Math.round(n / 1e3) + 'k';
+    return String(n);
+  }
+
+  function daysSince(iso) {
+    if (!iso) return null;
+    const then = new Date(iso + 'T00:00:00');
+    if (isNaN(then)) return null;
+    return Math.max(0, Math.round((Date.now() - then) / 86400000));
+  }
+
+  function fmtAge(iso) {
+    const d = daysSince(iso);
+    if (d == null) return 'never logged';
+    if (d === 0) return 'today';
+    if (d === 1) return 'yesterday';
+    if (d < 30) return d + 'd ago';
+    const m = Math.round(d / 30.4);
+    return m + (m === 1 ? ' month ago' : ' months ago');
+  }
+
+  /* ------------------------------------------------------------- app state */
+  let DATA = null;
+  let edits = {};
+  let route = 'overview';
+  let query = '';
+  let statusFilter = 'all';
+  let openToolId = null;
+  let chartMode = {}; // cardId -> 'chart' | 'table'
+
+  function loadEdits() {
+    try { edits = JSON.parse(localStorage.getItem(LS_EDITS)) || {}; } catch { edits = {}; }
+  }
+  function saveEdits() {
+    try { localStorage.setItem(LS_EDITS, JSON.stringify(edits)); } catch { /* storage may be blocked */ }
+  }
+  function editKey(id, path) { return id + '::' + path; }
+
+  function setEdit(id, path, value) {
+    const k = editKey(id, path);
+    const original = rawValue(id, path);
+    const same = String(original == null ? '' : original) === String(value == null ? '' : value);
+    if (same) delete edits[k]; else edits[k] = value;
+    saveEdits();
+    renderEditsBar();
+  }
+
+  function rawValue(id, path) {
+    const t = DATA.tools.find((x) => x.id === id);
+    if (!t) return null;
+    return path.split('.').reduce((o, k) => (o == null ? null : o[k]), t);
+  }
+
+  function val(id, path) {
+    const k = editKey(id, path);
+    return Object.prototype.hasOwnProperty.call(edits, k) ? edits[k] : rawValue(id, path);
+  }
+  function isEdited(id, path) { return Object.prototype.hasOwnProperty.call(edits, editKey(id, path)); }
+
+  /** A tool with browser edits applied on top. */
+  function tool(id) {
+    const t = DATA.tools.find((x) => x.id === id);
+    if (!t) return null;
+    return {
+      ...t,
+      status: val(id, 'status') || 'unknown',
+      health: val(id, 'health') || 'unknown',
+      percentComplete: numOrNull(val(id, 'percentComplete')),
+      repo: val(id, 'repo') || null,
+      liveUrl: val(id, 'liveUrl') || null,
+      lastTouched: val(id, 'lastTouched') || null,
+      notes: val(id, 'notes') || '',
+      effort: {
+        hours: numOrNull(val(id, 'effort.hours')),
+        tokens: numOrNull(val(id, 'effort.tokens')),
+        sessions: numOrNull(val(id, 'effort.sessions')),
+      },
+      priority: {
+        ...t.priority,
+        rank: numOrNull(val(id, 'priority.rank')),
+        impact: numOrNull(val(id, 'priority.impact')),
+        effort: numOrNull(val(id, 'priority.effort')),
+      },
+    };
+  }
+
+  function numOrNull(v) {
+    if (v === '' || v == null) return null;
+    const n = Number(v);
+    return isNaN(n) ? null : n;
+  }
+
+  const allTools = () => DATA.tools.map((t) => tool(t.id));
+  const platformName = (id) => (DATA.platforms.find((p) => p.id === id) || {}).name || '—';
+  const moduleById = (id) => DATA.modules.find((m) => m.id === id);
+  const toolName = (id) => { const t = DATA.tools.find((x) => x.id === id); return t ? t.name : id; };
+
+  /* --------------------------------------------------------------- filters */
+  function visibleTools() {
+    let list = allTools();
+    if (statusFilter !== 'all') list = list.filter((t) => t.status === statusFilter);
+    if (query.trim()) {
+      const q = query.trim().toLowerCase();
+      list = list.filter((t) =>
+        [t.name, t.tagline, t.notes, t.repo, platformName(t.platformId), t.status,
+          ...(t.provides || []).map((m) => (moduleById(m) || {}).name),
+          ...(t.consumes || []).map((m) => (moduleById(m) || {}).name)]
+          .filter(Boolean).join(' ').toLowerCase().includes(q));
+    }
+    return list.sort((a, b) => {
+      const ra = a.priority.rank == null ? 999 : a.priority.rank;
+      const rb = b.priority.rank == null ? 999 : b.priority.rank;
+      return ra - rb;
+    });
+  }
+
+  /* ---------------------------------------------------------- small chunks */
+  function statusPill(status) {
+    const s = status || 'unknown';
+    return `<span class="pill ${esc(s)}"><span class="dot"></span>${esc(STATUS_LABEL[s] || s)}</span>`;
+  }
+
+  function healthChip(health) {
+    const h = health || 'unknown';
+    const ic = h === 'good' ? 'check' : h === 'unknown' ? 'info' : 'alert';
+    return `<span class="health ${esc(h)}">${icon(ic)}${esc(HEALTH_LABEL[h] || h)}</span>`;
+  }
+
+  function confBadge(c) {
+    const label = { verified: 'verified', assumed: 'assumed', unknown: 'unknown' }[c] || c || 'assumed';
+    return `<span class="conf ${esc(c || 'assumed')}" title="${esc((DATA.meta.confidenceLegend || {})[c] || '')}">${esc(label)}</span>`;
+  }
+
+  function meter(pct) {
+    /* No empty track when the figure is unknown — a 0%-looking bar would be a lie. */
+    if (pct == null) {
+      return `<span class="faint" style="font-size:11.5px">Progress not estimated</span>`;
+    }
+    const p = Math.max(0, Math.min(100, pct));
+    return `<div class="meter"><div class="meter-track"><div class="meter-fill" style="width:${p}%"></div></div>
+      <span class="meter-val">${p}%</span></div>`;
+  }
+
+  /* ================================================================ CHARTS */
+
+  /**
+   * Horizontal bar chart. Single series, every bar directly labelled — which is
+   * also the relief the light-mode palette requires.
+   */
+  function barChart(rows, opts) {
+    const o = Object.assign({ unit: '', barH: 20, gap: 9, labelW: 168, valueW: 62 }, opts || {});
+    if (!rows.length) return '';
+    const max = Math.max(...rows.map((r) => r.value), 1);
+    const h = rows.length * (o.barH + o.gap) - o.gap;
+    const plotW = 640 - o.labelW - o.valueW;
+    const W = 640;
+
+    const ticks = [0, 0.5, 1].map((f) => Math.round(max * f));
+    const grid = ticks.map((t) => {
+      const x = o.labelW + (t / max) * plotW;
+      return `<line class="grid-line" x1="${x}" y1="0" x2="${x}" y2="${h}"/>
+              <text class="tick" x="${x}" y="${h + 13}" text-anchor="middle">${esc(o.fmt ? o.fmt(t) : t)}</text>`;
+    }).join('');
+
+    const bars = rows.map((r, i) => {
+      const y = i * (o.barH + o.gap);
+      const w = Math.max(2, (r.value / max) * plotW);
+      const color = r.color || 'var(--s1)';
+      return `<g>
+        <text class="cat-label" x="${o.labelW - 10}" y="${y + o.barH / 2 + 4}" text-anchor="end">${esc(r.label)}</text>
+        <rect class="bar" x="${o.labelW}" y="${y}" width="${w}" height="${o.barH}" fill="${color}"><title>${esc(r.label)}: ${esc(r.display)}</title></rect>
+        <text class="bar-label" x="${o.labelW + w + 8}" y="${y + o.barH / 2 + 4}">${esc(r.display)}</text>
+      </g>`;
+    }).join('');
+
+    return `<svg class="chart" viewBox="0 0 ${W} ${h + 22}" role="img"
+      aria-label="${esc(o.aria || 'Bar chart')}" preserveAspectRatio="xMinYMin meet">
+      ${grid}${bars}
+      <line class="axis-line" x1="${o.labelW}" y1="0" x2="${o.labelW}" y2="${h}"/>
+    </svg>`;
+  }
+
+  /** Impact x effort scatter, for choosing what to do next. */
+  function quadrant(items) {
+    const W = 560, H = 380, pad = { t: 26, r: 22, b: 40, l: 46 };
+    const px = (v) => pad.l + ((v - 0.5) / 5) * (W - pad.l - pad.r);
+    const py = (v) => H - pad.b - ((v - 0.5) / 5) * (H - pad.t - pad.b);
+
+    const grid = [1, 2, 3, 4, 5].map((v) =>
+      `<line class="grid-line" x1="${px(v)}" y1="${pad.t}" x2="${px(v)}" y2="${H - pad.b}"/>
+       <line class="grid-line" x1="${pad.l}" y1="${py(v)}" x2="${W - pad.r}" y2="${py(v)}"/>
+       <text class="tick" x="${px(v)}" y="${H - pad.b + 15}" text-anchor="middle">${v}</text>
+       <text class="tick" x="${pad.l - 8}" y="${py(v) + 4}" text-anchor="end">${v}</text>`).join('');
+
+    const midX = px(3), midY = py(3);
+    const quadLines = `<line class="axis-line" x1="${midX}" y1="${pad.t}" x2="${midX}" y2="${H - pad.b}" stroke-dasharray="3 3"/>
+      <line class="axis-line" x1="${pad.l}" y1="${midY}" x2="${W - pad.r}" y2="${midY}" stroke-dasharray="3 3"/>`;
+
+    const quadText = `
+      <text class="quad-label" x="${pad.l + 6}" y="${pad.t + 12}">Quick wins</text>
+      <text class="quad-label" x="${W - pad.r - 6}" y="${pad.t + 12}" text-anchor="end">Big bets</text>
+      <text class="quad-label" x="${pad.l + 6}" y="${H - pad.b - 6}">Fill-ins</text>
+      <text class="quad-label" x="${W - pad.r - 6}" y="${H - pad.b - 6}" text-anchor="end">Money pits</text>`;
+
+    /* Impact and effort are 1–5 integers, so ties are the norm rather than the
+       exception. Stack tied tools vertically inside their cell so every dot and
+       every label stays readable instead of overprinting. */
+    const cells = new Map();
+    items.forEach((t) => {
+      const k = `${t.priority.effort}:${t.priority.impact}`;
+      if (!cells.has(k)) cells.set(k, []);
+      cells.get(k).push(t);
+    });
+
+    const cellH = (H - pad.t - pad.b) / 5;
+    const dots = Array.from(cells.values()).map((members) => {
+      const n = members.length;
+      const step = Math.min(15, (cellH - 6) / Math.max(1, n));
+      return members.map((t, i) => {
+        const cx = px(t.priority.effort);
+        const cy = py(t.priority.impact) + (i - (n - 1) / 2) * step;
+        const color = `var(--life-${t.status || 'unknown'})`;
+        const short = t.name.length > 17 ? t.name.slice(0, 16) + '…' : t.name;
+        /* Point the label away from any tool further right on the same impact
+           row, so a label never runs across the next column's dots. */
+        const blockedRight = items.some((o) =>
+          o.priority.impact === t.priority.impact && o.priority.effort > t.priority.effort);
+        const toRight = !blockedRight && cx <= W * 0.62;
+        return `<g>
+          <circle class="dot-mark" cx="${cx}" cy="${cy}" r="5.5" fill="${color}"
+            data-tool="${esc(t.id)}"><title>${esc(t.name)} — impact ${t.priority.impact}, effort ${t.priority.effort}</title></circle>
+          <text class="dot-label" x="${cx + (toRight ? 10 : -10)}" y="${cy + 3.5}"
+            text-anchor="${toRight ? 'start' : 'end'}">${esc(short)}</text>
+        </g>`;
+      }).join('');
+    }).join('');
+
+    return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img"
+      aria-label="Impact against effort for each tool" preserveAspectRatio="xMinYMin meet">
+      ${grid}${quadLines}${quadText}${dots}
+      <text class="tick" x="${(pad.l + W - pad.r) / 2}" y="${H - 6}" text-anchor="middle">Effort  →</text>
+      <text class="tick" x="12" y="${(pad.t + H - pad.b) / 2}" text-anchor="middle"
+        transform="rotate(-90 12 ${(pad.t + H - pad.b) / 2})">Impact  →</text>
+    </svg>`;
+  }
+
+  /** Chart cards carry a table toggle — the accessible equivalent of the plot. */
+  function chartCard(id, title, note, chartHtml, tableHtml, extraHead) {
+    const mode = chartMode[id] || 'chart';
+    return `<section class="card">
+      <div class="card-head">
+        <h2>${esc(title)}</h2>
+        ${extraHead || ''}
+        <div class="spacer"></div>
+        <button class="btn btn-sm btn-ghost" data-chartmode="${esc(id)}">${mode === 'chart' ? 'Table' : 'Chart'}</button>
+      </div>
+      <div class="card-body">
+        ${note ? `<p class="section-note" style="margin-bottom:14px">${note}</p>` : ''}
+        ${mode === 'chart' ? chartHtml : `<div class="table-wrap">${tableHtml}</div>`}
+      </div>
+    </section>`;
+  }
+
+  /* ============================================================== OVERVIEW */
+  function renderOverview() {
+    const tools = allTools();
+    const byStatus = (s) => tools.filter((t) => t.status === s).length;
+
+    const trackedHours = tools.filter((t) => t.effort.hours != null);
+    const trackedTokens = tools.filter((t) => t.effort.tokens != null);
+    const sumHours = trackedHours.reduce((a, t) => a + t.effort.hours, 0);
+    const sumTokens = trackedTokens.reduce((a, t) => a + t.effort.tokens, 0);
+
+    const unknowns = tools.filter((t) => t.confidence === 'unknown').length;
+    const noRepo = tools.filter((t) => !t.repo).length;
+    const stale = tools.filter((t) => {
+      const d = daysSince(t.lastTouched);
+      return d != null && d > STALE_DAYS && t.status !== 'paused';
+    });
+
+    const tiles = `
+      <div class="tiles">
+        <div class="tile">
+          <span class="eyebrow">Tools tracked</span>
+          <span class="tile-val num">${tools.length}</span>
+          <span class="tile-sub">${byStatus('live')} live · ${byStatus('building')} building · ${byStatus('paused')} paused</span>
+        </div>
+        <div class="tile">
+          <span class="eyebrow">Needs your input</span>
+          <span class="tile-val num">${unknowns}</span>
+          <span class="tile-sub">tools I could not identify</span>
+        </div>
+        <div class="tile">
+          <span class="eyebrow">Missing a repo link</span>
+          <span class="tile-val num">${noRepo}</span>
+          <span class="tile-sub">can't be developed from here yet</span>
+        </div>
+        <div class="tile">
+          <span class="eyebrow">Hours logged</span>
+          <span class="tile-val ${trackedHours.length ? '' : 'untracked'}">${trackedHours.length ? fmtInt(sumHours) : 'Not tracked'}</span>
+          <span class="tile-sub">${trackedHours.length ? `across ${trackedHours.length} tools` : 'starts when we log the first session'}</span>
+        </div>
+        <div class="tile">
+          <span class="eyebrow">Tokens logged</span>
+          <span class="tile-val ${trackedTokens.length ? '' : 'untracked'}">${trackedTokens.length ? fmtTokens(sumTokens) : 'Not tracked'}</span>
+          <span class="tile-sub">${trackedTokens.length ? `across ${trackedTokens.length} tools` : 'needs a number per session from you'}</span>
+        </div>
+      </div>`;
+
+    /* attention list — real, derived signals only */
+    const attn = [];
+    tools.forEach((t) => {
+      (t.blockers || []).forEach((b) =>
+        attn.push({ sev: 'critical', ico: 'alert', who: t.name, what: b.text, id: t.id }));
+    });
+    stale.forEach((t) =>
+      attn.push({ sev: 'serious', ico: 'clock', who: t.name, what:
+        `No activity in ${fmtAge(t.lastTouched)} — keep, finish, or archive?`, id: t.id }));
+    /* A tool already flagged as blocked does not need a second, weaker row. */
+    tools.filter((t) => !t.repo && t.status !== 'idea' && !(t.blockers || []).length).forEach((t) =>
+      attn.push({ sev: 'warning', ico: 'info', who: t.name, what:
+        'No repo linked, so we cannot open it from here.', id: t.id }));
+
+    const attnHtml = attn.length ? `<ul class="attn">${attn.map((a) => `
+      <li>
+        <span class="health ${esc(a.sev)}" style="margin-top:1px">${icon(a.ico)}</span>
+        <span class="body">
+          <span class="who">${esc(a.who)}</span>
+          <span class="what">${esc(a.what)}</span>
+        </span>
+        <button class="btn btn-sm jump" data-open="${esc(a.id)}">Open</button>
+      </li>`).join('')}</ul>`
+      : `<p class="section-note">Nothing flagged.</p>`;
+
+    /* priorities */
+    const ranked = tools.filter((t) => t.priority.rank != null)
+      .sort((a, b) => a.priority.rank - b.priority.rank).slice(0, 6);
+    const prioHtml = `<ul class="prio">${ranked.map((t, i) => `
+      <li>
+        <span class="rank">${i + 1}</span>
+        <span class="body">
+          <span class="who">${esc(t.name)}</span>
+          <span class="why">${esc(t.priority.rationale || '')}</span>
+        </span>
+        <span class="ie">
+          <div><span class="k">Impact</span><br><span class="v">${t.priority.impact ?? '—'}</span></div>
+          <div><span class="k">Effort</span><br><span class="v">${t.priority.effort ?? '—'}</span></div>
+        </span>
+        <button class="btn btn-sm jump" data-open="${esc(t.id)}">Open</button>
+      </li>`).join('')}</ul>`;
+
+    /* staleness chart — real data from lastTouched */
+    const ageRows = tools.filter((t) => t.lastTouched)
+      .map((t) => ({ t, d: daysSince(t.lastTouched) }))
+      .sort((a, b) => b.d - a.d)
+      .map(({ t, d }) => ({
+        label: t.name.length > 24 ? t.name.slice(0, 23) + '…' : t.name,
+        value: d,
+        display: d === 0 ? 'today' : d + 'd',
+        color: d > STALE_DAYS ? 'var(--s2)' : 'var(--s1)',
+      }));
+
+    const ageTable = `<table class="data">
+      <thead><tr><th>Tool</th><th>Status</th><th class="n">Last touched</th><th class="n">Days</th></tr></thead>
+      <tbody>${tools.filter((t) => t.lastTouched)
+        .sort((a, b) => daysSince(b.lastTouched) - daysSince(a.lastTouched))
+        .map((t) => `<tr><td>${esc(t.name)}</td><td>${statusPill(t.status)}</td>
+          <td class="n">${esc(t.lastTouched)}</td><td class="n">${daysSince(t.lastTouched)}</td></tr>`).join('')}
+      </tbody></table>`;
+
+    const noDateCount = tools.filter((t) => !t.lastTouched).length;
+
+    return `
+      ${tiles}
+
+      <div class="split">
+        <section class="card">
+          <div class="card-head">${icon('alert')}<h2>Needs a decision</h2>
+            <div class="spacer"></div><span class="topbar-meta">${attn.length} item${attn.length === 1 ? '' : 's'}</span></div>
+          <div class="card-body">${attnHtml}</div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">${icon('flag')}<h2>Current priority order</h2></div>
+          <div class="card-body">
+            ${prioHtml}
+            <p class="section-note" style="margin-top:12px">This order is my proposal, not a decision.
+              Change any rank in a tool's panel and the list re-sorts.</p>
+          </div>
+        </section>
+      </div>
+
+      ${chartCard('age', 'Time since last activity',
+        `Real data, from the last push to each repo or the last session I can account for.${noDateCount ? ` ${noDateCount} tool${noDateCount === 1 ? ' has' : 's have'} no date on record yet.` : ''} Orange means nothing has moved in over ${STALE_DAYS} days.`,
+        barChart(ageRows, { aria: 'Days since last activity per tool', fmt: (v) => v + 'd' }),
+        ageTable)}
+    `;
+  }
+
+  /* ================================================================= TOOLS */
+  function renderTools() {
+    const tools = visibleTools();
+    const counts = {};
+    STATUS_ORDER.forEach((s) => { counts[s] = allTools().filter((t) => t.status === s).length; });
+
+    const chips = ['all'].concat(STATUS_ORDER.filter((s) => counts[s] > 0)).map((s) => `
+      <button class="chip" data-status="${esc(s)}" aria-pressed="${statusFilter === s}">
+        ${s === 'all' ? 'All' : esc(STATUS_LABEL[s])}
+        <span class="n">${s === 'all' ? allTools().length : counts[s]}</span>
+      </button>`).join('');
+
+    const cards = tools.map((t) => {
+      const d = daysSince(t.lastTouched);
+      const isStale = d != null && d > STALE_DAYS && t.status !== 'paused';
+      const provides = (t.provides || []).map((m) => (moduleById(m) || {}).name).filter(Boolean);
+      return `
+      <button class="tool-card ${esc(t.status)}" data-open="${esc(t.id)}">
+        <span class="stripe"></span>
+        <span class="tool-card-inner">
+          <span class="tool-card-top">
+            <h3>${esc(t.name)}</h3>
+            <span style="margin-left:auto">${confBadge(t.confidence)}</span>
+          </span>
+          <span class="tagline">${esc(t.tagline)}</span>
+          <span class="tool-card-rowline">
+            ${statusPill(t.status)}
+            ${healthChip(t.health)}
+          </span>
+          ${meter(t.percentComplete)}
+          ${provides.length ? `<span class="tool-card-rowline">${provides.map((p) => `<span class="tag">${esc(p)}</span>`).join('')}</span>` : ''}
+          <span class="tool-card-foot">
+            <span>${esc(platformName(t.platformId))}</span>
+            <span class="sep"></span>
+            <span class="${isStale ? 'stale-flag' : ''}">${esc(fmtAge(t.lastTouched))}</span>
+          </span>
+        </span>
+      </button>`;
+    }).join('');
+
+    return `
+      <div class="section-title">
+        <h2>All tools</h2>
+        <span class="section-note">${tools.length} shown${query ? ` matching “${esc(query)}”` : ''}. Click any card to open, edit and copy a working brief.</span>
+      </div>
+      <div class="filters">${chips}</div>
+      ${tools.length ? `<div class="tool-grid">${cards}</div>`
+        : `<div class="empty-state"><h3>Nothing matches</h3><p>Clear the search or pick a different status.</p></div>`}
+    `;
+  }
+
+  /* ========================================================== CONNECTIONS */
+  function renderModules() {
+    const mods = DATA.modules;
+    const conns = DATA.connections;
+
+    /* columns: tools that host or own a module */
+    const colIds = Array.from(new Set(
+      conns.map((c) => c.toToolId).concat(mods.map((m) => m.ownerToolId).filter(Boolean))
+    )).filter((id) => DATA.tools.some((t) => t.id === id));
+
+    const header = colIds.map((id) => `<th>${esc(toolName(id))}</th>`).join('');
+
+    const body = mods.map((m) => {
+      const cells = colIds.map((cid) => {
+        if (m.ownerToolId === cid) return `<td><span class="cell self" title="${esc(toolName(cid))} owns this module">OWNER</span></td>`;
+        const c = conns.find((x) => x.moduleId === m.id && x.toToolId === cid);
+        if (!c) return `<td><span class="cell empty"></span></td>`;
+        const cls = c.status === 'live' ? 'live' : c.status === 'planned' ? 'planned' : 'idea';
+        return `<td><span class="cell ${cls}" title="${esc(CONN_LABEL[c.type] || c.type)} · ${esc(c.status)} — ${esc(c.notes || '')}">${esc(CONN_SHORT[c.type] || '·')}</span></td>`;
+      }).join('');
+      return `<tr><th>${esc(m.name)}<span class="owner">${esc(m.ownerToolId ? toolName(m.ownerToolId) : 'no owner yet')}</span></th>${cells}</tr>`;
+    }).join('');
+
+    const connTable = `<table class="data">
+      <thead><tr><th>Module</th><th>Owned by</th><th>Attaches to</th><th>Commercial model</th><th>State</th><th>Note</th></tr></thead>
+      <tbody>${conns.map((c) => {
+        const m = moduleById(c.moduleId) || {};
+        return `<tr>
+          <td><strong>${esc(m.name || c.moduleId)}</strong></td>
+          <td>${esc(m.ownerToolId ? toolName(m.ownerToolId) : '—')}</td>
+          <td>${esc(toolName(c.toToolId))}</td>
+          <td><span class="tag">${esc(CONN_LABEL[c.type] || c.type)}</span></td>
+          <td>${esc(c.status)}</td>
+          <td class="dim">${esc(c.notes || '')}</td>
+        </tr>`;
+      }).join('')}</tbody></table>`;
+
+    return `
+      <div class="section-title">
+        <h2>Modules and connections</h2>
+        <span class="section-note">Which capability plugs into which product, and on what commercial terms.
+          Rows are modules, columns are the products that host them.</span>
+      </div>
+
+      <section class="card">
+        <div class="card-head">${icon('link')}<h2>Attachment matrix</h2>
+          <div class="spacer"></div>
+          <span class="topbar-meta">${conns.length} connections</span>
+        </div>
+        <div class="card-body">
+          <div class="matrix-wrap">
+            <table class="matrix"><thead><tr><th></th>${header}</tr></thead><tbody>${body}</tbody></table>
+          </div>
+          <div class="legend-row" style="margin-top:16px">
+            <span class="legend-key"><span class="legend-swatch" style="background:var(--life-live);border-color:var(--life-live)"></span>Live now</span>
+            <span class="legend-key"><span class="legend-swatch" style="background:var(--accent-soft);border-color:var(--accent-line)"></span>Planned</span>
+            <span class="legend-key"><span class="legend-swatch" style="background:transparent;border-style:dashed"></span>Idea only</span>
+            <span class="legend-key"><span class="legend-swatch" style="background:var(--surface-3)"></span>Owns the module</span>
+            <span class="legend-key faint">FREE = bundled free · PAID = paid add-on · API = service link</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">${icon('box')}<h2>Every connection in words</h2></div>
+        <div class="card-body"><div class="table-wrap">${connTable}</div></div>
+      </section>
+
+      <div class="empty-state">
+        <h3>The decision this view exists for</h3>
+        <p>You described two commercial models: a module people <strong>buy as an add-on</strong> to a tool they already
+          own, and a module you <strong>give away free</strong> inside a bigger platform. The Site Builder row shows both
+          at once — paid into BF, free into the platform. Once you confirm which products really host it,
+          this becomes the map we build the entitlement logic from.</p>
+      </div>
+    `;
+  }
+
+  /* ============================================================ PRIORITIES */
+  function renderPriorities() {
+    const tools = allTools().filter((t) => t.priority.impact != null && t.priority.effort != null);
+    const ranked = allTools().filter((t) => t.priority.rank != null)
+      .sort((a, b) => a.priority.rank - b.priority.rank);
+
+    const table = `<table class="data">
+      <thead><tr><th class="n">#</th><th>Tool</th><th>Status</th><th class="n">Impact</th><th class="n">Effort</th><th>Why this rank</th></tr></thead>
+      <tbody>${ranked.map((t, i) => `<tr>
+        <td class="n">${i + 1}</td>
+        <td><strong>${esc(t.name)}</strong></td>
+        <td>${statusPill(t.status)}</td>
+        <td class="n">${t.priority.impact ?? '—'}</td>
+        <td class="n">${t.priority.effort ?? '—'}</td>
+        <td class="dim">${esc(t.priority.rationale || '')}</td>
+      </tr>`).join('')}</tbody></table>`;
+
+    return `
+      <div class="section-title">
+        <h2>Priorities</h2>
+        <span class="section-note">Impact and effort are both 1–5, scored by me as a starting position.
+          Overwrite them in each tool's panel — this is the view we argue in front of.</span>
+      </div>
+
+      <div class="split">
+        ${chartCard('quad', 'Impact against effort',
+          'Top-left is where to spend time first. Dot colour is the tool\'s stage; every dot is labelled.',
+          quadrant(tools), table)}
+
+        <section class="card">
+          <div class="card-head">${icon('flag')}<h2>Ranked order</h2></div>
+          <div class="card-body">
+            <ul class="prio">${ranked.map((t, i) => `
+              <li>
+                <span class="rank">${i + 1}</span>
+                <span class="body">
+                  <span class="who">${esc(t.name)}</span>
+                  <span class="why">${esc(t.priority.rationale || '')}</span>
+                </span>
+                <button class="btn btn-sm jump" data-open="${esc(t.id)}">Open</button>
+              </li>`).join('')}
+            </ul>
+          </div>
+        </section>
+      </div>
+    `;
+  }
+
+  /* =============================================================== CLIENTS */
+  function renderClients() {
+    const rows = DATA.clients.map((c) => `<tr>
+      <td><strong>${esc(c.name)}</strong><br><span class="tag">${esc(c.type)}</span></td>
+      <td>${(c.toolIds || []).map((id) => `<span class="tag">${esc(toolName(id))}</span>`).join(' ') || '<span class="faint">—</span>'}</td>
+      <td>${esc(c.since || '—')}</td>
+      <td>${confBadge(c.confidence)}</td>
+      <td class="dim">${esc(c.notes || '')}</td>
+    </tr>`).join('');
+
+    /* who uses what, inverted */
+    const usage = allTools().map((t) => ({
+      t, users: DATA.clients.filter((c) => (c.toolIds || []).includes(t.id)),
+    })).filter((u) => u.users.length);
+
+    return `
+      <div class="section-title">
+        <h2>Who uses what</h2>
+        <span class="section-note">Thin on purpose — I only know what you have told me. The paying cohort
+          is the row worth filling in first, because it decides which tool earns the next module.</span>
+      </div>
+
+      <section class="card">
+        <div class="card-head">${icon('users')}<h2>Client and user groups</h2></div>
+        <div class="card-body"><div class="table-wrap">
+          <table class="data"><thead><tr><th>Group</th><th>Tools they use</th><th>Since</th><th>Confidence</th><th>Note</th></tr></thead>
+          <tbody>${rows}</tbody></table>
+        </div></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">${icon('box')}<h2>Tools by audience</h2></div>
+        <div class="card-body"><div class="table-wrap">
+          <table class="data"><thead><tr><th>Tool</th><th>Status</th><th>Used by</th></tr></thead>
+          <tbody>${usage.map((u) => `<tr>
+            <td><strong>${esc(u.t.name)}</strong></td>
+            <td>${statusPill(u.t.status)}</td>
+            <td>${u.users.map((c) => `<span class="tag">${esc(c.name)}</span>`).join(' ')}</td>
+          </tr>`).join('')}</tbody></table>
+        </div></div>
+      </section>
+
+      <div class="empty-state">
+        <h3>What is missing</h3>
+        <p>No seat counts, no revenue, no signup dates. If you tell me roughly how many people are on BF,
+          how many PEIAGENTS agents actively use the skills, and what each product charges, this view starts
+          answering “which tool deserves the next week of work” with numbers instead of instinct.</p>
+      </div>
+    `;
+  }
+
+  /* =================================================================== LOG */
+  function renderLog() {
+    const log = DATA.log || [];
+    const tools = allTools();
+
+    const effortRows = tools.filter((t) => t.effort.hours != null)
+      .sort((a, b) => b.effort.hours - a.effort.hours)
+      .map((t) => ({ label: t.name, value: t.effort.hours, display: t.effort.hours + 'h' }));
+
+    const tokenRows = tools.filter((t) => t.effort.tokens != null)
+      .sort((a, b) => b.effort.tokens - a.effort.tokens)
+      .map((t) => ({ label: t.name, value: t.effort.tokens, display: fmtTokens(t.effort.tokens), color: 'var(--s3)' }));
+
+    const effortTable = `<table class="data">
+      <thead><tr><th>Tool</th><th class="n">Hours</th><th class="n">Tokens</th><th class="n">Sessions</th></tr></thead>
+      <tbody>${tools.map((t) => `<tr>
+        <td>${esc(t.name)}</td>
+        <td class="n">${t.effort.hours ?? '<span class="faint">—</span>'}</td>
+        <td class="n">${t.effort.tokens != null ? fmtTokens(t.effort.tokens) : '<span class="faint">—</span>'}</td>
+        <td class="n">${t.effort.sessions ?? '<span class="faint">—</span>'}</td>
+      </tr>`).join('')}</tbody></table>`;
+
+    const logTable = log.length ? `<table class="data">
+      <thead><tr><th>Date</th><th>Tool</th><th>What happened</th><th class="n">Hours</th><th class="n">Tokens</th></tr></thead>
+      <tbody>${log.slice().reverse().map((e) => `<tr>
+        <td class="n">${esc(e.date)}</td>
+        <td>${esc(toolName(e.toolId))}</td>
+        <td>${esc(e.summary)}</td>
+        <td class="n">${e.hours ?? '—'}</td>
+        <td class="n">${e.tokens != null ? fmtTokens(e.tokens) : '—'}</td>
+      </tr>`).join('')}</tbody></table>` : '';
+
+    const haveEffort = effortRows.length || tokenRows.length;
+
+    return `
+      <div class="section-title">
+        <h2>Time and tokens</h2>
+        <span class="section-note">Every figure here is blank, and that is deliberate — I have no record of
+          hours or token spend from the earlier chats, so inventing numbers would make this view worse than useless.</span>
+      </div>
+
+      ${haveEffort ? `
+        ${effortRows.length ? chartCard('hours', 'Hours per tool', '', barChart(effortRows, { aria: 'Hours per tool', fmt: (v) => v + 'h' }), effortTable) : ''}
+        ${tokenRows.length ? chartCard('tokens', 'Tokens per tool', '', barChart(tokenRows, { aria: 'Tokens per tool', fmt: fmtTokens }), effortTable) : ''}
+      ` : `
+        <div class="empty-state">
+          <h3>Nothing logged yet</h3>
+          <p>Two ways to start. Either open a tool and type the hours and tokens you remember into its panel —
+            rough is fine, and the numbers stay marked as yours — or from here on I add a log line at the end of
+            every session we do, which is the version that stays accurate without you having to remember anything.</p>
+          <p><strong>On tokens specifically:</strong> I cannot read your account usage, so a token figure has to come
+            from you or from me noting it per session. There is no API I can call to backfill the ten chats that already happened.</p>
+        </div>
+      `}
+
+      <section class="card">
+        <div class="card-head">${icon('clock')}<h2>Effort by tool</h2>
+          <div class="spacer"></div><span class="topbar-meta">${tools.filter((t) => t.effort.hours != null).length} of ${tools.length} tracked</span></div>
+        <div class="card-body"><div class="table-wrap">${effortTable}</div></div>
+      </section>
+
+      ${logTable ? `<section class="card">
+        <div class="card-head">${icon('check')}<h2>Session log</h2></div>
+        <div class="card-body"><div class="table-wrap">${logTable}</div></div>
+      </section>` : ''}
+    `;
+  }
+
+  /* ========================================================= DETAIL PANEL */
+  function renderPanel() {
+    const scrim = $('#scrim'), panel = $('#panel');
+    if (!openToolId) { scrim.hidden = true; panel.hidden = true; return; }
+    const t = tool(openToolId);
+    if (!t) { openToolId = null; scrim.hidden = true; panel.hidden = true; return; }
+
+    const provides = (t.provides || []).map((m) => moduleById(m)).filter(Boolean);
+    const consumes = (t.consumes || []).map((m) => moduleById(m)).filter(Boolean);
+    const related = DATA.connections.filter((c) =>
+      c.toToolId === t.id || provides.some((p) => p.id === c.moduleId));
+
+    const field = (label, path, type, opts) => {
+      const v = val(t.id, path);
+      const cls = isEdited(t.id, path) ? 'edited' : '';
+      if (type === 'select') {
+        return `<div class="field"><label for="f-${path}">${esc(label)}</label>
+          <select id="f-${path}" class="${cls}" data-field="${esc(path)}">
+            ${opts.map((o) => `<option value="${esc(o)}" ${String(v) === o ? 'selected' : ''}>${esc(STATUS_LABEL[o] || HEALTH_LABEL[o] || o)}</option>`).join('')}
+          </select></div>`;
+      }
+      return `<div class="field"><label for="f-${path}">${esc(label)}</label>
+        <input id="f-${path}" class="${cls}" data-field="${esc(path)}" type="${type || 'text'}"
+          value="${esc(v == null ? '' : v)}" ${type === 'number' ? 'min="0"' : ''}
+          placeholder="${type === 'number' ? 'not tracked' : ''}"></div>`;
+    };
+
+    $('#panel-content').innerHTML = `
+      <div class="panel-head">
+        <div class="panel-head-top">
+          <div>
+            <span class="eyebrow">${esc(platformName(t.platformId))}</span>
+            <h2>${esc(t.name)}</h2>
+          </div>
+          <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
+            ${confBadge(t.confidence)}
+            <button class="btn btn-sm btn-ghost" id="panel-close" aria-label="Close">${icon('x')}</button>
+          </div>
+        </div>
+        <p class="dim" style="font-size:12.5px">${esc(t.tagline)}</p>
+        <div class="tool-card-rowline">${statusPill(t.status)}${healthChip(t.health)}
+          <span class="tag">last activity ${esc(fmtAge(t.lastTouched))}</span></div>
+      </div>
+
+      <div class="panel-body">
+        <div class="sub">
+          <span class="eyebrow">State</span>
+          <div class="field-grid">
+            ${field('Status', 'status', 'select', STATUS_ORDER)}
+            ${field('Health', 'health', 'select', ['good', 'warning', 'serious', 'critical', 'unknown'])}
+            ${field('Percent complete', 'percentComplete', 'number')}
+            ${field('Last touched', 'lastTouched', 'date')}
+          </div>
+        </div>
+
+        <div class="sub">
+          <span class="eyebrow">Where it lives</span>
+          <div class="field-grid">
+            ${field('Repo (owner/name)', 'repo', 'text')}
+            ${field('Live URL', 'liveUrl', 'text')}
+          </div>
+          <div class="linklist">
+            ${t.repo ? `<a class="btn btn-sm" href="https://github.com/${esc(t.repo)}" target="_blank" rel="noopener">${icon('ext')}${esc(t.repo)}</a>` : ''}
+            ${t.liveUrl ? `<a class="btn btn-sm" href="${esc(t.liveUrl)}" target="_blank" rel="noopener">${icon('ext')}Open live</a>` : ''}
+            ${t.adminUrl ? `<a class="btn btn-sm" href="${esc(t.adminUrl)}" target="_blank" rel="noopener">${icon('ext')}Admin</a>` : ''}
+          </div>
+        </div>
+
+        <div class="sub">
+          <span class="eyebrow">Effort — your numbers, not mine</span>
+          <div class="field-grid">
+            ${field('Hours', 'effort.hours', 'number')}
+            ${field('Tokens', 'effort.tokens', 'number')}
+            ${field('Sessions', 'effort.sessions', 'number')}
+            <div class="field"><label>Source</label>
+              <span class="hint">Blank means never measured. Anything you type is treated as your estimate.</span></div>
+          </div>
+        </div>
+
+        <div class="sub">
+          <span class="eyebrow">Priority</span>
+          <div class="field-grid">
+            ${field('Rank', 'priority.rank', 'number')}
+            ${field('Impact 1–5', 'priority.impact', 'number')}
+            ${field('Effort 1–5', 'priority.effort', 'number')}
+          </div>
+          ${t.priority.rationale ? `<div class="note-block">${esc(t.priority.rationale)}</div>` : ''}
+        </div>
+
+        ${(t.blockers || []).length ? `<div class="sub">
+          <span class="eyebrow">Blocked on</span>
+          ${t.blockers.map((b) => `<div class="blocker">${icon('alert')}<span>${esc(b.text)}
+            ${b.since ? `<br><span class="faint mono" style="font-size:10.5px">since ${esc(b.since)}</span>` : ''}</span></div>`).join('')}
+        </div>` : ''}
+
+        ${(t.nextActions || []).length ? `<div class="sub">
+          <span class="eyebrow">Next actions</span>
+          <ul class="checklist">${t.nextActions.map((a, i) => `
+            <li class="${a.done ? 'done' : ''}">
+              <input type="checkbox" id="na-${i}" data-action="${i}" ${a.done ? 'checked' : ''}>
+              <label for="na-${i}"><span>${esc(a.text)}</span></label>
+            </li>`).join('')}</ul>
+        </div>` : ''}
+
+        ${(provides.length || consumes.length) ? `<div class="sub">
+          <span class="eyebrow">Modules</span>
+          ${provides.length ? `<p style="font-size:12.5px"><strong>Provides:</strong>
+            ${provides.map((m) => `<span class="tag">${esc(m.name)}</span>`).join(' ')}</p>` : ''}
+          ${consumes.length ? `<p style="font-size:12.5px"><strong>Consumes:</strong>
+            ${consumes.map((m) => `<span class="tag">${esc(m.name)}</span>`).join(' ')}</p>` : ''}
+        </div>` : ''}
+
+        ${related.length ? `<div class="sub">
+          <span class="eyebrow">Connections</span>
+          <div class="table-wrap"><table class="data">
+            <thead><tr><th>Module</th><th>Direction</th><th>Model</th><th>State</th></tr></thead>
+            <tbody>${related.map((c) => {
+              const m = moduleById(c.moduleId) || {};
+              const dir = c.toToolId === t.id ? `into ${t.name}` : `${t.name} → ${toolName(c.toToolId)}`;
+              return `<tr><td>${esc(m.name || c.moduleId)}</td><td class="dim">${esc(dir)}</td>
+                <td><span class="tag">${esc(CONN_LABEL[c.type] || c.type)}</span></td><td>${esc(c.status)}</td></tr>`;
+            }).join('')}</tbody></table></div>
+        </div>` : ''}
+
+        <div class="sub">
+          <span class="eyebrow">Notes</span>
+          <div class="field">
+            <textarea data-field="notes" class="${isEdited(t.id, 'notes') ? 'edited' : ''}" rows="4">${esc(t.notes)}</textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-foot">
+        <button class="btn btn-primary btn-sm" id="copy-brief">${icon('copy')}Copy working brief</button>
+        <span class="hint faint" style="font-size:11px">Paste into a new chat to pick this tool up with full context.</span>
+      </div>
+    `;
+
+    scrim.hidden = false;
+    panel.hidden = false;
+    panel.focus();
+  }
+
+  /** A paste-ready brief so a fresh chat starts with the full picture. */
+  function buildBrief(t) {
+    const provides = (t.provides || []).map((m) => (moduleById(m) || {}).name).filter(Boolean);
+    const consumes = (t.consumes || []).map((m) => (moduleById(m) || {}).name).filter(Boolean);
+    const related = DATA.connections.filter((c) =>
+      c.toToolId === t.id || (t.provides || []).includes(c.moduleId));
+
+    const lines = [
+      `# Working on: ${t.name}`,
+      ``,
+      `Platform: ${platformName(t.platformId)}`,
+      `Status: ${STATUS_LABEL[t.status] || t.status} · Health: ${HEALTH_LABEL[t.health] || t.health}` +
+        (t.percentComplete != null ? ` · ${t.percentComplete}% complete` : ''),
+      `Repo: ${t.repo || 'NOT LINKED YET'}`,
+      t.liveUrl ? `Live: ${t.liveUrl}` : null,
+      `Data confidence: ${t.confidence}`,
+      `Last activity: ${fmtAge(t.lastTouched)}${t.lastTouched ? ` (${t.lastTouched})` : ''}`,
+      ``,
+      `## What it is`,
+      t.tagline,
+      ``,
+    ];
+
+    if (provides.length) lines.push(`## Modules it provides`, ...provides.map((p) => `- ${p}`), ``);
+    if (consumes.length) lines.push(`## Modules it consumes`, ...consumes.map((p) => `- ${p}`), ``);
+
+    if (related.length) {
+      lines.push(`## Connections`);
+      related.forEach((c) => {
+        const m = moduleById(c.moduleId) || {};
+        const dir = c.toToolId === t.id ? `${m.name} → ${t.name}` : `${m.name} → ${toolName(c.toToolId)}`;
+        lines.push(`- ${dir} — ${CONN_LABEL[c.type] || c.type}, ${c.status}${c.notes ? `. ${c.notes}` : ''}`);
+      });
+      lines.push('');
+    }
+
+    if ((t.blockers || []).length) {
+      lines.push(`## Blocked on`, ...t.blockers.map((b) => `- ${b.text}`), ``);
+    }
+    if ((t.nextActions || []).length) {
+      lines.push(`## Next actions`, ...t.nextActions.map((a) => `- [${a.done ? 'x' : ' '}] ${a.text}`), ``);
+    }
+    if (t.notes) lines.push(`## Notes`, t.notes, ``);
+
+    lines.push(`## Effort so far`);
+    lines.push(`Hours: ${t.effort.hours ?? 'not tracked'} · Tokens: ${t.effort.tokens ?? 'not tracked'} · Sessions: ${t.effort.sessions ?? 'not tracked'}`);
+    lines.push('');
+    lines.push(`---`);
+    lines.push(`Generated from the FT Ventures development dashboard registry (${DATA.meta.updated}).`);
+
+    return lines.filter((l) => l !== null).join('\n');
+  }
+
+  /* ============================================================ EDITS BAR */
+  function renderEditsBar() {
+    const bar = $('#edits-bar');
+    const n = Object.keys(edits).length;
+    bar.hidden = n === 0;
+    if (n) {
+      $('#edits-count').textContent = `${n} unsaved change${n === 1 ? '' : 's'}`;
+    }
+  }
+
+  /** Edits as a compact patch, grouped by tool, ready to paste back to me. */
+  function buildPatch() {
+    const byTool = {};
+    Object.keys(edits).forEach((k) => {
+      const [id, path] = k.split('::');
+      (byTool[id] = byTool[id] || {})[path] = edits[k];
+    });
+    const out = {
+      _instruction: 'Apply these changes to dashboard/registry.json. Paths are dot-notation within each tool object.',
+      _from: 'FT Ventures development dashboard, browser edits',
+      changes: byTool,
+    };
+    return JSON.stringify(out, null, 2);
+  }
+
+  async function copy(text, okMsg) {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast(okMsg || 'Copied');
+    } catch {
+      /* clipboard can be blocked; fall back to a selectable prompt */
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;top:10%;left:50%;transform:translateX(-50%);width:min(680px,90vw);height:60vh;z-index:70';
+      document.body.appendChild(ta);
+      ta.select();
+      toast('Clipboard blocked — text selected, press Ctrl/Cmd+C then Esc');
+      const cleanup = (e) => {
+        if (e.type === 'keydown' && e.key !== 'Escape') return;
+        ta.remove();
+        document.removeEventListener('keydown', cleanup);
+      };
+      document.addEventListener('keydown', cleanup);
+    }
+  }
+
+  let toastTimer;
+  function toast(msg) {
+    const el = $('#toast');
+    el.textContent = msg;
+    el.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.hidden = true; }, 2600);
+  }
+
+  /* ================================================================ ROUTER */
+  const VIEWS = {
+    overview: { label: 'Overview', icon: 'gauge', render: renderOverview, title: 'Overview' },
+    tools: { label: 'Tools', icon: 'grid', render: renderTools, title: 'Tools' },
+    modules: { label: 'Connections', icon: 'link', render: renderModules, title: 'Modules and connections' },
+    priorities: { label: 'Priorities', icon: 'flag', render: renderPriorities, title: 'Priorities' },
+    clients: { label: 'Who uses what', icon: 'users', render: renderClients, title: 'Who uses what' },
+    log: { label: 'Time and tokens', icon: 'clock', render: renderLog, title: 'Time and tokens' },
+  };
+
+  function renderRail() {
+    const counts = {
+      tools: DATA.tools.length,
+      modules: DATA.connections.length,
+      clients: DATA.clients.length,
+    };
+    $('#nav').innerHTML = Object.entries(VIEWS).map(([k, v]) => `
+      <button class="nav-item" data-route="${k}" ${route === k ? 'aria-current="page"' : ''}>
+        ${icon(v.icon)}<span>${esc(v.label)}</span>
+        ${counts[k] != null ? `<span class="count">${counts[k]}</span>` : ''}
+      </button>`).join('');
+  }
+
+  function render() {
+    renderRail();
+    $('#view-title').textContent = VIEWS[route].title;
+    $('#view').innerHTML = VIEWS[route].render();
+    renderEditsBar();
+    renderPanel();
+  }
+
+  function go(r) {
+    if (!VIEWS[r]) r = 'overview';
+    route = r;
+    if (location.hash.slice(1) !== r) history.replaceState(null, '', '#' + r);
+    render();
+  }
+
+  /* ================================================================ EVENTS */
+  function wire() {
+    document.addEventListener('click', (e) => {
+      const navBtn = e.target.closest('[data-route]');
+      if (navBtn) { go(navBtn.dataset.route); return; }
+
+      const openBtn = e.target.closest('[data-open]');
+      if (openBtn) { openToolId = openBtn.dataset.open; renderPanel(); return; }
+
+      const dot = e.target.closest('[data-tool]');
+      if (dot) { openToolId = dot.dataset.tool; renderPanel(); return; }
+
+      const chipBtn = e.target.closest('[data-status]');
+      if (chipBtn) { statusFilter = chipBtn.dataset.status; render(); return; }
+
+      const cm = e.target.closest('[data-chartmode]');
+      if (cm) {
+        const id = cm.dataset.chartmode;
+        chartMode[id] = (chartMode[id] || 'chart') === 'chart' ? 'table' : 'chart';
+        render();
+        return;
+      }
+
+      if (e.target.closest('#panel-close') || e.target.id === 'scrim') {
+        openToolId = null; renderPanel(); return;
+      }
+
+      if (e.target.closest('#copy-brief')) {
+        copy(buildBrief(tool(openToolId)), 'Brief copied — paste it into a new chat');
+        return;
+      }
+      if (e.target.closest('#copy-patch')) {
+        copy(buildPatch(), 'Patch copied — paste it to me and I will commit it');
+        return;
+      }
+      if (e.target.closest('#discard-edits')) {
+        if (confirm('Discard all local changes and go back to the committed registry?')) {
+          edits = {}; saveEdits(); render(); toast('Local changes discarded');
+        }
+        return;
+      }
+      if (e.target.closest('#theme-toggle')) { toggleTheme(); return; }
+    });
+
+    /* editable fields inside the panel */
+    document.addEventListener('input', (e) => {
+      const f = e.target.closest('[data-field]');
+      if (f && openToolId) {
+        setEdit(openToolId, f.dataset.field, f.value);
+        f.classList.toggle('edited', isEdited(openToolId, f.dataset.field));
+        return;
+      }
+      if (e.target.id === 'q') {
+        query = e.target.value;
+        if (route !== 'tools') { route = 'tools'; history.replaceState(null, '', '#tools'); }
+        render();
+        $('#q').focus();
+      }
+    });
+
+    document.addEventListener('change', (e) => {
+      const f = e.target.closest('select[data-field]');
+      if (f && openToolId) {
+        setEdit(openToolId, f.dataset.field, f.value);
+        render();
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && openToolId) { openToolId = null; renderPanel(); }
+      if (e.key === '/' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        e.preventDefault(); $('#q').focus();
+      }
+    });
+
+    window.addEventListener('hashchange', () => go(location.hash.slice(1) || 'overview'));
+  }
+
+  /* ================================================================= THEME */
+  function applyTheme(t) {
+    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme');
+    const btn = $('#theme-toggle');
+    if (btn) {
+      const isDark = t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+      btn.innerHTML = icon(isDark ? 'sun' : 'moon') + `<span>${isDark ? 'Light' : 'Dark'}</span>`;
+    }
+  }
+  function toggleTheme() {
+    const cur = document.documentElement.getAttribute('data-theme');
+    const isDark = cur === 'dark' || (!cur && matchMedia('(prefers-color-scheme: dark)').matches);
+    const next = isDark ? 'light' : 'dark';
+    try { localStorage.setItem(LS_THEME, next); } catch { /* ignore */ }
+    applyTheme(next);
+  }
+
+  /* ================================================================== BOOT */
+  async function boot() {
+    const inline = $('#registry-data');
+    if (inline) {
+      DATA = JSON.parse(inline.textContent);
+    } else {
+      const res = await fetch('registry.json');
+      DATA = await res.json();
+    }
+
+    loadEdits();
+    let theme = null;
+    try { theme = localStorage.getItem(LS_THEME); } catch { /* ignore */ }
+    applyTheme(theme);
+
+    $('#meta-updated').textContent = `registry ${DATA.meta.version} · ${DATA.meta.updated}`;
+    wire();
+    go(location.hash.slice(1) || 'overview');
+  }
+
+  boot().catch((err) => {
+    document.body.innerHTML = `<div style="padding:40px;font-family:system-ui">
+      <h1 style="font-size:18px">Could not load the registry</h1>
+      <p style="color:#666;font-size:14px">${esc(err.message)}</p>
+      <p style="color:#666;font-size:13px">If you opened this file directly from disk, the browser blocks reading
+      registry.json. Use the built single-file version in <code>dashboard/dist/</code>, or serve the folder with
+      <code>npx serve dashboard</code>.</p></div>`;
+  });
+})();
+
+</script>
+</body>
+</html>
