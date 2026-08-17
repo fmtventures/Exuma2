@@ -1025,6 +1025,7 @@ table.matrix tbody th .owner { display: block; font-family: var(--mono); font-si
       percentComplete: numOrNull(val(id, 'percentComplete')),
       repo: val(id, 'repo') || null,
       liveUrl: val(id, 'liveUrl') || null,
+      localPath: val(id, 'localPath') || null,
       lastTouched: val(id, 'lastTouched') || null,
       notes: val(id, 'notes') || '',
       effort: {
@@ -1057,7 +1058,7 @@ table.matrix tbody th .owner { display: block; font-family: var(--mono); font-si
     'percentComplete', 'effort.hours', 'effort.tokens', 'effort.sessions',
     'priority.rank', 'priority.impact', 'priority.effort',
   ]);
-  const NULLABLE_STRING_PATHS = new Set(['repo', 'liveUrl', 'lastTouched']);
+  const NULLABLE_STRING_PATHS = new Set(['repo', 'liveUrl', 'lastTouched', 'localPath']);
 
   function coerce(path, value) {
     if (NUMERIC_PATHS.has(path)) return numOrNull(value);
@@ -2068,6 +2069,7 @@ table.matrix tbody th .owner { display: block; font-family: var(--mono); font-si
             ${field('Repo (owner/name)', 'repo', 'text')}
             ${field('Live URL', 'liveUrl', 'text')}
           </div>
+          ${field('Local folder', 'localPath', 'text')}
           <div class="linklist">
             ${t.repo ? `<a class="btn btn-sm" href="https://github.com/${esc(t.repo)}" target="_blank" rel="noopener">${icon('ext')}${esc(t.repo)}</a>` : ''}
             ${t.liveUrl ? `<a class="btn btn-sm" href="${esc(t.liveUrl)}" target="_blank" rel="noopener">${icon('ext')}Open live</a>` : ''}
@@ -2177,6 +2179,7 @@ table.matrix tbody th .owner { display: block; font-family: var(--mono); font-si
       `Status: ${STATUS_LABEL[t.status] || t.status} · Health: ${HEALTH_LABEL[t.health] || t.health}` +
         (t.percentComplete != null ? ` · ${t.percentComplete}% complete` : ''),
       `Repo: ${t.repo || 'NOT LINKED YET'}`,
+      t.localPath ? `Local folder: ${t.localPath}` : null,
       t.liveUrl ? `Live: ${t.liveUrl}` : null,
       `Data confidence: ${t.confidence}`,
       `Last activity: ${fmtAge(t.lastTouched)}${t.lastTouched ? ` (${t.lastTouched})` : ''}`,
