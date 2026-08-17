@@ -1,0 +1,78 @@
+name: Sidelio CI
+
+# Scoped to the sidelio/ directory so the existing GitHub Pages project in this
+# repository is unaffected.
+on:
+  push:
+    branches: [main]
+    paths: ['sidelio/**', '.github/workflows/sidelio-ci.yml']
+  pull_request:
+    paths: ['sidelio/**', '.github/workflows/sidelio-ci.yml']
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: sidelio
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: sidelio/package-lock.json
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      # The demo exercises every module end to end, so a break in composition
+      # fails here even when the unit tests still pass.
+      - name: Demo (end-to-end smoke)
+        run: npm run demo
+
+      # The admin must actually boot: a broken seed or route table is not
+      # caught by unit tests that construct the server themselves.
+      - name: Admin boots
+        run: |
+          PORT=4399 npm run dev &
+          for i in $(seq 1 40); do
+            curl -sf http://localhost:4399/api/session > /dev/null && break
+            sleep 0.5
+          done
+          curl -sf http://localhost:4399/api/session > /dev/null
+          curl -sf http://localhost:4399/ > /dev/null
+          kill %1
+
+  # The schema and RLS policies are the second, independent tenancy layer, so
+  # they are verified against a real Postgres rather than reviewed by eye.
+  database:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGUSER: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Schema, RLS and tenancy isolation
+        run: npm run test:db
