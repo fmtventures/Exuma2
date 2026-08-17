@@ -740,6 +740,49 @@ table.matrix tbody th .owner { display: block; font-family: var(--mono); font-si
 .prio .ie .v { font-family: var(--mono); font-size: 13px; font-variant-numeric: tabular-nums; }
 
 /* ==========================================================================
+   Queue, decisions, add-forms — the working surfaces
+   ========================================================================== */
+.qlist { display: flex; flex-direction: column; }
+.qrow {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+.qrow:last-child { border-bottom: 0; }
+.qrow .body { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.qrow .what { font-size: 13px; font-weight: 550; }
+.qrow .what.struck { text-decoration: line-through; color: var(--muted); font-weight: 400; }
+.qrow .why { font-size: 11.5px; color: var(--ink-2); }
+
+/* status select doubles as the state indicator, so it carries the colour */
+.qrow .qstat {
+  flex: none; width: 96px;
+  padding: 3px 5px;
+  font-size: 11.5px; font-weight: 600;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
+.qrow.doing   .qstat { border-color: var(--life-building); color: var(--ink); box-shadow: inset 3px 0 0 var(--life-building); }
+.qrow.blocked .qstat { border-color: var(--critical);       color: var(--ink); box-shadow: inset 3px 0 0 var(--critical); }
+.qrow.done    .qstat { opacity: 0.6; }
+.qrow.blocked .why { color: var(--ink); }
+
+.addform { display: flex; flex-direction: column; gap: 11px; }
+.addform .field-grid { gap: 11px; }
+
+.dec {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+}
+.dec:last-child { border-bottom: 0; }
+.dec-top { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.dec-body { font-size: 12.5px; color: var(--ink-2); }
+.tag.warn { border-color: var(--warn); color: var(--ink); }
+
+/* ==========================================================================
    Responsive
    ========================================================================== */
 @media (max-width: 1080px) {
@@ -827,7 +870,7 @@ table.matrix tbody th .owner { display: block; font-family: var(--mono); font-si
 </aside>
 
 <div class="toast" id="toast" hidden role="status"></div>
-<script type="application/json" id="registry-data">{"meta":{"name":"FT Ventures Development Dashboard","version":"0.2.0","updated":"2026-08-17","owner":"Francis Theriault","confidenceLegend":{"verified":"Confirmed by reading the repo or the running code.","assumed":"Francis named it or a repo exists, but details are my inference. Correct me.","unknown":"Placeholder. Needs Francis to fill in."},"effortNote":"Hours and tokens are null wherever they were never measured. Nothing here is estimated or invented — an empty cell means untracked, and tracking starts from the first entry in the log.","tiers":[{"name":"Starter","price":"$49/mo","includes":"Any 1 module + branded portal"},{"name":"Pro","price":"$149/mo","includes":"Up to 5 modules — CRM, invoicing, website, bookings"},{"name":"Platform","price":"$399/mo","includes":"All 14 modules including BrokerFlow, multi-portal"}],"tiersNote":"Read from studio/pitch.html, which labels these as placeholder pricing. This is the packaging model that already exists — modules are the unit of sale, priced by how many you get, not sold individually as add-ons.","moduleSync":{"from":"fmtventures/Financial-tool → studio/registry.js","at":"2026-08-17","count":14,"wired":14}},"platforms":[{"id":"ftventures","name":"FT Ventures","kind":"holding","note":"Holding company and the umbrella for the software products."},{"id":"peiagents","name":"PEIAGENTS Realty","kind":"brokerage","note":"Real-estate brokerage. Its agents are the users of the skill suite."},{"id":"sidelio","name":"Sidelio","kind":"product","note":"Club and sports organisation management. sidelio.ca, sports.sidelio.ca."},{"id":"fotoshop","name":"PEI Fotoshop","kind":"product","note":"Photo product line. peifotoshop.com plus an admin surface."},{"id":"sandypalms","name":"Sandy Palms","kind":"asset","note":"Great Exuma, Bahamas investment project."}],"tools":[{"id":"ftv-studio","name":"FT Ventures Studio","tagline":"The module platform. A shelf of 14 reusable modules that the Builder composes into a branded client portal, one per client.","platformId":"ftventures","status":"beta","health":"good","percentComplete":null,"repo":"fmtventures/Financial-tool","liveUrl":null,"stack":["static site","no build step","vanilla JS","localStorage via FTVStore","Playwright checks"],"confidence":"verified","lastTouched":"2026-08-04","effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":1,"impact":5,"effort":3,"rationale":"This is the module platform you described wanting to build. It already exists, all 14 modules are wired, and the packaging model is defined. The work is finishing it, not starting it."},"provides":["website","calculators","crm","invoices","gallery","accounting","budget","brokerflow","showings","tournaments","staff","inventory","shopcms","bookings"],"consumes":["cma-engine","listing-marketing"],"nextActions":[{"text":"Confirm the repo name — 'Financial-tool' badly undersells what is in it","done":false},{"text":"Phase 2: swap FTVStore's localStorage for a real backend so client data is not trapped in one browser","done":false},{"text":"Replace the placeholder pricing in studio/pitch.html with real numbers","done":false},{"text":"Decide whether Sidelio's own module system merges with this shelf or stays separate","done":false}],"blockers":[],"notes":"Internally called 'The Ship'. Verified by reading the repo. studio/registry.js is the authoritative module shelf and this dashboard now syncs from it rather than keeping a second copy. Architecture is documented in MODULES.md, which is unusually thorough — it covers the module contract, the FTVStore adapter, seeding and shape repair, interconnect deduping, printing, CSV safety, accessibility and 31 automated checks. Phase 2 (a Cloudflare Worker backend) is planned but not built: all client data currently lives in one browser's localStorage, and studio/data.html is the only way out of it."},{"id":"sidelio","name":"Sidelio","tagline":"Club and sports organisation management — registration, scheduling, officials, practice planning, accounting, team websites.","platformId":"sidelio","status":"live","health":"good","percentComplete":null,"repo":"fmtventures/sidelio-site","liveUrl":"https://sidelio.ca/app.html","stack":["static site","PWA","Capacitor (iOS/Android shell)","Supabase"],"confidence":"verified","lastTouched":"2026-08-17","effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":2,"impact":5,"effort":4,"rationale":"The largest and most actively worked codebase, touched today, with a store-submission runbook already written. Closest to earning revenue on its own."},"provides":["club-management"],"consumes":[],"nextActions":[{"text":"MOBILE-APP.md is blocked on your Apple/Google accounts and a build machine — that is the release path","done":false},{"text":"Reconcile docs/club-platform-modules.md against the Studio shelf — two module systems is the duplication the Studio was built to end","done":false},{"text":"Confirm sidelio-archive can be archived for good","done":false}],"blockers":[],"notes":"Verified. Around 30 pages: registration builder, schedule generator, practice planner, officials, accounting, library, training, pricing, plus its own website/studio pages. One web app (app.html + sidelio-data.js) hardened as an installable PWA; Capacitor config, native bridge and icon sources are all in the repo. Supabase is referenced in app.html, sidelio-portal.html, sidelio-coach.js and the service worker. Note it has its own website and studio pages, which overlap the Studio's website module — worth resolving deliberately."},{"id":"lighthouse","name":"The Lighthouse","tagline":"Personal and business finance command centre, commercial deal analyzer and PEI rental intelligence.","platformId":"peiagents","status":"live","health":"warning","percentComplete":null,"repo":"fmtventures/lighthouse-dashboard","liveUrl":null,"stack":["single-file HTML pages","service worker","PWA manifest"],"confidence":"verified","lastTouched":"2026-07-26","effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":5,"impact":4,"effort":2,"rationale":"Real-money tracking that several skills already defer to, but the repo is showing wear and three of its modules have been reimplemented inside the Studio."},"provides":["finance-command-centre","rental-intelligence"],"consumes":[],"nextActions":[{"text":"Delete the four committed .bak files — index.html has three and realestate.html one","done":false},{"text":"Decide: does Lighthouse stay standalone, or become Studio modules? Accounting, BrokerFlow and Showings were all built from its ideas already","done":false}],"blockers":[],"notes":"Verified. Pages: index/realestate (THE LIGHTHOUSE), Finance-Command-Centre.html, deal-analyzer.html (Commercial Deal Analyzer — PEI Intelligence), pei-rental-intelligence.html, training-dashboard.html, training-realestate.html. Health marked as needing attention for two concrete reasons: four .bak files are committed to the repo, and three Studio modules (accounting, brokerflow, showings) list Lighthouse as where their idea came from, so the same capability now exists in two places."},{"id":"sandy-palms-portal","name":"Sandy Palms Investor Portal","tagline":"Interactive Bahamas investment business plan: comps, 30-year projection, financing scenarios, PDF export.","platformId":"sandypalms","status":"live","health":"good","percentComplete":null,"repo":"fmtventures/Exuma2","liveUrl":null,"stack":["single-file HTML","Tailwind CDN","Chart.js","jsPDF","html2canvas"],"confidence":"verified","lastTouched":"2026-08-17","effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":6,"impact":4,"effort":2,"rationale":"Investor-facing, so its quality is visible to outside parties. Its financial model is also the origin of the Studio's calculators."},"provides":["investor-portal"],"consumes":["calculators"],"nextActions":[{"text":"Consolidate three Exuma repos (Exuma, Exuma2, Sandypalms) into one","done":false},{"text":"Consider using the Studio's Property Analyzer instead of the embedded model","done":false}],"blockers":[],"notes":"Verified by reading the source. 70KB single-file app, five tabs, a live financial model with sliders, three Chart.js charts and PDF export. The Studio's Investment Property Analyzer was generalised from this model, and the confidential original memo is preserved in the Studio repo at _private/sandy-palms.html, excluded from its published build."},{"id":"peiagents-skills","name":"PEIAGENTS Skill Suite","tagline":"Around twenty Claude skills covering listings, CMAs, marketing, follow-up, leases and daily ops.","platformId":"peiagents","status":"live","health":"warning","percentComplete":null,"repo":null,"liveUrl":null,"stack":["Claude skills"],"confidence":"verified","lastTouched":"2026-08-17","effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":3,"impact":5,"effort":2,"rationale":"In daily use, widest reach of anything built, and the Studio already names specific skills as the brains behind eight of its modules. It is a live dependency that is not in version control."},"provides":["cma-engine","listing-marketing","presentation-engine"],"consumes":["finance-command-centre"],"nextActions":[{"text":"Get these into a repo — the Studio depends on named skills that are not versioned anywhere","done":false},{"text":"Reconcile the deal-analyzer skill against the Studio's Property Analyzer module","done":false}],"blockers":[{"text":"Not in version control. The Studio's registry names skills as Phase 2 dependencies, so an unversioned rename breaks it silently.","since":"2026-08-17"}],"notes":"Verified present in this session. The Studio's studio/registry.js names these skills against modules: listing-writer and photo-to-listing (website), deal-analyzer and cma-pei (calculators), client-followup-pei and email-triage (crm), pictures-choosethebestones (gallery), deal-analyzer (accounting), cma-pei and listing-writer (brokerflow), client-followup-pei (showings), banner-design (shopcms). That makes the skill suite a real architectural dependency of the platform, not a side project."},{"id":"pei-fotoshop","name":"PEI Fotoshop","tagline":"Photo product with a customer site and an admin surface.","platformId":"fotoshop","status":"live","health":"unknown","percentComplete":null,"repo":null,"liveUrl":"https://peifotoshop.com/","adminUrl":"https://peifotoshop.com/admin","stack":[],"confidence":"assumed","lastTouched":null,"effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":4,"impact":4,"effort":3,"rationale":"Two Studio modules were built from its ideas and it has a live admin, so it is the most obvious first real customer of the platform. Needs a repo before we can touch it."},"provides":[],"consumes":["website","gallery"],"nextActions":[{"text":"Point me at the repo behind peifotoshop.com","done":false},{"text":"Could this run on the Studio's website + gallery modules instead of its own code?","done":false},{"text":"Clarify the relationship to pelotphotos.com","done":false}],"blockers":[],"notes":"The Studio's website and gallery modules both list PEIFOTOSHOP as where their idea came from, so the capability already exists on the shelf. Note that an earlier FT Ventures ecosystem audit, quoted in the Studio's README, classified 'PEI Foto Shop' as a names-only concept — but the site and its admin are live now, so that assessment is out of date. Could not inspect it directly: this environment's network policy blocks the domain."},{"id":"ftventures-dashboard","name":"FT Ventures Dashboard","tagline":"Existing operations dashboard at dashboard.ftventures.ca.","platformId":"ftventures","status":"live","health":"unknown","percentComplete":null,"repo":null,"liveUrl":"https://dashboard.ftventures.ca/","stack":[],"confidence":"assumed","lastTouched":null,"effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":8,"impact":3,"effort":2,"rationale":"Already running. The open question is whether this development dashboard belongs inside it."},"provides":[],"consumes":[],"nextActions":[{"text":"Decide: fold this development dashboard into dashboard.ftventures.ca, or keep it separate","done":false},{"text":"Is this the same thing as the Studio's Owner Dashboard, or different?","done":false}],"blockers":[],"notes":"Could not inspect it — this environment's network policy blocks the domain. Worth checking against studio/dashboard.html, which is already an owner dashboard, before building anything new."},{"id":"dev-dashboard","name":"Build Board","tagline":"This tool. One place for every tool, its status, its modules, priorities and effort.","platformId":"ftventures","status":"building","health":"good","percentComplete":70,"repo":"fmtventures/Exuma2","liveUrl":null,"stack":["single-file HTML","vanilla JS","no dependencies","local Node server for saving"],"confidence":"verified","lastTouched":"2026-08-17","effort":{"hours":null,"tokens":null,"sessions":1},"priority":{"rank":7,"impact":4,"effort":2,"rationale":"Useful the moment the data is right, and the data got substantially more right once the repos were readable."},"provides":[],"consumes":[],"nextActions":[{"text":"Francis fills in Claire 80, Pelot Photos and the two missing repo links","done":false},{"text":"Move it out of the Exuma2 repo — probably into the Studio, where it could be a module","done":false},{"text":"Add live status checks now that local mode can reach the sites","done":false}],"blockers":[],"notes":"Built in this session. Runs read-only from a static file, or locally via serve.mjs where edits write straight to registry.json. Module list is synced from the Studio's own shelf rather than hand-copied."},{"id":"claire-80","name":"Claire 80","tagline":"Presentations tool.","platformId":"ftventures","status":"unknown","health":"unknown","percentComplete":null,"repo":null,"liveUrl":null,"stack":[],"confidence":"unknown","lastTouched":null,"effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":9,"impact":2,"effort":2,"rationale":"Not enough known to rank properly."},"provides":[],"consumes":[],"nextActions":[{"text":"What is Claire 80 — who is it for and what stage is it at?","done":false}],"blockers":[{"text":"Described only as '(presentations)'. No repo found in the org.","since":"2026-08-17"}],"notes":"Francis listed it as 'Claire 80 (presentations)'. Nothing matching it exists in the eight repos I can see."},{"id":"pelot-photos","name":"Pelot Photos","tagline":"Photo site at pelotphotos.com.","platformId":"fotoshop","status":"unknown","health":"unknown","percentComplete":null,"repo":null,"liveUrl":"https://pelotphotos.com/","stack":[],"confidence":"unknown","lastTouched":null,"effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":10,"impact":2,"effort":1,"rationale":"Listed but unexplained. If it is a client site rather than a product, it belongs in the clients view instead."},"provides":[],"consumes":[],"nextActions":[{"text":"Is this a product, a client site, or the same codebase as PEI Fotoshop?","done":false}],"blockers":[],"notes":"No repo found in the org. Could not inspect the site — network policy blocks the domain."},{"id":"exuma-contacts","name":"Exuma Contacts","tagline":"Contact list for the Exuma project.","platformId":"sandypalms","status":"paused","health":"warning","percentComplete":null,"repo":"fmtventures/Exumacontacts","liveUrl":null,"stack":[],"confidence":"assumed","lastTouched":"2026-01-15","effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":11,"impact":1,"effort":1,"rationale":"Untouched for seven months, and the Studio's CRM module covers the same ground. Keep-or-archive call."},"provides":[],"consumes":["crm"],"nextActions":[{"text":"Archive it, or migrate the contacts into the Studio's CRM module","done":false}],"blockers":[],"notes":"No pushes since January 2026. The Studio's CRM / Lead Book module is a superset of this."}],"modules":[{"id":"website","name":"Website","ownerToolId":"ftv-studio","kind":"feature","description":"A clean marketing site — hero, services, testimonials, contact form — exportable as a hostable page.","wired":true,"ideaFrom":"PEIFOTOSHOP","skills":["listing-writer","photo-to-listing"],"href":"../modules/website/index.html","subTools":[],"source":"studio/registry.js"},{"id":"calculators","name":"Financial Calculators","ownerToolId":"ftv-studio","kind":"suite","description":"Property analyzer, mortgage, cap rate & home value — with lead capture.","wired":true,"ideaFrom":"FT Ventures tools","skills":["deal-analyzer","cma-pei"],"href":null,"subTools":["Investment Property Analyzer","Mortgage Calculator","Cap Rate & Quick Returns","What's My Home Worth?"],"source":"studio/registry.js"},{"id":"crm","name":"CRM · Lead Book","ownerToolId":"ftv-studio","kind":"feature","description":"Capture leads from every form; track Contacted → Working → Closed, with follow-up dates that flag cold leads.","wired":true,"ideaFrom":"PEIAGENTS admin","skills":["client-followup-pei","email-triage"],"href":"../modules/crm/index.html","subTools":[],"source":"studio/registry.js"},{"id":"invoices","name":"Invoicing","ownerToolId":"ftv-studio","kind":"feature","description":"Bill clients, print a branded PDF, track paid/unpaid, log paid invoices as income.","wired":true,"ideaFrom":"new","skills":[],"href":"../modules/invoices/index.html","subTools":[],"source":"studio/registry.js"},{"id":"gallery","name":"Client Gallery","ownerToolId":"ftv-studio","kind":"feature","description":"Access-code photo albums — clients select photos, download them, and order prints that raise an invoice.","wired":true,"ideaFrom":"PEIFOTOSHOP","skills":["pictures-choosethebestones"],"href":"../modules/gallery/index.html","subTools":[],"source":"studio/registry.js"},{"id":"accounting","name":"Accounting-light","ownerToolId":"ftv-studio","kind":"feature","description":"Income, expenses & HST — plus a printable HST return and P&L by category.","wired":true,"ideaFrom":"Lighthouse","skills":["deal-analyzer"],"href":"../modules/accounting/index.html","subTools":[],"source":"studio/registry.js"},{"id":"budget","name":"Budget","ownerToolId":"ftv-studio","kind":"feature","description":"Plan a monthly budget by category and track spend against it — actuals pulled from Accounting.","wired":true,"ideaFrom":"Sidelio","skills":[],"href":"../modules/budget/index.html","subTools":[],"source":"studio/registry.js"},{"id":"brokerflow","name":"Full BrokerFlow","ownerToolId":"ftv-studio","kind":"feature","description":"Brokerage hub — live KPIs from your own data, a commission calculator that posts to Accounting, listings + Lighthouse screens.","wired":true,"ideaFrom":"Lighthouse","skills":["cma-pei","listing-writer"],"href":"../modules/brokerflow/index.html","subTools":[],"source":"studio/registry.js"},{"id":"showings","name":"Showings","ownerToolId":"ftv-studio","kind":"feature","description":"Book property showings, confirm them, capture buyer feedback — requests drop into the Lead Book.","wired":true,"ideaFrom":"Lighthouse","skills":["client-followup-pei"],"href":"../modules/showings/index.html","subTools":[],"source":"studio/registry.js"},{"id":"tournaments","name":"Tournaments Builder","ownerToolId":"ftv-studio","kind":"feature","description":"Single-elim brackets or a round-robin league with a live standings table, registration & a public view.","wired":true,"ideaFrom":"Sidelio","skills":[],"href":"../modules/tournaments/index.html","subTools":[],"source":"studio/registry.js"},{"id":"staff","name":"Staff Management","ownerToolId":"ftv-studio","kind":"feature","description":"Employees, schedules, time-off, payroll & a staff portal.","wired":true,"ideaFrom":"AlotGelato","skills":[],"href":"../modules/staff/index.html","subTools":[],"source":"studio/registry.js"},{"id":"inventory","name":"Suppliers & Inventory","ownerToolId":"ftv-studio","kind":"feature","description":"Supplier catalogue, reorder points, purchase orders & showcase-to-site — stock spend lands in Accounting.","wired":true,"ideaFrom":"AlotGelato","skills":[],"href":"../modules/inventory/index.html","subTools":[],"source":"studio/registry.js"},{"id":"shopcms","name":"Shop CMS","ownerToolId":"ftv-studio","kind":"feature","description":"Menu, prices, photos, daily specials & a promotion banner — plus a printable menu board.","wired":true,"ideaFrom":"AlotGelato","skills":["banner-design"],"href":"../modules/shopcms/index.html","subTools":[],"source":"studio/registry.js"},{"id":"bookings","name":"Bookings","ownerToolId":"ftv-studio","kind":"feature","description":"Services, an appointment form & a schedule — bookings become leads, and a completed booking becomes an invoice.","wired":true,"ideaFrom":"new","skills":[],"href":"../modules/bookings/index.html","subTools":[],"source":"studio/registry.js"},{"id":"club-management","name":"Club Management","ownerToolId":"sidelio","kind":"suite","description":"Registration, scheduling, officials, practice planning and club accounting.","wired":true,"ideaFrom":null,"skills":[],"href":null,"subTools":[],"source":"hand"},{"id":"finance-command-centre","name":"Finance Command Centre","ownerToolId":"lighthouse","kind":"feature","description":"Personal and business finance tracking, commissions and trust accounting.","wired":true,"ideaFrom":null,"skills":[],"href":null,"subTools":[],"source":"hand"},{"id":"rental-intelligence","name":"PEI Rental Intelligence","ownerToolId":"lighthouse","kind":"feature","description":"Local rental market data and a commercial deal analyzer.","wired":true,"ideaFrom":null,"skills":[],"href":null,"subTools":[],"source":"hand"},{"id":"investor-portal","name":"Investor Portal","ownerToolId":"sandy-palms-portal","kind":"surface","description":"Interactive investor-facing business plan with a live financial model.","wired":true,"ideaFrom":null,"skills":[],"href":null,"subTools":[],"source":"hand"},{"id":"cma-engine","name":"CMA Engine","ownerToolId":"peiagents-skills","kind":"engine","description":"Comparative market analysis, quick 3-page and full report.","wired":true,"ideaFrom":null,"skills":["cma-pei","easycma-pei"],"href":null,"subTools":[],"source":"hand"},{"id":"listing-marketing","name":"Listing Marketing","ownerToolId":"peiagents-skills","kind":"engine","description":"Ads, captions, reel scripts and hashtags for a listing.","wired":true,"ideaFrom":null,"skills":["listing-marketing-engine","listing-writer-pei"],"href":null,"subTools":[],"source":"hand"},{"id":"presentation-engine","name":"Presentation Engine","ownerToolId":"peiagents-skills","kind":"engine","description":"Deck and presentation generation. May be what Claire 80 is.","wired":false,"ideaFrom":null,"skills":["pptx"],"href":null,"subTools":[],"source":"hand"}],"connections":[{"moduleId":"website","toToolId":"pei-fotoshop","type":"idea-from","status":"live","notes":"The website module's idea came from PEIFOTOSHOP. The capability is already built and wired on the shelf — the open question is whether peifotoshop.com should run on it."},{"moduleId":"gallery","toToolId":"pei-fotoshop","type":"idea-from","status":"live","notes":"Access-code photo albums with print ordering that raises an invoice. Same story as the website module: built, wired, not yet pointed at the real site."},{"moduleId":"brokerflow","toToolId":"peiagents-skills","type":"api","status":"planned","notes":"BrokerFlow names cma-pei and listing-writer as the skills behind it. Phase 2 attaches them via the Claude API; today the wiring is declared, not live."},{"moduleId":"crm","toToolId":"peiagents-skills","type":"api","status":"planned","notes":"Declares client-followup-pei and email-triage."},{"moduleId":"calculators","toToolId":"sandy-palms-portal","type":"api","status":"planned","notes":"The Property Analyzer was generalised from the Sandy Palms model. Pointing the portal back at the shared engine would remove a duplicate."},{"moduleId":"calculators","toToolId":"peiagents-skills","type":"api","status":"planned","notes":"Declares deal-analyzer and cma-pei."},{"moduleId":"accounting","toToolId":"lighthouse","type":"idea-from","status":"live","notes":"Accounting-light was built from the Lighthouse idea. The same capability now exists in both places."},{"moduleId":"showings","toToolId":"lighthouse","type":"idea-from","status":"live","notes":"Also from Lighthouse. Third overlap between the two."},{"moduleId":"tournaments","toToolId":"sidelio","type":"idea-from","status":"live","notes":"Built from the idea 'brackets or a round-robin league', deliberately not lifted from Sidelio — so it came out different from the tournament tool actually running there. MODULES.md flags this as intentional and warns against building the rest of Sidelio's modules from names alone."},{"moduleId":"budget","toToolId":"sidelio","type":"idea-from","status":"live","notes":"Idea from Sidelio; written fresh for the platform."},{"moduleId":"crm","toToolId":"exuma-contacts","type":"planned","status":"idea","notes":"The Lead Book is a superset of the Exuma contact list. Migrating would let that repo be archived."},{"moduleId":"club-management","toToolId":"ftv-studio","type":"planned","status":"idea","notes":"Sidelio keeps its own module system in docs/club-platform-modules.md. Deciding whether it merges onto the Studio shelf or stays separate is the biggest open architectural question."},{"moduleId":"finance-command-centre","toToolId":"peiagents-skills","type":"api","status":"live","notes":"realestate-ops-pei and daily-weekly-planner both explicitly hand financial tracking and tasks to Lighthouse."}],"clients":[{"id":"francis","name":"Francis (owner)","type":"internal","toolIds":["lighthouse","ftv-studio","sandy-palms-portal","dev-dashboard","peiagents-skills"],"since":null,"confidence":"verified","notes":"Primary user of the daily-ops and financial tooling."},{"id":"peiagents-agents","name":"PEIAGENTS agents","type":"internal","toolIds":["peiagents-skills","lighthouse"],"since":null,"confidence":"assumed","notes":"The brokerage's own agents. Count unknown."},{"id":"studio-clients","name":"Studio portal clients","type":"paying","toolIds":["ftv-studio"],"since":null,"confidence":"unknown","notes":"The Studio is built to sell branded portals at $49/$149/$399 a month. Whether anyone is paying yet is the single most important unknown on this board — it decides whether the next week goes into finishing the platform or into selling it. The example portals in studio/ are demos, not customers."},{"id":"sidelio-clubs","name":"Sidelio clubs","type":"unknown","toolIds":["sidelio"],"since":null,"confidence":"unknown","notes":"Sidelio has a pricing page and a beta guide, which implies real or intended customers. Numbers unknown."},{"id":"sandy-palms-investors","name":"Sandy Palms investors","type":"external","toolIds":["sandy-palms-portal"],"since":null,"confidence":"assumed","notes":"Audience for the investor portal."}],"log":[]}</script>
+<script type="application/json" id="registry-data">{"meta":{"name":"FT Ventures Development Dashboard","version":"0.2.0","updated":"2026-08-17","owner":"Francis Theriault","confidenceLegend":{"verified":"Confirmed by reading the repo or the running code.","assumed":"Francis named it or a repo exists, but details are my inference. Correct me.","unknown":"Placeholder. Needs Francis to fill in."},"effortNote":"Hours and tokens are null wherever they were never measured. Nothing here is estimated or invented — an empty cell means untracked, and tracking starts from the first entry in the log.","tiers":[{"name":"Starter","price":"$49/mo","includes":"Any 1 module + branded portal"},{"name":"Pro","price":"$149/mo","includes":"Up to 5 modules — CRM, invoicing, website, bookings"},{"name":"Platform","price":"$399/mo","includes":"All 14 modules including BrokerFlow, multi-portal"}],"tiersNote":"Read from studio/pitch.html, which labels these as placeholder pricing. This is the packaging model that already exists — modules are the unit of sale, priced by how many you get, not sold individually as add-ons.","moduleSync":{"from":"fmtventures/Financial-tool → studio/registry.js","at":"2026-08-17","count":14,"wired":14}},"platforms":[{"id":"ftventures","name":"FT Ventures","kind":"holding","note":"Holding company and the umbrella for the software products."},{"id":"peiagents","name":"PEIAGENTS Realty","kind":"brokerage","note":"Real-estate brokerage. Its agents are the users of the skill suite."},{"id":"sidelio","name":"Sidelio","kind":"product","note":"Club and sports organisation management. sidelio.ca, sports.sidelio.ca."},{"id":"fotoshop","name":"PEI Fotoshop","kind":"product","note":"Photo product line. peifotoshop.com plus an admin surface."},{"id":"sandypalms","name":"Sandy Palms","kind":"asset","note":"Great Exuma, Bahamas investment project."}],"tools":[{"id":"ftv-studio","name":"FT Ventures Studio","tagline":"The module platform. A shelf of 14 reusable modules that the Builder composes into a branded client portal, one per client.","platformId":"ftventures","status":"beta","health":"good","percentComplete":null,"repo":"fmtventures/Financial-tool","liveUrl":null,"stack":["static site","no build step","vanilla JS","localStorage via FTVStore","Playwright checks"],"confidence":"verified","lastTouched":"2026-08-04","effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":1,"impact":5,"effort":3,"rationale":"This is the module platform you described wanting to build. It already exists, all 14 modules are wired, and the packaging model is defined. The work is finishing it, not starting it."},"provides":["website","calculators","crm","invoices","gallery","accounting","budget","brokerflow","showings","tournaments","staff","inventory","shopcms","bookings"],"consumes":["cma-engine","listing-marketing"],"nextActions":[{"text":"Confirm the repo name — 'Financial-tool' badly undersells what is in it","done":false},{"text":"Phase 2: swap FTVStore's localStorage for a real backend so client data is not trapped in one browser","done":false},{"text":"Replace the placeholder pricing in studio/pitch.html with real numbers","done":false},{"text":"Decide whether Sidelio's own module system merges with this shelf or stays separate","done":false}],"blockers":[],"notes":"Internally called 'The Ship'. Verified by reading the repo. studio/registry.js is the authoritative module shelf and this dashboard now syncs from it rather than keeping a second copy. Architecture is documented in MODULES.md, which is unusually thorough — it covers the module contract, the FTVStore adapter, seeding and shape repair, interconnect deduping, printing, CSV safety, accessibility and 31 automated checks. Phase 2 (a Cloudflare Worker backend) is planned but not built: all client data currently lives in one browser's localStorage, and studio/data.html is the only way out of it."},{"id":"sidelio","name":"Sidelio","tagline":"Club and sports organisation management — registration, scheduling, officials, practice planning, accounting, team websites.","platformId":"sidelio","status":"live","health":"good","percentComplete":null,"repo":"fmtventures/sidelio-site","liveUrl":"https://sidelio.ca/app.html","stack":["static site","PWA","Capacitor (iOS/Android shell)","Supabase"],"confidence":"verified","lastTouched":"2026-08-17","effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":2,"impact":5,"effort":4,"rationale":"The largest and most actively worked codebase, touched today, with a store-submission runbook already written. Closest to earning revenue on its own."},"provides":["club-management"],"consumes":[],"nextActions":[{"text":"MOBILE-APP.md is blocked on your Apple/Google accounts and a build machine — that is the release path","done":false},{"text":"Reconcile docs/club-platform-modules.md against the Studio shelf — two module systems is the duplication the Studio was built to end","done":false},{"text":"Confirm sidelio-archive can be archived for good","done":false}],"blockers":[],"notes":"Verified. Around 30 pages: registration builder, schedule generator, practice planner, officials, accounting, library, training, pricing, plus its own website/studio pages. One web app (app.html + sidelio-data.js) hardened as an installable PWA; Capacitor config, native bridge and icon sources are all in the repo. Supabase is referenced in app.html, sidelio-portal.html, sidelio-coach.js and the service worker. Note it has its own website and studio pages, which overlap the Studio's website module — worth resolving deliberately."},{"id":"lighthouse","name":"The Lighthouse","tagline":"Personal and business finance command centre, commercial deal analyzer and PEI rental intelligence.","platformId":"peiagents","status":"live","health":"warning","percentComplete":null,"repo":"fmtventures/lighthouse-dashboard","liveUrl":null,"stack":["single-file HTML pages","service worker","PWA manifest"],"confidence":"verified","lastTouched":"2026-07-26","effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":5,"impact":4,"effort":2,"rationale":"Real-money tracking that several skills already defer to, but the repo is showing wear and three of its modules have been reimplemented inside the Studio."},"provides":["finance-command-centre","rental-intelligence"],"consumes":[],"nextActions":[{"text":"Delete the four committed .bak files — index.html has three and realestate.html one","done":false},{"text":"Decide: does Lighthouse stay standalone, or become Studio modules? Accounting, BrokerFlow and Showings were all built from its ideas already","done":false}],"blockers":[],"notes":"Verified. Pages: index/realestate (THE LIGHTHOUSE), Finance-Command-Centre.html, deal-analyzer.html (Commercial Deal Analyzer — PEI Intelligence), pei-rental-intelligence.html, training-dashboard.html, training-realestate.html. Health marked as needing attention for two concrete reasons: four .bak files are committed to the repo, and three Studio modules (accounting, brokerflow, showings) list Lighthouse as where their idea came from, so the same capability now exists in two places."},{"id":"sandy-palms-portal","name":"Sandy Palms Investor Portal","tagline":"Interactive Bahamas investment business plan: comps, 30-year projection, financing scenarios, PDF export.","platformId":"sandypalms","status":"live","health":"good","percentComplete":null,"repo":"fmtventures/Exuma2","liveUrl":null,"stack":["single-file HTML","Tailwind CDN","Chart.js","jsPDF","html2canvas"],"confidence":"verified","lastTouched":"2026-08-17","effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":6,"impact":4,"effort":2,"rationale":"Investor-facing, so its quality is visible to outside parties. Its financial model is also the origin of the Studio's calculators."},"provides":["investor-portal"],"consumes":["calculators"],"nextActions":[{"text":"Consolidate three Exuma repos (Exuma, Exuma2, Sandypalms) into one","done":false},{"text":"Consider using the Studio's Property Analyzer instead of the embedded model","done":false}],"blockers":[],"notes":"Verified by reading the source. 70KB single-file app, five tabs, a live financial model with sliders, three Chart.js charts and PDF export. The Studio's Investment Property Analyzer was generalised from this model, and the confidential original memo is preserved in the Studio repo at _private/sandy-palms.html, excluded from its published build."},{"id":"peiagents-skills","name":"PEIAGENTS Skill Suite","tagline":"Around twenty Claude skills covering listings, CMAs, marketing, follow-up, leases and daily ops.","platformId":"peiagents","status":"live","health":"warning","percentComplete":null,"repo":null,"liveUrl":null,"stack":["Claude skills"],"confidence":"verified","lastTouched":"2026-08-17","effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":3,"impact":5,"effort":2,"rationale":"In daily use, widest reach of anything built, and the Studio already names specific skills as the brains behind eight of its modules. It is a live dependency that is not in version control."},"provides":["cma-engine","listing-marketing","presentation-engine"],"consumes":["finance-command-centre"],"nextActions":[{"text":"Get these into a repo — the Studio depends on named skills that are not versioned anywhere","done":false},{"text":"Reconcile the deal-analyzer skill against the Studio's Property Analyzer module","done":false}],"blockers":[{"text":"Not in version control. The Studio's registry names skills as Phase 2 dependencies, so an unversioned rename breaks it silently.","since":"2026-08-17"}],"notes":"Verified present in this session. The Studio's studio/registry.js names these skills against modules: listing-writer and photo-to-listing (website), deal-analyzer and cma-pei (calculators), client-followup-pei and email-triage (crm), pictures-choosethebestones (gallery), deal-analyzer (accounting), cma-pei and listing-writer (brokerflow), client-followup-pei (showings), banner-design (shopcms). That makes the skill suite a real architectural dependency of the platform, not a side project."},{"id":"pei-fotoshop","name":"PEI Fotoshop","tagline":"Photo product with a customer site and an admin surface.","platformId":"fotoshop","status":"live","health":"unknown","percentComplete":null,"repo":null,"liveUrl":"https://peifotoshop.com/","adminUrl":"https://peifotoshop.com/admin","stack":[],"confidence":"assumed","lastTouched":null,"effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":4,"impact":4,"effort":3,"rationale":"Two Studio modules were built from its ideas and it has a live admin, so it is the most obvious first real customer of the platform. Needs a repo before we can touch it."},"provides":[],"consumes":["website","gallery"],"nextActions":[{"text":"Point me at the repo behind peifotoshop.com","done":false},{"text":"Could this run on the Studio's website + gallery modules instead of its own code?","done":false},{"text":"Clarify the relationship to pelotphotos.com","done":false}],"blockers":[],"notes":"The Studio's website and gallery modules both list PEIFOTOSHOP as where their idea came from, so the capability already exists on the shelf. Note that an earlier FT Ventures ecosystem audit, quoted in the Studio's README, classified 'PEI Foto Shop' as a names-only concept — but the site and its admin are live now, so that assessment is out of date. Could not inspect it directly: this environment's network policy blocks the domain."},{"id":"ftventures-dashboard","name":"FT Ventures Dashboard","tagline":"Existing operations dashboard at dashboard.ftventures.ca.","platformId":"ftventures","status":"live","health":"unknown","percentComplete":null,"repo":null,"liveUrl":"https://dashboard.ftventures.ca/","stack":[],"confidence":"assumed","lastTouched":null,"effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":8,"impact":3,"effort":2,"rationale":"Already running. The open question is whether this development dashboard belongs inside it."},"provides":[],"consumes":[],"nextActions":[{"text":"Decide: fold this development dashboard into dashboard.ftventures.ca, or keep it separate","done":false},{"text":"Is this the same thing as the Studio's Owner Dashboard, or different?","done":false}],"blockers":[],"notes":"Could not inspect it — this environment's network policy blocks the domain. Worth checking against studio/dashboard.html, which is already an owner dashboard, before building anything new."},{"id":"dev-dashboard","name":"Build Board","tagline":"This tool. One place for every tool, its status, its modules, priorities and effort.","platformId":"ftventures","status":"building","health":"good","percentComplete":70,"repo":"fmtventures/Exuma2","liveUrl":null,"stack":["single-file HTML","vanilla JS","no dependencies","local Node server for saving"],"confidence":"verified","lastTouched":"2026-08-17","effort":{"hours":null,"tokens":null,"sessions":1},"priority":{"rank":7,"impact":4,"effort":2,"rationale":"Useful the moment the data is right, and the data got substantially more right once the repos were readable."},"provides":[],"consumes":[],"nextActions":[{"text":"Francis fills in Claire 80, Pelot Photos and the two missing repo links","done":false},{"text":"Move it out of the Exuma2 repo — probably into the Studio, where it could be a module","done":false},{"text":"Add live status checks now that local mode can reach the sites","done":false}],"blockers":[],"notes":"Built in this session. Runs read-only from a static file, or locally via serve.mjs where edits write straight to registry.json. Module list is synced from the Studio's own shelf rather than hand-copied."},{"id":"claire-80","name":"Claire 80","tagline":"Presentations tool.","platformId":"ftventures","status":"unknown","health":"unknown","percentComplete":null,"repo":null,"liveUrl":null,"stack":[],"confidence":"unknown","lastTouched":null,"effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":9,"impact":2,"effort":2,"rationale":"Not enough known to rank properly."},"provides":[],"consumes":[],"nextActions":[{"text":"What is Claire 80 — who is it for and what stage is it at?","done":false}],"blockers":[{"text":"Described only as '(presentations)'. No repo found in the org.","since":"2026-08-17"}],"notes":"Francis listed it as 'Claire 80 (presentations)'. Nothing matching it exists in the eight repos I can see."},{"id":"pelot-photos","name":"Pelot Photos","tagline":"Photo site at pelotphotos.com.","platformId":"fotoshop","status":"unknown","health":"unknown","percentComplete":null,"repo":null,"liveUrl":"https://pelotphotos.com/","stack":[],"confidence":"unknown","lastTouched":null,"effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":10,"impact":2,"effort":1,"rationale":"Listed but unexplained. If it is a client site rather than a product, it belongs in the clients view instead."},"provides":[],"consumes":[],"nextActions":[{"text":"Is this a product, a client site, or the same codebase as PEI Fotoshop?","done":false}],"blockers":[],"notes":"No repo found in the org. Could not inspect the site — network policy blocks the domain."},{"id":"exuma-contacts","name":"Exuma Contacts","tagline":"Contact list for the Exuma project.","platformId":"sandypalms","status":"paused","health":"warning","percentComplete":null,"repo":"fmtventures/Exumacontacts","liveUrl":null,"stack":[],"confidence":"assumed","lastTouched":"2026-01-15","effort":{"hours":null,"tokens":null,"sessions":null},"priority":{"rank":11,"impact":1,"effort":1,"rationale":"Untouched for seven months, and the Studio's CRM module covers the same ground. Keep-or-archive call."},"provides":[],"consumes":["crm"],"nextActions":[{"text":"Archive it, or migrate the contacts into the Studio's CRM module","done":false}],"blockers":[],"notes":"No pushes since January 2026. The Studio's CRM / Lead Book module is a superset of this."}],"modules":[{"id":"website","name":"Website","ownerToolId":"ftv-studio","kind":"feature","description":"A clean marketing site — hero, services, testimonials, contact form — exportable as a hostable page.","wired":true,"ideaFrom":"PEIFOTOSHOP","skills":["listing-writer","photo-to-listing"],"href":"../modules/website/index.html","subTools":[],"source":"studio/registry.js"},{"id":"calculators","name":"Financial Calculators","ownerToolId":"ftv-studio","kind":"suite","description":"Property analyzer, mortgage, cap rate & home value — with lead capture.","wired":true,"ideaFrom":"FT Ventures tools","skills":["deal-analyzer","cma-pei"],"href":null,"subTools":["Investment Property Analyzer","Mortgage Calculator","Cap Rate & Quick Returns","What's My Home Worth?"],"source":"studio/registry.js"},{"id":"crm","name":"CRM · Lead Book","ownerToolId":"ftv-studio","kind":"feature","description":"Capture leads from every form; track Contacted → Working → Closed, with follow-up dates that flag cold leads.","wired":true,"ideaFrom":"PEIAGENTS admin","skills":["client-followup-pei","email-triage"],"href":"../modules/crm/index.html","subTools":[],"source":"studio/registry.js"},{"id":"invoices","name":"Invoicing","ownerToolId":"ftv-studio","kind":"feature","description":"Bill clients, print a branded PDF, track paid/unpaid, log paid invoices as income.","wired":true,"ideaFrom":"new","skills":[],"href":"../modules/invoices/index.html","subTools":[],"source":"studio/registry.js"},{"id":"gallery","name":"Client Gallery","ownerToolId":"ftv-studio","kind":"feature","description":"Access-code photo albums — clients select photos, download them, and order prints that raise an invoice.","wired":true,"ideaFrom":"PEIFOTOSHOP","skills":["pictures-choosethebestones"],"href":"../modules/gallery/index.html","subTools":[],"source":"studio/registry.js"},{"id":"accounting","name":"Accounting-light","ownerToolId":"ftv-studio","kind":"feature","description":"Income, expenses & HST — plus a printable HST return and P&L by category.","wired":true,"ideaFrom":"Lighthouse","skills":["deal-analyzer"],"href":"../modules/accounting/index.html","subTools":[],"source":"studio/registry.js"},{"id":"budget","name":"Budget","ownerToolId":"ftv-studio","kind":"feature","description":"Plan a monthly budget by category and track spend against it — actuals pulled from Accounting.","wired":true,"ideaFrom":"Sidelio","skills":[],"href":"../modules/budget/index.html","subTools":[],"source":"studio/registry.js"},{"id":"brokerflow","name":"Full BrokerFlow","ownerToolId":"ftv-studio","kind":"feature","description":"Brokerage hub — live KPIs from your own data, a commission calculator that posts to Accounting, listings + Lighthouse screens.","wired":true,"ideaFrom":"Lighthouse","skills":["cma-pei","listing-writer"],"href":"../modules/brokerflow/index.html","subTools":[],"source":"studio/registry.js"},{"id":"showings","name":"Showings","ownerToolId":"ftv-studio","kind":"feature","description":"Book property showings, confirm them, capture buyer feedback — requests drop into the Lead Book.","wired":true,"ideaFrom":"Lighthouse","skills":["client-followup-pei"],"href":"../modules/showings/index.html","subTools":[],"source":"studio/registry.js"},{"id":"tournaments","name":"Tournaments Builder","ownerToolId":"ftv-studio","kind":"feature","description":"Single-elim brackets or a round-robin league with a live standings table, registration & a public view.","wired":true,"ideaFrom":"Sidelio","skills":[],"href":"../modules/tournaments/index.html","subTools":[],"source":"studio/registry.js"},{"id":"staff","name":"Staff Management","ownerToolId":"ftv-studio","kind":"feature","description":"Employees, schedules, time-off, payroll & a staff portal.","wired":true,"ideaFrom":"AlotGelato","skills":[],"href":"../modules/staff/index.html","subTools":[],"source":"studio/registry.js"},{"id":"inventory","name":"Suppliers & Inventory","ownerToolId":"ftv-studio","kind":"feature","description":"Supplier catalogue, reorder points, purchase orders & showcase-to-site — stock spend lands in Accounting.","wired":true,"ideaFrom":"AlotGelato","skills":[],"href":"../modules/inventory/index.html","subTools":[],"source":"studio/registry.js"},{"id":"shopcms","name":"Shop CMS","ownerToolId":"ftv-studio","kind":"feature","description":"Menu, prices, photos, daily specials & a promotion banner — plus a printable menu board.","wired":true,"ideaFrom":"AlotGelato","skills":["banner-design"],"href":"../modules/shopcms/index.html","subTools":[],"source":"studio/registry.js"},{"id":"bookings","name":"Bookings","ownerToolId":"ftv-studio","kind":"feature","description":"Services, an appointment form & a schedule — bookings become leads, and a completed booking becomes an invoice.","wired":true,"ideaFrom":"new","skills":[],"href":"../modules/bookings/index.html","subTools":[],"source":"studio/registry.js"},{"id":"club-management","name":"Club Management","ownerToolId":"sidelio","kind":"suite","description":"Registration, scheduling, officials, practice planning and club accounting.","wired":true,"ideaFrom":null,"skills":[],"href":null,"subTools":[],"source":"hand"},{"id":"finance-command-centre","name":"Finance Command Centre","ownerToolId":"lighthouse","kind":"feature","description":"Personal and business finance tracking, commissions and trust accounting.","wired":true,"ideaFrom":null,"skills":[],"href":null,"subTools":[],"source":"hand"},{"id":"rental-intelligence","name":"PEI Rental Intelligence","ownerToolId":"lighthouse","kind":"feature","description":"Local rental market data and a commercial deal analyzer.","wired":true,"ideaFrom":null,"skills":[],"href":null,"subTools":[],"source":"hand"},{"id":"investor-portal","name":"Investor Portal","ownerToolId":"sandy-palms-portal","kind":"surface","description":"Interactive investor-facing business plan with a live financial model.","wired":true,"ideaFrom":null,"skills":[],"href":null,"subTools":[],"source":"hand"},{"id":"cma-engine","name":"CMA Engine","ownerToolId":"peiagents-skills","kind":"engine","description":"Comparative market analysis, quick 3-page and full report.","wired":true,"ideaFrom":null,"skills":["cma-pei","easycma-pei"],"href":null,"subTools":[],"source":"hand"},{"id":"listing-marketing","name":"Listing Marketing","ownerToolId":"peiagents-skills","kind":"engine","description":"Ads, captions, reel scripts and hashtags for a listing.","wired":true,"ideaFrom":null,"skills":["listing-marketing-engine","listing-writer-pei"],"href":null,"subTools":[],"source":"hand"},{"id":"presentation-engine","name":"Presentation Engine","ownerToolId":"peiagents-skills","kind":"engine","description":"Deck and presentation generation. May be what Claire 80 is.","wired":false,"ideaFrom":null,"skills":["pptx"],"href":null,"subTools":[],"source":"hand"}],"connections":[{"moduleId":"website","toToolId":"pei-fotoshop","type":"idea-from","status":"live","notes":"The website module's idea came from PEIFOTOSHOP. The capability is already built and wired on the shelf — the open question is whether peifotoshop.com should run on it."},{"moduleId":"gallery","toToolId":"pei-fotoshop","type":"idea-from","status":"live","notes":"Access-code photo albums with print ordering that raises an invoice. Same story as the website module: built, wired, not yet pointed at the real site."},{"moduleId":"brokerflow","toToolId":"peiagents-skills","type":"api","status":"planned","notes":"BrokerFlow names cma-pei and listing-writer as the skills behind it. Phase 2 attaches them via the Claude API; today the wiring is declared, not live."},{"moduleId":"crm","toToolId":"peiagents-skills","type":"api","status":"planned","notes":"Declares client-followup-pei and email-triage."},{"moduleId":"calculators","toToolId":"sandy-palms-portal","type":"api","status":"planned","notes":"The Property Analyzer was generalised from the Sandy Palms model. Pointing the portal back at the shared engine would remove a duplicate."},{"moduleId":"calculators","toToolId":"peiagents-skills","type":"api","status":"planned","notes":"Declares deal-analyzer and cma-pei."},{"moduleId":"accounting","toToolId":"lighthouse","type":"idea-from","status":"live","notes":"Accounting-light was built from the Lighthouse idea. The same capability now exists in both places."},{"moduleId":"showings","toToolId":"lighthouse","type":"idea-from","status":"live","notes":"Also from Lighthouse. Third overlap between the two."},{"moduleId":"tournaments","toToolId":"sidelio","type":"idea-from","status":"live","notes":"Built from the idea 'brackets or a round-robin league', deliberately not lifted from Sidelio — so it came out different from the tournament tool actually running there. MODULES.md flags this as intentional and warns against building the rest of Sidelio's modules from names alone."},{"moduleId":"budget","toToolId":"sidelio","type":"idea-from","status":"live","notes":"Idea from Sidelio; written fresh for the platform."},{"moduleId":"crm","toToolId":"exuma-contacts","type":"planned","status":"idea","notes":"The Lead Book is a superset of the Exuma contact list. Migrating would let that repo be archived."},{"moduleId":"club-management","toToolId":"ftv-studio","type":"planned","status":"idea","notes":"Sidelio keeps its own module system in docs/club-platform-modules.md. Deciding whether it merges onto the Studio shelf or stays separate is the biggest open architectural question."},{"moduleId":"finance-command-centre","toToolId":"peiagents-skills","type":"api","status":"live","notes":"realestate-ops-pei and daily-weekly-planner both explicitly hand financial tracking and tasks to Lighthouse."}],"clients":[{"id":"francis","name":"Francis (owner)","type":"internal","toolIds":["lighthouse","ftv-studio","sandy-palms-portal","dev-dashboard","peiagents-skills"],"since":null,"confidence":"verified","notes":"Primary user of the daily-ops and financial tooling."},{"id":"peiagents-agents","name":"PEIAGENTS agents","type":"internal","toolIds":["peiagents-skills","lighthouse"],"since":null,"confidence":"assumed","notes":"The brokerage's own agents. Count unknown."},{"id":"studio-clients","name":"Studio portal clients","type":"paying","toolIds":["ftv-studio"],"since":null,"confidence":"unknown","notes":"The Studio is built to sell branded portals at $49/$149/$399 a month. Whether anyone is paying yet is the single most important unknown on this board — it decides whether the next week goes into finishing the platform or into selling it. The example portals in studio/ are demos, not customers."},{"id":"sidelio-clubs","name":"Sidelio clubs","type":"unknown","toolIds":["sidelio"],"since":null,"confidence":"unknown","notes":"Sidelio has a pricing page and a beta guide, which implies real or intended customers. Numbers unknown."},{"id":"sandy-palms-investors","name":"Sandy Palms investors","type":"external","toolIds":["sandy-palms-portal"],"since":null,"confidence":"assumed","notes":"Audience for the investor portal."}],"queue":[{"id":"q1","toolId":"ftv-studio","text":"Is anyone paying for a Studio portal yet?","status":"blocked","size":"S","added":"2026-08-17","note":"Only Francis can answer. Decides whether the next week is building or selling — the single highest-value unknown on the board."},{"id":"q2","toolId":"sidelio","text":"Decide: does Sidelio's module system merge onto the Studio shelf?","status":"queued","size":"L","added":"2026-08-17","note":"Biggest architectural fork. Two module systems is the duplication the Studio exists to end, but merging is weeks of work."},{"id":"q3","toolId":"ftv-studio","text":"Phase 2 backend so client data is not trapped in one browser","status":"queued","size":"L","added":"2026-08-17","note":"Most serious technical problem in the portfolio. Recommend Supabase, already in Sidelio's stack."},{"id":"q4","toolId":"dev-dashboard","text":"Move dashboard off the public Exuma2 repo into a private one","status":"queued","size":"S","added":"2026-08-17","note":"registry.json is world-readable on GitHub today, pricing and internal notes included."},{"id":"q5","toolId":"claire-80","text":"Tell me what Claire 80 is","status":"blocked","size":"S","added":"2026-08-17","note":"No repo in the org matches it."},{"id":"q6","toolId":"pei-fotoshop","text":"Point me at the repo behind peifotoshop.com","status":"blocked","size":"S","added":"2026-08-17","note":"Best candidate to be the Studio's first real customer — Website and Gallery were both built from its ideas."},{"id":"q7","toolId":"peiagents-skills","text":"Get the skill suite into version control","status":"queued","size":"M","added":"2026-08-17","note":"The Studio names specific skills as Phase 2 dependencies; an unversioned rename breaks it silently."},{"id":"q8","toolId":"sidelio","text":"App store release — needs your Apple/Google accounts and a build machine","status":"blocked","size":"M","added":"2026-08-17","note":"MOBILE-APP.md is the runbook; everything codeable is already done."},{"id":"q9","toolId":"lighthouse","text":"Delete the four committed .bak files","status":"queued","size":"S","added":"2026-08-17","note":"Trivial cleanup."},{"id":"q10","toolId":"ftv-studio","text":"Replace the placeholder pricing in studio/pitch.html with real numbers","status":"queued","size":"S","added":"2026-08-17","note":"The page itself says the figures are placeholders."},{"id":"q11","toolId":"sandy-palms-portal","text":"Consolidate the three Exuma repos into one","status":"queued","size":"M","added":"2026-08-17","note":"Exuma, Exuma2 and Sandypalms overlap."},{"id":"q12","toolId":"pelot-photos","text":"Is Pelot Photos a product, a client site, or the same code as PEI Fotoshop?","status":"blocked","size":"S","added":"2026-08-17","note":"If it is a client site it belongs in the clients view, not as a tool."},{"id":"q13","toolId":"dev-dashboard","text":"Add live status checks for each live URL","status":"queued","size":"M","added":"2026-08-17","note":"Possible from local mode, where no network policy blocks the domains."}],"decisions":[{"id":"d1","date":"2026-08-17","title":"BF is BrokerFlow, and it is a Studio module","decision":"BF is not a separate product with its own customers. It is 'Full BrokerFlow', one of the 14 wired modules on the Studio shelf.","why":"Found by reading fmtventures/Financial-tool: modules/brokerflow/ exists, and studio/registry.js lists it as wired with cma-pei and listing-writer as its skills.","toolIds":["ftv-studio"],"status":"settled"},{"id":"d2","date":"2026-08-17","title":"The website builder is the Studio's Website module","decision":"The 'website builder' is the wired `website` module, which exports a hostable marketing page.","why":"studio/registry.js lists it first, wired, with its idea credited to PEIFOTOSHOP.","toolIds":["ftv-studio","pei-fotoshop"],"status":"settled"},{"id":"d3","date":"2026-08-17","title":"The module attachment mechanism already exists","decision":"No new mechanism needs designing. The Builder already composes any combination of shelf modules into a branded per-client portal, and pricing is by module count (Starter/Pro/Platform), not per-module add-ons.","why":"This was the original question — how the website builder could attach to a tool like BF. Both are already modules on one shelf.","toolIds":["ftv-studio"],"status":"settled"},{"id":"d4","date":"2026-08-17","title":"This board syncs modules, never copies them","decision":"The module list is generated from studio/registry.js by sync-modules.mjs. Studio modules are not edited here.","why":"A hand-maintained second copy would drift on the next module added — the exact complaint the Studio was built to answer.","toolIds":["dev-dashboard","ftv-studio"],"status":"settled"},{"id":"d5","date":"2026-08-17","title":"Effort stays blank until it is measured","decision":"Hours and tokens are null wherever they were never tracked. No estimates, no back-filled guesses.","why":"A fabricated number becomes the basis for a real prioritisation call. There is also no API that can recover spend from the earlier chats.","toolIds":["dev-dashboard"],"status":"settled"},{"id":"d6","date":"2026-08-17","title":"Supabase for the Studio's Phase 2, not a low-code platform","decision":"Proposed: use Supabase as the Studio backend rather than rebuilding on Bubble, WeWeb or Retool.","why":"It is already in Sidelio's stack, keeps the static-site architecture the Studio's value rests on, and avoids a per-seat platform cost underneath a $49/mo product. One backend across both platforms instead of two.","toolIds":["ftv-studio","sidelio"],"status":"proposed"},{"id":"d7","date":"2026-08-17","title":"Move this dashboard off the public repo","decision":"Proposed: relocate dashboard/ from the public Exuma2 repo into a private one.","why":"registry.json is currently world-readable, including pricing and strategic notes.","toolIds":["dev-dashboard"],"status":"proposed"}],"sessions":[{"id":"s1","date":"2026-08-17","toolId":"dev-dashboard","summary":"Built the Build Board: registry model, views, module matrix, local server with save-to-file, the module sync from The Ship, and the Now/Decisions workbench. Read three repos and corrected the seeded data — BF turned out to be BrokerFlow.","hours":null,"tokens":null,"by":"Claude + Francis"}],"log":[]}</script>
 <script>
 /* ==========================================================================
    FT Ventures Development Dashboard
@@ -840,7 +883,17 @@ table.matrix tbody th .owner { display: block; font-family: var(--mono); font-si
   'use strict';
 
   const LS_EDITS = 'ftv-dash-edits-v1';
+  const LS_COL = 'ftv-dash-collections-v1';
   const LS_THEME = 'ftv-dash-theme-v1';
+
+  /* Collections that are worked, not just read. */
+  const COLLECTIONS = ['queue', 'decisions', 'sessions'];
+
+  const Q_STATUS = ['doing', 'queued', 'blocked', 'done'];
+  const Q_LABEL = { doing: 'In flight', queued: 'Queued', blocked: 'Blocked', done: 'Done' };
+  const D_STATUS = ['settled', 'proposed', 'revisit'];
+  const D_LABEL = { settled: 'Settled', proposed: 'Proposed', revisit: 'Revisit' };
+  const SIZES = ['S', 'M', 'L'];
 
   const STATUS_ORDER = ['live', 'beta', 'building', 'paused', 'idea', 'unknown'];
   const STATUS_LABEL = {
@@ -1013,9 +1066,65 @@ table.matrix tbody th .owner { display: block; font-family: var(--mono); font-si
     return value;
   }
 
+  /* ---------------------------------------------------- worked collections */
+  /* Tool edits are keyed by field path; queue/decision/session records are whole
+     rows that get added or have a field changed, so they carry their own overlay
+     rather than being forced through the tool-edit shape. */
+  let colAdds = { queue: [], decisions: [], sessions: [] };
+  let colPatch = {}; // "queue::q1::status" -> value
+
+  function loadCol() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(LS_COL)) || {};
+      colAdds = Object.assign({ queue: [], decisions: [], sessions: [] }, raw.adds || {});
+      colPatch = raw.patch || {};
+    } catch { colAdds = { queue: [], decisions: [], sessions: [] }; colPatch = {}; }
+  }
+  function saveCol() {
+    try { localStorage.setItem(LS_COL, JSON.stringify({ adds: colAdds, patch: colPatch })); }
+    catch { /* storage may be blocked */ }
+  }
+
+  function applyColPatch(name, rec) {
+    const out = Object.assign({}, rec);
+    Object.keys(colPatch).forEach((k) => {
+      const [n, id, field] = k.split('::');
+      if (n === name && id === rec.id) out[field] = colPatch[k];
+    });
+    return out;
+  }
+
+  /** A collection with additions appended and field changes applied. */
+  function col(name) {
+    return (DATA[name] || []).concat(colAdds[name] || []).map((r) => applyColPatch(name, r));
+  }
+
+  function setColPatch(name, id, field, value) {
+    const own = (colAdds[name] || []).find((r) => r.id === id);
+    if (own) { own[field] = value; saveCol(); renderEditsBar(); return; }
+    const original = (DATA[name] || []).find((r) => r.id === id);
+    const k = `${name}::${id}::${field}`;
+    if (original && String(original[field] ?? '') === String(value ?? '')) delete colPatch[k];
+    else colPatch[k] = value;
+    saveCol();
+    renderEditsBar();
+  }
+
+  function addColItem(name, rec) {
+    rec.id = name[0] + Date.now().toString(36);
+    (colAdds[name] = colAdds[name] || []).push(rec);
+    saveCol();
+  }
+
+  function pendingCount() {
+    return Object.keys(edits).length + Object.keys(colPatch).length
+      + COLLECTIONS.reduce((a, n) => a + (colAdds[n] || []).length, 0);
+  }
+
   /** Deep clone of the registry with every browser edit applied and coerced. */
   function mergedRegistry() {
     const out = JSON.parse(JSON.stringify(DATA));
+    COLLECTIONS.forEach((n) => { out[n] = col(n); });
     Object.keys(edits).forEach((k) => {
       const [id, path] = k.split('::');
       const t = out.tools.find((x) => x.id === id);
@@ -1200,6 +1309,186 @@ table.matrix tbody th .owner { display: block; font-family: var(--mono); font-si
         ${mode === 'chart' ? chartHtml : `<div class="table-wrap">${tableHtml}</div>`}
       </div>
     </section>`;
+  }
+
+  /* ================================================================== NOW */
+
+  function toolPicker(name, selected) {
+    return `<select data-new="${esc(name)}" data-field="toolId">
+      ${allTools().map((t) => `<option value="${esc(t.id)}" ${t.id === selected ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}
+    </select>`;
+  }
+
+  function queueRow(q, opts) {
+    const o = opts || {};
+    const t = DATA.tools.find((x) => x.id === q.toolId);
+    return `<li class="qrow ${esc(q.status)}">
+      <select class="qstat" data-qstatus="${esc(q.id)}" aria-label="Status of: ${esc(q.text)}">
+        ${Q_STATUS.map((s) => `<option value="${s}" ${q.status === s ? 'selected' : ''}>${esc(Q_LABEL[s])}</option>`).join('')}
+      </select>
+      <span class="body">
+        <span class="what ${q.status === 'done' ? 'struck' : ''}">${esc(q.text)}</span>
+        ${q.note ? `<span class="why">${esc(q.note)}</span>` : ''}
+      </span>
+      ${q.size ? `<span class="tag">${esc(q.size)}</span>` : ''}
+      ${o.hideTool ? '' : `<button class="btn btn-sm btn-ghost" data-open="${esc(q.toolId)}">${esc(t ? t.name : q.toolId)}</button>`}
+    </li>`;
+  }
+
+  function renderNow() {
+    const queue = col('queue');
+    const decisions = col('decisions');
+    const sessions = col('sessions');
+
+    const doing = queue.filter((q) => q.status === 'doing');
+    const blocked = queue.filter((q) => q.status === 'blocked');
+    const byRank = (a, b) => {
+      const ta = tool(a.toolId), tb = tool(b.toolId);
+      const ra = ta && ta.priority.rank != null ? ta.priority.rank : 999;
+      const rb = tb && tb.priority.rank != null ? tb.priority.rank : 999;
+      return ra - rb;
+    };
+    const queued = queue.filter((q) => q.status === 'queued').sort(byRank);
+    const done = queue.filter((q) => q.status === 'done');
+
+    const tiles = `<div class="tiles">
+      <div class="tile"><span class="eyebrow">In flight</span><span class="tile-val num">${doing.length}</span>
+        <span class="tile-sub">${doing.length ? 'being worked now' : 'nothing started yet'}</span></div>
+      <div class="tile"><span class="eyebrow">Blocked on you</span><span class="tile-val num">${blocked.length}</span>
+        <span class="tile-sub">only you can unblock these</span></div>
+      <div class="tile"><span class="eyebrow">Queued</span><span class="tile-val num">${queued.length}</span>
+        <span class="tile-sub">ready to pick up</span></div>
+      <div class="tile"><span class="eyebrow">Decisions recorded</span><span class="tile-val num">${decisions.length}</span>
+        <span class="tile-sub">${decisions.filter((d) => d.status === 'proposed').length} awaiting your call</span></div>
+      <div class="tile"><span class="eyebrow">Sessions logged</span><span class="tile-val num">${sessions.length}</span>
+        <span class="tile-sub">since tracking started</span></div>
+    </div>`;
+
+    const list = (items, emptyMsg) => items.length
+      ? `<ul class="qlist">${items.map((q) => queueRow(q)).join('')}</ul>`
+      : `<p class="section-note">${esc(emptyMsg)}</p>`;
+
+    return `
+      ${tiles}
+
+      <section class="card">
+        <div class="card-head">${icon('alert')}<h2>Blocked on you</h2>
+          <div class="spacer"></div>
+          <span class="topbar-meta">${blocked.length} item${blocked.length === 1 ? '' : 's'}</span></div>
+        <div class="card-body">
+          <p class="section-note" style="margin-bottom:12px">These are not waiting on work. They are waiting on an
+            answer only you have — and each one is holding something else up.</p>
+          ${list(blocked, 'Nothing is blocked. Good.')}
+        </div>
+      </section>
+
+      <div class="split">
+        <section class="card">
+          <div class="card-head">${icon('flag')}<h2>Next up</h2>
+            <div class="spacer"></div><span class="topbar-meta">ordered by tool priority</span></div>
+          <div class="card-body">
+            ${doing.length ? `<span class="eyebrow" style="display:block;margin-bottom:8px">In flight</span>
+              ${list(doing, '')}<div style="height:16px"></div>` : ''}
+            <span class="eyebrow" style="display:block;margin-bottom:8px">Queued</span>
+            ${list(queued, 'Queue is empty.')}
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">${icon('copy')}<h2>Add to the queue</h2></div>
+          <div class="card-body">
+            <div class="addform">
+              <div class="field"><label for="nq-text">What needs doing</label>
+                <input id="nq-text" data-new="queue" data-field="text" type="text" placeholder="Short, concrete, one thing"></div>
+              <div class="field-grid">
+                <div class="field"><label for="nq-tool">Tool</label>${toolPicker('queue')}</div>
+                <div class="field"><label for="nq-size">Size</label>
+                  <select data-new="queue" data-field="size">${SIZES.map((s) => `<option value="${s}">${s}</option>`).join('')}</select></div>
+              </div>
+              <div class="field"><label for="nq-note">Why it matters (optional)</label>
+                <textarea data-new="queue" data-field="note" rows="2"></textarea></div>
+              <button class="btn btn-primary btn-sm" data-add="queue">Add item</button>
+            </div>
+            <p class="section-note" style="margin-top:14px">Anything you add here shows up in my working brief for that
+              tool, so it survives into the next session instead of living in a chat.</p>
+          </div>
+        </section>
+      </div>
+
+      <section class="card">
+        <div class="card-head">${icon('check')}<h2>Recent decisions</h2>
+          <div class="spacer"></div>
+          <button class="btn btn-sm btn-ghost" data-route="decisions">See all</button></div>
+        <div class="card-body">
+          ${decisions.slice(-4).reverse().map((d) => `<div class="dec">
+            <span class="dec-top"><strong>${esc(d.title)}</strong>
+              <span class="tag ${d.status === 'proposed' ? 'warn' : ''}">${esc(D_LABEL[d.status] || d.status)}</span>
+              <span class="faint mono" style="font-size:10.5px;margin-left:auto">${esc(d.date)}</span></span>
+            <span class="dec-body">${esc(d.decision)}</span>
+          </div>`).join('') || '<p class="section-note">Nothing recorded yet.</p>'}
+        </div>
+      </section>
+
+      ${done.length ? `<section class="card">
+        <div class="card-head">${icon('check')}<h2>Done</h2>
+          <div class="spacer"></div><span class="topbar-meta">${done.length}</span></div>
+        <div class="card-body">${list(done, '')}</div>
+      </section>` : ''}
+    `;
+  }
+
+  /* ============================================================ DECISIONS */
+  function renderDecisions() {
+    const decisions = col('decisions');
+    const rows = decisions.slice().reverse().map((d) => `<tr>
+      <td class="n">${esc(d.date)}</td>
+      <td><strong>${esc(d.title)}</strong>${(d.toolIds || []).length
+        ? `<br>${d.toolIds.map((id) => `<span class="tag">${esc(toolName(id))}</span>`).join(' ')}` : ''}</td>
+      <td>${esc(d.decision)}</td>
+      <td class="dim">${esc(d.why || '')}</td>
+      <td><select data-dstatus="${esc(d.id)}" aria-label="Status of: ${esc(d.title)}">
+        ${D_STATUS.map((s) => `<option value="${s}" ${d.status === s ? 'selected' : ''}>${esc(D_LABEL[s])}</option>`).join('')}
+      </select></td>
+    </tr>`).join('');
+
+    return `
+      <div class="section-title">
+        <h2>Decisions</h2>
+        <span class="section-note">What we settled and why. This is the part that was getting lost across ten chats —
+          a decision with no record gets re-argued three sessions later.</span>
+      </div>
+
+      <section class="card">
+        <div class="card-head">${icon('check')}<h2>The record</h2>
+          <div class="spacer"></div>
+          <span class="topbar-meta">${decisions.filter((d) => d.status === 'proposed').length} awaiting your call</span></div>
+        <div class="card-body"><div class="table-wrap">
+          <table class="data"><thead><tr><th>Date</th><th>Decision</th><th>What we chose</th><th>Why</th><th>State</th></tr></thead>
+          <tbody>${rows || '<tr><td colspan="5" class="faint">Nothing recorded yet.</td></tr>'}</tbody></table>
+        </div></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">${icon('copy')}<h2>Record a decision</h2></div>
+        <div class="card-body">
+          <div class="addform">
+            <div class="field"><label for="nd-title">Decision</label>
+              <input id="nd-title" data-new="decisions" data-field="title" type="text" placeholder="Short title"></div>
+            <div class="field"><label for="nd-dec">What we chose</label>
+              <textarea data-new="decisions" data-field="decision" rows="2"></textarea></div>
+            <div class="field"><label for="nd-why">Why</label>
+              <textarea data-new="decisions" data-field="why" rows="2"></textarea></div>
+            <div class="field-grid">
+              <div class="field"><label for="nd-status">State</label>
+                <select data-new="decisions" data-field="status">${D_STATUS.map((s) => `<option value="${s}">${esc(D_LABEL[s])}</option>`).join('')}</select></div>
+              <div class="field"><label>Date</label>
+                <input data-new="decisions" data-field="date" type="date"></div>
+            </div>
+            <button class="btn btn-primary btn-sm" data-add="decisions">Record it</button>
+          </div>
+        </div>
+      </section>
+    `;
   }
 
   /* ============================================================== OVERVIEW */
@@ -1629,8 +1918,10 @@ table.matrix tbody th .owner { display: block; font-family: var(--mono); font-si
 
   /* =================================================================== LOG */
   function renderLog() {
-    const log = DATA.log || [];
+    const log = col('sessions');
     const tools = allTools();
+    const loggedHours = log.filter((e) => e.hours != null).reduce((a, e) => a + Number(e.hours), 0);
+    const loggedTokens = log.filter((e) => e.tokens != null).reduce((a, e) => a + Number(e.tokens), 0);
 
     const effortRows = tools.filter((t) => t.effort.hours != null)
       .sort((a, b) => b.effort.hours - a.effort.hours)
@@ -1688,10 +1979,31 @@ table.matrix tbody th .owner { display: block; font-family: var(--mono); font-si
         <div class="card-body"><div class="table-wrap">${effortTable}</div></div>
       </section>
 
-      ${logTable ? `<section class="card">
-        <div class="card-head">${icon('check')}<h2>Session log</h2></div>
-        <div class="card-body"><div class="table-wrap">${logTable}</div></div>
-      </section>` : ''}
+      <section class="card">
+        <div class="card-head">${icon('check')}<h2>Session log</h2>
+          <div class="spacer"></div>
+          <span class="topbar-meta">${log.length} session${log.length === 1 ? '' : 's'}${
+            loggedHours ? ` · ${loggedHours}h` : ''}${loggedTokens ? ` · ${fmtTokens(loggedTokens)} tokens` : ''}</span></div>
+        <div class="card-body">
+          ${logTable ? `<div class="table-wrap">${logTable}</div>`
+            : '<p class="section-note">No sessions logged yet.</p>'}
+          <div class="addform" style="margin-top:18px">
+            <span class="eyebrow" style="display:block">Log a session</span>
+            <div class="field"><label for="ns-summary">What happened</label>
+              <input id="ns-summary" data-new="sessions" data-field="summary" type="text" placeholder="What moved"></div>
+            <div class="field-grid">
+              <div class="field"><label for="ns-tool">Tool</label>${toolPicker('sessions')}</div>
+              <div class="field"><label>Date</label>
+                <input data-new="sessions" data-field="date" type="date"></div>
+              <div class="field"><label for="ns-hours">Hours</label>
+                <input id="ns-hours" data-new="sessions" data-field="hours" type="number" min="0" step="0.25" placeholder="optional"></div>
+              <div class="field"><label for="ns-tokens">Tokens</label>
+                <input id="ns-tokens" data-new="sessions" data-field="tokens" type="number" min="0" placeholder="optional"></div>
+            </div>
+            <button class="btn btn-primary btn-sm" data-add="sessions">Add session</button>
+          </div>
+        </div>
+      </section>
     `;
   }
 
@@ -1790,6 +2102,14 @@ table.matrix tbody th .owner { display: block; font-family: var(--mono); font-si
             ${b.since ? `<br><span class="faint mono" style="font-size:10.5px">since ${esc(b.since)}</span>` : ''}</span></div>`).join('')}
         </div>` : ''}
 
+        ${(() => {
+          const q = col('queue').filter((x) => x.toolId === t.id && x.status !== 'done');
+          return q.length ? `<div class="sub">
+            <span class="eyebrow">On the queue</span>
+            <ul class="qlist">${q.map((x) => queueRow(x, { hideTool: true })).join('')}</ul>
+          </div>` : '';
+        })()}
+
         ${(t.nextActions || []).length ? `<div class="sub">
           <span class="eyebrow">Next actions</span>
           <ul class="checklist">${t.nextActions.map((a, i) => `
@@ -1882,8 +2202,21 @@ table.matrix tbody th .owner { display: block; font-family: var(--mono); font-si
     if ((t.blockers || []).length) {
       lines.push(`## Blocked on`, ...t.blockers.map((b) => `- ${b.text}`), ``);
     }
+    const q = col('queue').filter((x) => x.toolId === t.id && x.status !== 'done');
+    if (q.length) {
+      lines.push(`## On the queue`);
+      q.forEach((x) => lines.push(`- [${x.status}] (${x.size}) ${x.text}${x.note ? ` — ${x.note}` : ''}`));
+      lines.push('');
+    }
     if ((t.nextActions || []).length) {
       lines.push(`## Next actions`, ...t.nextActions.map((a) => `- [${a.done ? 'x' : ' '}] ${a.text}`), ``);
+    }
+
+    const decs = col('decisions').filter((d) => (d.toolIds || []).includes(t.id));
+    if (decs.length) {
+      lines.push(`## Decisions already made about this`);
+      decs.forEach((d) => lines.push(`- ${d.title} (${d.status}) — ${d.decision}`));
+      lines.push('');
     }
     if (t.notes) lines.push(`## Notes`, t.notes, ``);
 
@@ -1896,10 +2229,54 @@ table.matrix tbody th .owner { display: block; font-family: var(--mono); font-si
     return lines.filter((l) => l !== null).join('\n');
   }
 
+  /** Collect an add-form's fields into a new record. */
+  function submitNew(name) {
+    const fields = {};
+    $$(`[data-new="${name}"]`).forEach((el) => { fields[el.dataset.field] = el.value; });
+
+    const required = { queue: 'text', decisions: 'title', sessions: 'summary' }[name];
+    if (!fields[required] || !fields[required].trim()) {
+      toast(`Nothing added — fill in the ${required === 'text' ? 'item' : required} first`);
+      const el = $(`[data-new="${name}"][data-field="${required}"]`);
+      if (el) el.focus();
+      return;
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    const rec = { added: today, date: fields.date || today };
+
+    if (name === 'queue') {
+      Object.assign(rec, {
+        toolId: fields.toolId, text: fields.text.trim(),
+        status: 'queued', size: fields.size || 'M',
+        note: (fields.note || '').trim(),
+      });
+      delete rec.date;
+    } else if (name === 'decisions') {
+      Object.assign(rec, {
+        title: fields.title.trim(), decision: (fields.decision || '').trim(),
+        why: (fields.why || '').trim(), status: fields.status || 'proposed',
+        toolIds: [],
+      });
+      delete rec.added;
+    } else {
+      Object.assign(rec, {
+        toolId: fields.toolId, summary: fields.summary.trim(),
+        hours: numOrNull(fields.hours), tokens: numOrNull(fields.tokens),
+        by: 'Francis',
+      });
+      delete rec.added;
+    }
+
+    addColItem(name, rec);
+    render();
+    toast(LOCAL ? 'Added — press Save to write it to the file' : 'Added — use Copy changes to send it to me');
+  }
+
   /* ============================================================ EDITS BAR */
   function renderEditsBar() {
     const bar = $('#edits-bar');
-    const n = Object.keys(edits).length;
+    const n = pendingCount();
     bar.hidden = n === 0;
     $('#bar-save').hidden = !LOCAL;
     $('#bar-copy-patch').hidden = LOCAL;
@@ -1938,7 +2315,10 @@ table.matrix tbody th .owner { display: block; font-family: var(--mono); font-si
       /* Edits are now the file's contents, so the overlay is no longer a diff. */
       DATA = mergedRegistry();
       edits = {};
+      colAdds = { queue: [], decisions: [], sessions: [] };
+      colPatch = {};
       saveEdits();
+      saveCol();
       $('#meta-updated').textContent = `registry ${DATA.meta.version} · ${DATA.meta.updated}`;
       render();
       toast(`Saved to registry.json · ${out.tools} tools`);
@@ -1956,11 +2336,23 @@ table.matrix tbody th .owner { display: block; font-family: var(--mono); font-si
       const [id, path] = k.split('::');
       (byTool[id] = byTool[id] || {})[path] = edits[k];
     });
+
+    const recordChanges = {};
+    Object.keys(colPatch).forEach((k) => {
+      const [n, id, field] = k.split('::');
+      ((recordChanges[n] = recordChanges[n] || {})[id] = recordChanges[n][id] || {})[field] = colPatch[k];
+    });
+
+    const newRecords = {};
+    COLLECTIONS.forEach((n) => { if ((colAdds[n] || []).length) newRecords[n] = colAdds[n]; });
+
     const out = {
-      _instruction: 'Apply these changes to dashboard/registry.json. Paths are dot-notation within each tool object.',
+      _instruction: 'Apply to dashboard/registry.json. toolChanges use dot-notation paths inside each tool object. newRecords append to the named array. recordChanges set fields on existing records, matched by id.',
       _from: 'FT Ventures development dashboard, browser edits',
-      changes: byTool,
     };
+    if (Object.keys(byTool).length) out.toolChanges = byTool;
+    if (Object.keys(newRecords).length) out.newRecords = newRecords;
+    if (Object.keys(recordChanges).length) out.recordChanges = recordChanges;
     return JSON.stringify(out, null, 2);
   }
 
@@ -1997,18 +2389,23 @@ table.matrix tbody th .owner { display: block; font-family: var(--mono); font-si
 
   /* ================================================================ ROUTER */
   const VIEWS = {
+    now: { label: 'Now', icon: 'flag', render: renderNow, title: 'Now' },
     overview: { label: 'Overview', icon: 'gauge', render: renderOverview, title: 'Overview' },
     tools: { label: 'Tools', icon: 'grid', render: renderTools, title: 'Tools' },
     modules: { label: 'Connections', icon: 'link', render: renderModules, title: 'Modules and connections' },
-    priorities: { label: 'Priorities', icon: 'flag', render: renderPriorities, title: 'Priorities' },
+    priorities: { label: 'Priorities', icon: 'box', render: renderPriorities, title: 'Priorities' },
+    decisions: { label: 'Decisions', icon: 'check', render: renderDecisions, title: 'Decisions' },
     clients: { label: 'Who uses what', icon: 'users', render: renderClients, title: 'Who uses what' },
     log: { label: 'Time and tokens', icon: 'clock', render: renderLog, title: 'Time and tokens' },
   };
 
   function renderRail() {
+    const openQueue = col('queue').filter((q) => q.status !== 'done').length;
     const counts = {
+      now: openQueue,
       tools: DATA.tools.length,
       modules: DATA.connections.length,
+      decisions: col('decisions').length,
       clients: DATA.clients.length,
     };
     $('#nav').innerHTML = Object.entries(VIEWS).map(([k, v]) => `
@@ -2027,7 +2424,7 @@ table.matrix tbody th .owner { display: block; font-family: var(--mono); font-si
   }
 
   function go(r) {
-    if (!VIEWS[r]) r = 'overview';
+    if (!VIEWS[r]) r = 'now';
     route = r;
     if (location.hash.slice(1) !== r) history.replaceState(null, '', '#' + r);
     render();
@@ -2070,9 +2467,15 @@ table.matrix tbody th .owner { display: block; font-family: var(--mono); font-si
       }
       const saveBtn = e.target.closest('[data-act="save"]');
       if (saveBtn) { saveToDisk(saveBtn); return; }
+
+      const addBtn = e.target.closest('[data-add]');
+      if (addBtn) { submitNew(addBtn.dataset.add); return; }
       if (e.target.closest('#discard-edits')) {
         if (confirm('Discard all local changes and go back to the committed registry?')) {
-          edits = {}; saveEdits(); render(); toast('Local changes discarded');
+          edits = {};
+          colAdds = { queue: [], decisions: [], sessions: [] };
+          colPatch = {};
+          saveEdits(); saveCol(); render(); toast('Local changes discarded');
         }
         return;
       }
@@ -2106,7 +2509,14 @@ table.matrix tbody th .owner { display: block; font-family: var(--mono); font-si
       if (box && openToolId) {
         setEdit(openToolId, `nextActions.${box.dataset.action}.done`, box.checked);
         renderPanel();
+        return;
       }
+
+      const qs = e.target.closest('[data-qstatus]');
+      if (qs) { setColPatch('queue', qs.dataset.qstatus, 'status', qs.value); render(); return; }
+
+      const ds = e.target.closest('[data-dstatus]');
+      if (ds) { setColPatch('decisions', ds.dataset.dstatus, 'status', ds.value); render(); }
     });
 
     document.addEventListener('keydown', (e) => {
@@ -2116,7 +2526,7 @@ table.matrix tbody th .owner { display: block; font-family: var(--mono); font-si
       }
     });
 
-    window.addEventListener('hashchange', () => go(location.hash.slice(1) || 'overview'));
+    window.addEventListener('hashchange', () => go(location.hash.slice(1) || 'now'));
   }
 
   /* ================================================================= THEME */
@@ -2157,6 +2567,7 @@ table.matrix tbody th .owner { display: block; font-family: var(--mono); font-si
     }
 
     loadEdits();
+    loadCol();
     let theme = null;
     try { theme = localStorage.getItem(LS_THEME); } catch { /* ignore */ }
     applyTheme(theme);
@@ -2169,7 +2580,7 @@ table.matrix tbody th .owner { display: block; font-family: var(--mono); font-si
       ? 'Served by serve.mjs — edits write straight into dashboard/registry.json.'
       : 'Static copy. Edits stay in this browser and are exported as a patch.';
     wire();
-    go(location.hash.slice(1) || 'overview');
+    go(location.hash.slice(1) || 'now');
   }
 
   boot().catch((err) => {

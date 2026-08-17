@@ -1046,5 +1046,35 @@
       "notes": "Audience for the investor portal."
     }
   ],
+  "queue": [
+    { "id": "q1", "toolId": "ftv-studio", "text": "Is anyone paying for a Studio portal yet?", "status": "blocked", "size": "S", "added": "2026-08-17", "note": "Only Francis can answer. Decides whether the next week is building or selling — the single highest-value unknown on the board." },
+    { "id": "q2", "toolId": "sidelio", "text": "Decide: does Sidelio's module system merge onto the Studio shelf?", "status": "queued", "size": "L", "added": "2026-08-17", "note": "Biggest architectural fork. Two module systems is the duplication the Studio exists to end, but merging is weeks of work." },
+    { "id": "q3", "toolId": "ftv-studio", "text": "Phase 2 backend so client data is not trapped in one browser", "status": "queued", "size": "L", "added": "2026-08-17", "note": "Most serious technical problem in the portfolio. Recommend Supabase, already in Sidelio's stack." },
+    { "id": "q4", "toolId": "dev-dashboard", "text": "Move dashboard off the public Exuma2 repo into a private one", "status": "queued", "size": "S", "added": "2026-08-17", "note": "registry.json is world-readable on GitHub today, pricing and internal notes included." },
+    { "id": "q5", "toolId": "claire-80", "text": "Tell me what Claire 80 is", "status": "blocked", "size": "S", "added": "2026-08-17", "note": "No repo in the org matches it." },
+    { "id": "q6", "toolId": "pei-fotoshop", "text": "Point me at the repo behind peifotoshop.com", "status": "blocked", "size": "S", "added": "2026-08-17", "note": "Best candidate to be the Studio's first real customer — Website and Gallery were both built from its ideas." },
+    { "id": "q7", "toolId": "peiagents-skills", "text": "Get the skill suite into version control", "status": "queued", "size": "M", "added": "2026-08-17", "note": "The Studio names specific skills as Phase 2 dependencies; an unversioned rename breaks it silently." },
+    { "id": "q8", "toolId": "sidelio", "text": "App store release — needs your Apple/Google accounts and a build machine", "status": "blocked", "size": "M", "added": "2026-08-17", "note": "MOBILE-APP.md is the runbook; everything codeable is already done." },
+    { "id": "q9", "toolId": "lighthouse", "text": "Delete the four committed .bak files", "status": "queued", "size": "S", "added": "2026-08-17", "note": "Trivial cleanup." },
+    { "id": "q10", "toolId": "ftv-studio", "text": "Replace the placeholder pricing in studio/pitch.html with real numbers", "status": "queued", "size": "S", "added": "2026-08-17", "note": "The page itself says the figures are placeholders." },
+    { "id": "q11", "toolId": "sandy-palms-portal", "text": "Consolidate the three Exuma repos into one", "status": "queued", "size": "M", "added": "2026-08-17", "note": "Exuma, Exuma2 and Sandypalms overlap." },
+    { "id": "q12", "toolId": "pelot-photos", "text": "Is Pelot Photos a product, a client site, or the same code as PEI Fotoshop?", "status": "blocked", "size": "S", "added": "2026-08-17", "note": "If it is a client site it belongs in the clients view, not as a tool." },
+    { "id": "q13", "toolId": "dev-dashboard", "text": "Add live status checks for each live URL", "status": "queued", "size": "M", "added": "2026-08-17", "note": "Possible from local mode, where no network policy blocks the domains." }
+  ],
+
+  "decisions": [
+    { "id": "d1", "date": "2026-08-17", "title": "BF is BrokerFlow, and it is a Studio module", "decision": "BF is not a separate product with its own customers. It is 'Full BrokerFlow', one of the 14 wired modules on the Studio shelf.", "why": "Found by reading fmtventures/Financial-tool: modules/brokerflow/ exists, and studio/registry.js lists it as wired with cma-pei and listing-writer as its skills.", "toolIds": ["ftv-studio"], "status": "settled" },
+    { "id": "d2", "date": "2026-08-17", "title": "The website builder is the Studio's Website module", "decision": "The 'website builder' is the wired `website` module, which exports a hostable marketing page.", "why": "studio/registry.js lists it first, wired, with its idea credited to PEIFOTOSHOP.", "toolIds": ["ftv-studio", "pei-fotoshop"], "status": "settled" },
+    { "id": "d3", "date": "2026-08-17", "title": "The module attachment mechanism already exists", "decision": "No new mechanism needs designing. The Builder already composes any combination of shelf modules into a branded per-client portal, and pricing is by module count (Starter/Pro/Platform), not per-module add-ons.", "why": "This was the original question — how the website builder could attach to a tool like BF. Both are already modules on one shelf.", "toolIds": ["ftv-studio"], "status": "settled" },
+    { "id": "d4", "date": "2026-08-17", "title": "This board syncs modules, never copies them", "decision": "The module list is generated from studio/registry.js by sync-modules.mjs. Studio modules are not edited here.", "why": "A hand-maintained second copy would drift on the next module added — the exact complaint the Studio was built to answer.", "toolIds": ["dev-dashboard", "ftv-studio"], "status": "settled" },
+    { "id": "d5", "date": "2026-08-17", "title": "Effort stays blank until it is measured", "decision": "Hours and tokens are null wherever they were never tracked. No estimates, no back-filled guesses.", "why": "A fabricated number becomes the basis for a real prioritisation call. There is also no API that can recover spend from the earlier chats.", "toolIds": ["dev-dashboard"], "status": "settled" },
+    { "id": "d6", "date": "2026-08-17", "title": "Supabase for the Studio's Phase 2, not a low-code platform", "decision": "Proposed: use Supabase as the Studio backend rather than rebuilding on Bubble, WeWeb or Retool.", "why": "It is already in Sidelio's stack, keeps the static-site architecture the Studio's value rests on, and avoids a per-seat platform cost underneath a $49/mo product. One backend across both platforms instead of two.", "toolIds": ["ftv-studio", "sidelio"], "status": "proposed" },
+    { "id": "d7", "date": "2026-08-17", "title": "Move this dashboard off the public repo", "decision": "Proposed: relocate dashboard/ from the public Exuma2 repo into a private one.", "why": "registry.json is currently world-readable, including pricing and strategic notes.", "toolIds": ["dev-dashboard"], "status": "proposed" }
+  ],
+
+  "sessions": [
+    { "id": "s1", "date": "2026-08-17", "toolId": "dev-dashboard", "summary": "Built the Build Board: registry model, views, module matrix, local server with save-to-file, the module sync from The Ship, and the Now/Decisions workbench. Read three repos and corrected the seeded data — BF turned out to be BrokerFlow.", "hours": null, "tokens": null, "by": "Claude + Francis" }
+  ],
+
   "log": []
 }

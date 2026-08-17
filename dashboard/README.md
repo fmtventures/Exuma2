@@ -17,6 +17,7 @@ throwing anything away.
 | `styles.css` | All styling. Light and dark themes are both defined as token sets. |
 | `app.js` | Rendering, filtering, editing, charts. |
 | `serve.mjs` | Local server. Run this and edits save straight to `registry.json`. |
+| `sync-modules.mjs` | Pulls the module shelf from The Ship's own `studio/registry.js`. |
 | `build.mjs` | Inlines the four files above into single-file builds. |
 | `dist/index.html` | Standalone build — open it directly in a browser. |
 | `dist/artifact.html` | Same page as content-only, for publishing as a Claude Artifact. |
@@ -74,6 +75,43 @@ does not lose them — but nothing is shared with anyone else until step 4.
 paste-ready summary of one tool — status, repo, modules, blockers, next actions —
 so a fresh chat can pick that tool up with full context instead of starting cold.
 That is the fix for work being spread across ten conversations.
+
+## The working surfaces
+
+Three collections make this something you work from rather than just read. All
+three are editable in the browser and saved by the same mechanism as everything
+else.
+
+- **Queue** (`queue`) — one line per thing that needs doing, against a tool, with
+  a status you change from a dropdown: *In flight · Queued · Blocked · Done*.
+  **Blocked** has a specific meaning here: waiting on an answer only Francis has.
+  Those get their own panel at the top of **Now**, because each one is holding
+  something else up.
+- **Decisions** (`decisions`) — what was settled, and why. This is the one that
+  earns its keep: a decision with no record gets re-argued three sessions later,
+  which is exactly what was happening across ten chats. Each is *settled*,
+  *proposed* (awaiting a call) or *revisit*.
+- **Sessions** (`sessions`) — what happened, when, and optionally hours and
+  tokens. This is where effort tracking actually starts.
+
+A tool's queue items and decisions are both folded into its **Copy working
+brief**, so opening a fresh chat on that tool carries the open work and the
+settled decisions with it.
+
+## Keeping the module shelf in sync
+
+The Ship (`fmtventures/Financial-tool`) keeps the authoritative module list in
+`studio/registry.js`. This board reads it rather than keeping a copy:
+
+```sh
+node dashboard/sync-modules.mjs /path/to/financial-tool
+node dashboard/build.mjs
+```
+
+Modules from the Studio are tagged `source: "studio/registry.js"` and should not
+be edited here — a re-sync overwrites them. Hand-written modules for tools
+outside The Ship are left alone. The script refuses to run on an id collision and
+prunes any connection pointing at a module that no longer exists.
 
 ## Reading the data honestly
 

@@ -732,6 +732,49 @@ table.matrix tbody th .owner { display: block; font-family: var(--mono); font-si
 .prio .ie .v { font-family: var(--mono); font-size: 13px; font-variant-numeric: tabular-nums; }
 
 /* ==========================================================================
+   Queue, decisions, add-forms — the working surfaces
+   ========================================================================== */
+.qlist { display: flex; flex-direction: column; }
+.qrow {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+.qrow:last-child { border-bottom: 0; }
+.qrow .body { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.qrow .what { font-size: 13px; font-weight: 550; }
+.qrow .what.struck { text-decoration: line-through; color: var(--muted); font-weight: 400; }
+.qrow .why { font-size: 11.5px; color: var(--ink-2); }
+
+/* status select doubles as the state indicator, so it carries the colour */
+.qrow .qstat {
+  flex: none; width: 96px;
+  padding: 3px 5px;
+  font-size: 11.5px; font-weight: 600;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
+.qrow.doing   .qstat { border-color: var(--life-building); color: var(--ink); box-shadow: inset 3px 0 0 var(--life-building); }
+.qrow.blocked .qstat { border-color: var(--critical);       color: var(--ink); box-shadow: inset 3px 0 0 var(--critical); }
+.qrow.done    .qstat { opacity: 0.6; }
+.qrow.blocked .why { color: var(--ink); }
+
+.addform { display: flex; flex-direction: column; gap: 11px; }
+.addform .field-grid { gap: 11px; }
+
+.dec {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+}
+.dec:last-child { border-bottom: 0; }
+.dec-top { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.dec-body { font-size: 12.5px; color: var(--ink-2); }
+.tag.warn { border-color: var(--warn); color: var(--ink); }
+
+/* ==========================================================================
    Responsive
    ========================================================================== */
 @media (max-width: 1080px) {

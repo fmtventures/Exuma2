@@ -9,7 +9,17 @@
   'use strict';
 
   const LS_EDITS = 'ftv-dash-edits-v1';
+  const LS_COL = 'ftv-dash-collections-v1';
   const LS_THEME = 'ftv-dash-theme-v1';
+
+  /* Collections that are worked, not just read. */
+  const COLLECTIONS = ['queue', 'decisions', 'sessions'];
+
+  const Q_STATUS = ['doing', 'queued', 'blocked', 'done'];
+  const Q_LABEL = { doing: 'In flight', queued: 'Queued', blocked: 'Blocked', done: 'Done' };
+  const D_STATUS = ['settled', 'proposed', 'revisit'];
+  const D_LABEL = { settled: 'Settled', proposed: 'Proposed', revisit: 'Revisit' };
+  const SIZES = ['S', 'M', 'L'];
 
   const STATUS_ORDER = ['live', 'beta', 'building', 'paused', 'idea', 'unknown'];
   const STATUS_LABEL = {
@@ -182,9 +192,65 @@
     return value;
   }
 
+  /* ---------------------------------------------------- worked collections */
+  /* Tool edits are keyed by field path; queue/decision/session records are whole
+     rows that get added or have a field changed, so they carry their own overlay
+     rather than being forced through the tool-edit shape. */
+  let colAdds = { queue: [], decisions: [], sessions: [] };
+  let colPatch = {}; // "queue::q1::status" -> value
+
+  function loadCol() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(LS_COL)) || {};
+      colAdds = Object.assign({ queue: [], decisions: [], sessions: [] }, raw.adds || {});
+      colPatch = raw.patch || {};
+    } catch { colAdds = { queue: [], decisions: [], sessions: [] }; colPatch = {}; }
+  }
+  function saveCol() {
+    try { localStorage.setItem(LS_COL, JSON.stringify({ adds: colAdds, patch: colPatch })); }
+    catch { /* storage may be blocked */ }
+  }
+
+  function applyColPatch(name, rec) {
+    const out = Object.assign({}, rec);
+    Object.keys(colPatch).forEach((k) => {
+      const [n, id, field] = k.split('::');
+      if (n === name && id === rec.id) out[field] = colPatch[k];
+    });
+    return out;
+  }
+
+  /** A collection with additions appended and field changes applied. */
+  function col(name) {
+    return (DATA[name] || []).concat(colAdds[name] || []).map((r) => applyColPatch(name, r));
+  }
+
+  function setColPatch(name, id, field, value) {
+    const own = (colAdds[name] || []).find((r) => r.id === id);
+    if (own) { own[field] = value; saveCol(); renderEditsBar(); return; }
+    const original = (DATA[name] || []).find((r) => r.id === id);
+    const k = `${name}::${id}::${field}`;
+    if (original && String(original[field] ?? '') === String(value ?? '')) delete colPatch[k];
+    else colPatch[k] = value;
+    saveCol();
+    renderEditsBar();
+  }
+
+  function addColItem(name, rec) {
+    rec.id = name[0] + Date.now().toString(36);
+    (colAdds[name] = colAdds[name] || []).push(rec);
+    saveCol();
+  }
+
+  function pendingCount() {
+    return Object.keys(edits).length + Object.keys(colPatch).length
+      + COLLECTIONS.reduce((a, n) => a + (colAdds[n] || []).length, 0);
+  }
+
   /** Deep clone of the registry with every browser edit applied and coerced. */
   function mergedRegistry() {
     const out = JSON.parse(JSON.stringify(DATA));
+    COLLECTIONS.forEach((n) => { out[n] = col(n); });
     Object.keys(edits).forEach((k) => {
       const [id, path] = k.split('::');
       const t = out.tools.find((x) => x.id === id);
@@ -369,6 +435,186 @@
         ${mode === 'chart' ? chartHtml : `<div class="table-wrap">${tableHtml}</div>`}
       </div>
     </section>`;
+  }
+
+  /* ================================================================== NOW */
+
+  function toolPicker(name, selected) {
+    return `<select data-new="${esc(name)}" data-field="toolId">
+      ${allTools().map((t) => `<option value="${esc(t.id)}" ${t.id === selected ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}
+    </select>`;
+  }
+
+  function queueRow(q, opts) {
+    const o = opts || {};
+    const t = DATA.tools.find((x) => x.id === q.toolId);
+    return `<li class="qrow ${esc(q.status)}">
+      <select class="qstat" data-qstatus="${esc(q.id)}" aria-label="Status of: ${esc(q.text)}">
+        ${Q_STATUS.map((s) => `<option value="${s}" ${q.status === s ? 'selected' : ''}>${esc(Q_LABEL[s])}</option>`).join('')}
+      </select>
+      <span class="body">
+        <span class="what ${q.status === 'done' ? 'struck' : ''}">${esc(q.text)}</span>
+        ${q.note ? `<span class="why">${esc(q.note)}</span>` : ''}
+      </span>
+      ${q.size ? `<span class="tag">${esc(q.size)}</span>` : ''}
+      ${o.hideTool ? '' : `<button class="btn btn-sm btn-ghost" data-open="${esc(q.toolId)}">${esc(t ? t.name : q.toolId)}</button>`}
+    </li>`;
+  }
+
+  function renderNow() {
+    const queue = col('queue');
+    const decisions = col('decisions');
+    const sessions = col('sessions');
+
+    const doing = queue.filter((q) => q.status === 'doing');
+    const blocked = queue.filter((q) => q.status === 'blocked');
+    const byRank = (a, b) => {
+      const ta = tool(a.toolId), tb = tool(b.toolId);
+      const ra = ta && ta.priority.rank != null ? ta.priority.rank : 999;
+      const rb = tb && tb.priority.rank != null ? tb.priority.rank : 999;
+      return ra - rb;
+    };
+    const queued = queue.filter((q) => q.status === 'queued').sort(byRank);
+    const done = queue.filter((q) => q.status === 'done');
+
+    const tiles = `<div class="tiles">
+      <div class="tile"><span class="eyebrow">In flight</span><span class="tile-val num">${doing.length}</span>
+        <span class="tile-sub">${doing.length ? 'being worked now' : 'nothing started yet'}</span></div>
+      <div class="tile"><span class="eyebrow">Blocked on you</span><span class="tile-val num">${blocked.length}</span>
+        <span class="tile-sub">only you can unblock these</span></div>
+      <div class="tile"><span class="eyebrow">Queued</span><span class="tile-val num">${queued.length}</span>
+        <span class="tile-sub">ready to pick up</span></div>
+      <div class="tile"><span class="eyebrow">Decisions recorded</span><span class="tile-val num">${decisions.length}</span>
+        <span class="tile-sub">${decisions.filter((d) => d.status === 'proposed').length} awaiting your call</span></div>
+      <div class="tile"><span class="eyebrow">Sessions logged</span><span class="tile-val num">${sessions.length}</span>
+        <span class="tile-sub">since tracking started</span></div>
+    </div>`;
+
+    const list = (items, emptyMsg) => items.length
+      ? `<ul class="qlist">${items.map((q) => queueRow(q)).join('')}</ul>`
+      : `<p class="section-note">${esc(emptyMsg)}</p>`;
+
+    return `
+      ${tiles}
+
+      <section class="card">
+        <div class="card-head">${icon('alert')}<h2>Blocked on you</h2>
+          <div class="spacer"></div>
+          <span class="topbar-meta">${blocked.length} item${blocked.length === 1 ? '' : 's'}</span></div>
+        <div class="card-body">
+          <p class="section-note" style="margin-bottom:12px">These are not waiting on work. They are waiting on an
+            answer only you have — and each one is holding something else up.</p>
+          ${list(blocked, 'Nothing is blocked. Good.')}
+        </div>
+      </section>
+
+      <div class="split">
+        <section class="card">
+          <div class="card-head">${icon('flag')}<h2>Next up</h2>
+            <div class="spacer"></div><span class="topbar-meta">ordered by tool priority</span></div>
+          <div class="card-body">
+            ${doing.length ? `<span class="eyebrow" style="display:block;margin-bottom:8px">In flight</span>
+              ${list(doing, '')}<div style="height:16px"></div>` : ''}
+            <span class="eyebrow" style="display:block;margin-bottom:8px">Queued</span>
+            ${list(queued, 'Queue is empty.')}
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">${icon('copy')}<h2>Add to the queue</h2></div>
+          <div class="card-body">
+            <div class="addform">
+              <div class="field"><label for="nq-text">What needs doing</label>
+                <input id="nq-text" data-new="queue" data-field="text" type="text" placeholder="Short, concrete, one thing"></div>
+              <div class="field-grid">
+                <div class="field"><label for="nq-tool">Tool</label>${toolPicker('queue')}</div>
+                <div class="field"><label for="nq-size">Size</label>
+                  <select data-new="queue" data-field="size">${SIZES.map((s) => `<option value="${s}">${s}</option>`).join('')}</select></div>
+              </div>
+              <div class="field"><label for="nq-note">Why it matters (optional)</label>
+                <textarea data-new="queue" data-field="note" rows="2"></textarea></div>
+              <button class="btn btn-primary btn-sm" data-add="queue">Add item</button>
+            </div>
+            <p class="section-note" style="margin-top:14px">Anything you add here shows up in my working brief for that
+              tool, so it survives into the next session instead of living in a chat.</p>
+          </div>
+        </section>
+      </div>
+
+      <section class="card">
+        <div class="card-head">${icon('check')}<h2>Recent decisions</h2>
+          <div class="spacer"></div>
+          <button class="btn btn-sm btn-ghost" data-route="decisions">See all</button></div>
+        <div class="card-body">
+          ${decisions.slice(-4).reverse().map((d) => `<div class="dec">
+            <span class="dec-top"><strong>${esc(d.title)}</strong>
+              <span class="tag ${d.status === 'proposed' ? 'warn' : ''}">${esc(D_LABEL[d.status] || d.status)}</span>
+              <span class="faint mono" style="font-size:10.5px;margin-left:auto">${esc(d.date)}</span></span>
+            <span class="dec-body">${esc(d.decision)}</span>
+          </div>`).join('') || '<p class="section-note">Nothing recorded yet.</p>'}
+        </div>
+      </section>
+
+      ${done.length ? `<section class="card">
+        <div class="card-head">${icon('check')}<h2>Done</h2>
+          <div class="spacer"></div><span class="topbar-meta">${done.length}</span></div>
+        <div class="card-body">${list(done, '')}</div>
+      </section>` : ''}
+    `;
+  }
+
+  /* ============================================================ DECISIONS */
+  function renderDecisions() {
+    const decisions = col('decisions');
+    const rows = decisions.slice().reverse().map((d) => `<tr>
+      <td class="n">${esc(d.date)}</td>
+      <td><strong>${esc(d.title)}</strong>${(d.toolIds || []).length
+        ? `<br>${d.toolIds.map((id) => `<span class="tag">${esc(toolName(id))}</span>`).join(' ')}` : ''}</td>
+      <td>${esc(d.decision)}</td>
+      <td class="dim">${esc(d.why || '')}</td>
+      <td><select data-dstatus="${esc(d.id)}" aria-label="Status of: ${esc(d.title)}">
+        ${D_STATUS.map((s) => `<option value="${s}" ${d.status === s ? 'selected' : ''}>${esc(D_LABEL[s])}</option>`).join('')}
+      </select></td>
+    </tr>`).join('');
+
+    return `
+      <div class="section-title">
+        <h2>Decisions</h2>
+        <span class="section-note">What we settled and why. This is the part that was getting lost across ten chats —
+          a decision with no record gets re-argued three sessions later.</span>
+      </div>
+
+      <section class="card">
+        <div class="card-head">${icon('check')}<h2>The record</h2>
+          <div class="spacer"></div>
+          <span class="topbar-meta">${decisions.filter((d) => d.status === 'proposed').length} awaiting your call</span></div>
+        <div class="card-body"><div class="table-wrap">
+          <table class="data"><thead><tr><th>Date</th><th>Decision</th><th>What we chose</th><th>Why</th><th>State</th></tr></thead>
+          <tbody>${rows || '<tr><td colspan="5" class="faint">Nothing recorded yet.</td></tr>'}</tbody></table>
+        </div></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">${icon('copy')}<h2>Record a decision</h2></div>
+        <div class="card-body">
+          <div class="addform">
+            <div class="field"><label for="nd-title">Decision</label>
+              <input id="nd-title" data-new="decisions" data-field="title" type="text" placeholder="Short title"></div>
+            <div class="field"><label for="nd-dec">What we chose</label>
+              <textarea data-new="decisions" data-field="decision" rows="2"></textarea></div>
+            <div class="field"><label for="nd-why">Why</label>
+              <textarea data-new="decisions" data-field="why" rows="2"></textarea></div>
+            <div class="field-grid">
+              <div class="field"><label for="nd-status">State</label>
+                <select data-new="decisions" data-field="status">${D_STATUS.map((s) => `<option value="${s}">${esc(D_LABEL[s])}</option>`).join('')}</select></div>
+              <div class="field"><label>Date</label>
+                <input data-new="decisions" data-field="date" type="date"></div>
+            </div>
+            <button class="btn btn-primary btn-sm" data-add="decisions">Record it</button>
+          </div>
+        </div>
+      </section>
+    `;
   }
 
   /* ============================================================== OVERVIEW */
@@ -798,8 +1044,10 @@
 
   /* =================================================================== LOG */
   function renderLog() {
-    const log = DATA.log || [];
+    const log = col('sessions');
     const tools = allTools();
+    const loggedHours = log.filter((e) => e.hours != null).reduce((a, e) => a + Number(e.hours), 0);
+    const loggedTokens = log.filter((e) => e.tokens != null).reduce((a, e) => a + Number(e.tokens), 0);
 
     const effortRows = tools.filter((t) => t.effort.hours != null)
       .sort((a, b) => b.effort.hours - a.effort.hours)
@@ -857,10 +1105,31 @@
         <div class="card-body"><div class="table-wrap">${effortTable}</div></div>
       </section>
 
-      ${logTable ? `<section class="card">
-        <div class="card-head">${icon('check')}<h2>Session log</h2></div>
-        <div class="card-body"><div class="table-wrap">${logTable}</div></div>
-      </section>` : ''}
+      <section class="card">
+        <div class="card-head">${icon('check')}<h2>Session log</h2>
+          <div class="spacer"></div>
+          <span class="topbar-meta">${log.length} session${log.length === 1 ? '' : 's'}${
+            loggedHours ? ` · ${loggedHours}h` : ''}${loggedTokens ? ` · ${fmtTokens(loggedTokens)} tokens` : ''}</span></div>
+        <div class="card-body">
+          ${logTable ? `<div class="table-wrap">${logTable}</div>`
+            : '<p class="section-note">No sessions logged yet.</p>'}
+          <div class="addform" style="margin-top:18px">
+            <span class="eyebrow" style="display:block">Log a session</span>
+            <div class="field"><label for="ns-summary">What happened</label>
+              <input id="ns-summary" data-new="sessions" data-field="summary" type="text" placeholder="What moved"></div>
+            <div class="field-grid">
+              <div class="field"><label for="ns-tool">Tool</label>${toolPicker('sessions')}</div>
+              <div class="field"><label>Date</label>
+                <input data-new="sessions" data-field="date" type="date"></div>
+              <div class="field"><label for="ns-hours">Hours</label>
+                <input id="ns-hours" data-new="sessions" data-field="hours" type="number" min="0" step="0.25" placeholder="optional"></div>
+              <div class="field"><label for="ns-tokens">Tokens</label>
+                <input id="ns-tokens" data-new="sessions" data-field="tokens" type="number" min="0" placeholder="optional"></div>
+            </div>
+            <button class="btn btn-primary btn-sm" data-add="sessions">Add session</button>
+          </div>
+        </div>
+      </section>
     `;
   }
 
@@ -959,6 +1228,14 @@
             ${b.since ? `<br><span class="faint mono" style="font-size:10.5px">since ${esc(b.since)}</span>` : ''}</span></div>`).join('')}
         </div>` : ''}
 
+        ${(() => {
+          const q = col('queue').filter((x) => x.toolId === t.id && x.status !== 'done');
+          return q.length ? `<div class="sub">
+            <span class="eyebrow">On the queue</span>
+            <ul class="qlist">${q.map((x) => queueRow(x, { hideTool: true })).join('')}</ul>
+          </div>` : '';
+        })()}
+
         ${(t.nextActions || []).length ? `<div class="sub">
           <span class="eyebrow">Next actions</span>
           <ul class="checklist">${t.nextActions.map((a, i) => `
@@ -1051,8 +1328,21 @@
     if ((t.blockers || []).length) {
       lines.push(`## Blocked on`, ...t.blockers.map((b) => `- ${b.text}`), ``);
     }
+    const q = col('queue').filter((x) => x.toolId === t.id && x.status !== 'done');
+    if (q.length) {
+      lines.push(`## On the queue`);
+      q.forEach((x) => lines.push(`- [${x.status}] (${x.size}) ${x.text}${x.note ? ` — ${x.note}` : ''}`));
+      lines.push('');
+    }
     if ((t.nextActions || []).length) {
       lines.push(`## Next actions`, ...t.nextActions.map((a) => `- [${a.done ? 'x' : ' '}] ${a.text}`), ``);
+    }
+
+    const decs = col('decisions').filter((d) => (d.toolIds || []).includes(t.id));
+    if (decs.length) {
+      lines.push(`## Decisions already made about this`);
+      decs.forEach((d) => lines.push(`- ${d.title} (${d.status}) — ${d.decision}`));
+      lines.push('');
     }
     if (t.notes) lines.push(`## Notes`, t.notes, ``);
 
@@ -1065,10 +1355,54 @@
     return lines.filter((l) => l !== null).join('\n');
   }
 
+  /** Collect an add-form's fields into a new record. */
+  function submitNew(name) {
+    const fields = {};
+    $$(`[data-new="${name}"]`).forEach((el) => { fields[el.dataset.field] = el.value; });
+
+    const required = { queue: 'text', decisions: 'title', sessions: 'summary' }[name];
+    if (!fields[required] || !fields[required].trim()) {
+      toast(`Nothing added — fill in the ${required === 'text' ? 'item' : required} first`);
+      const el = $(`[data-new="${name}"][data-field="${required}"]`);
+      if (el) el.focus();
+      return;
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    const rec = { added: today, date: fields.date || today };
+
+    if (name === 'queue') {
+      Object.assign(rec, {
+        toolId: fields.toolId, text: fields.text.trim(),
+        status: 'queued', size: fields.size || 'M',
+        note: (fields.note || '').trim(),
+      });
+      delete rec.date;
+    } else if (name === 'decisions') {
+      Object.assign(rec, {
+        title: fields.title.trim(), decision: (fields.decision || '').trim(),
+        why: (fields.why || '').trim(), status: fields.status || 'proposed',
+        toolIds: [],
+      });
+      delete rec.added;
+    } else {
+      Object.assign(rec, {
+        toolId: fields.toolId, summary: fields.summary.trim(),
+        hours: numOrNull(fields.hours), tokens: numOrNull(fields.tokens),
+        by: 'Francis',
+      });
+      delete rec.added;
+    }
+
+    addColItem(name, rec);
+    render();
+    toast(LOCAL ? 'Added — press Save to write it to the file' : 'Added — use Copy changes to send it to me');
+  }
+
   /* ============================================================ EDITS BAR */
   function renderEditsBar() {
     const bar = $('#edits-bar');
-    const n = Object.keys(edits).length;
+    const n = pendingCount();
     bar.hidden = n === 0;
     $('#bar-save').hidden = !LOCAL;
     $('#bar-copy-patch').hidden = LOCAL;
@@ -1107,7 +1441,10 @@
       /* Edits are now the file's contents, so the overlay is no longer a diff. */
       DATA = mergedRegistry();
       edits = {};
+      colAdds = { queue: [], decisions: [], sessions: [] };
+      colPatch = {};
       saveEdits();
+      saveCol();
       $('#meta-updated').textContent = `registry ${DATA.meta.version} · ${DATA.meta.updated}`;
       render();
       toast(`Saved to registry.json · ${out.tools} tools`);
@@ -1125,11 +1462,23 @@
       const [id, path] = k.split('::');
       (byTool[id] = byTool[id] || {})[path] = edits[k];
     });
+
+    const recordChanges = {};
+    Object.keys(colPatch).forEach((k) => {
+      const [n, id, field] = k.split('::');
+      ((recordChanges[n] = recordChanges[n] || {})[id] = recordChanges[n][id] || {})[field] = colPatch[k];
+    });
+
+    const newRecords = {};
+    COLLECTIONS.forEach((n) => { if ((colAdds[n] || []).length) newRecords[n] = colAdds[n]; });
+
     const out = {
-      _instruction: 'Apply these changes to dashboard/registry.json. Paths are dot-notation within each tool object.',
+      _instruction: 'Apply to dashboard/registry.json. toolChanges use dot-notation paths inside each tool object. newRecords append to the named array. recordChanges set fields on existing records, matched by id.',
       _from: 'FT Ventures development dashboard, browser edits',
-      changes: byTool,
     };
+    if (Object.keys(byTool).length) out.toolChanges = byTool;
+    if (Object.keys(newRecords).length) out.newRecords = newRecords;
+    if (Object.keys(recordChanges).length) out.recordChanges = recordChanges;
     return JSON.stringify(out, null, 2);
   }
 
@@ -1166,18 +1515,23 @@
 
   /* ================================================================ ROUTER */
   const VIEWS = {
+    now: { label: 'Now', icon: 'flag', render: renderNow, title: 'Now' },
     overview: { label: 'Overview', icon: 'gauge', render: renderOverview, title: 'Overview' },
     tools: { label: 'Tools', icon: 'grid', render: renderTools, title: 'Tools' },
     modules: { label: 'Connections', icon: 'link', render: renderModules, title: 'Modules and connections' },
-    priorities: { label: 'Priorities', icon: 'flag', render: renderPriorities, title: 'Priorities' },
+    priorities: { label: 'Priorities', icon: 'box', render: renderPriorities, title: 'Priorities' },
+    decisions: { label: 'Decisions', icon: 'check', render: renderDecisions, title: 'Decisions' },
     clients: { label: 'Who uses what', icon: 'users', render: renderClients, title: 'Who uses what' },
     log: { label: 'Time and tokens', icon: 'clock', render: renderLog, title: 'Time and tokens' },
   };
 
   function renderRail() {
+    const openQueue = col('queue').filter((q) => q.status !== 'done').length;
     const counts = {
+      now: openQueue,
       tools: DATA.tools.length,
       modules: DATA.connections.length,
+      decisions: col('decisions').length,
       clients: DATA.clients.length,
     };
     $('#nav').innerHTML = Object.entries(VIEWS).map(([k, v]) => `
@@ -1196,7 +1550,7 @@
   }
 
   function go(r) {
-    if (!VIEWS[r]) r = 'overview';
+    if (!VIEWS[r]) r = 'now';
     route = r;
     if (location.hash.slice(1) !== r) history.replaceState(null, '', '#' + r);
     render();
@@ -1239,9 +1593,15 @@
       }
       const saveBtn = e.target.closest('[data-act="save"]');
       if (saveBtn) { saveToDisk(saveBtn); return; }
+
+      const addBtn = e.target.closest('[data-add]');
+      if (addBtn) { submitNew(addBtn.dataset.add); return; }
       if (e.target.closest('#discard-edits')) {
         if (confirm('Discard all local changes and go back to the committed registry?')) {
-          edits = {}; saveEdits(); render(); toast('Local changes discarded');
+          edits = {};
+          colAdds = { queue: [], decisions: [], sessions: [] };
+          colPatch = {};
+          saveEdits(); saveCol(); render(); toast('Local changes discarded');
         }
         return;
       }
@@ -1275,7 +1635,14 @@
       if (box && openToolId) {
         setEdit(openToolId, `nextActions.${box.dataset.action}.done`, box.checked);
         renderPanel();
+        return;
       }
+
+      const qs = e.target.closest('[data-qstatus]');
+      if (qs) { setColPatch('queue', qs.dataset.qstatus, 'status', qs.value); render(); return; }
+
+      const ds = e.target.closest('[data-dstatus]');
+      if (ds) { setColPatch('decisions', ds.dataset.dstatus, 'status', ds.value); render(); }
     });
 
     document.addEventListener('keydown', (e) => {
@@ -1285,7 +1652,7 @@
       }
     });
 
-    window.addEventListener('hashchange', () => go(location.hash.slice(1) || 'overview'));
+    window.addEventListener('hashchange', () => go(location.hash.slice(1) || 'now'));
   }
 
   /* ================================================================= THEME */
@@ -1326,6 +1693,7 @@
     }
 
     loadEdits();
+    loadCol();
     let theme = null;
     try { theme = localStorage.getItem(LS_THEME); } catch { /* ignore */ }
     applyTheme(theme);
@@ -1338,7 +1706,7 @@
       ? 'Served by serve.mjs — edits write straight into dashboard/registry.json.'
       : 'Static copy. Edits stay in this browser and are exported as a patch.';
     wire();
-    go(location.hash.slice(1) || 'overview');
+    go(location.hash.slice(1) || 'now');
   }
 
   boot().catch((err) => {
