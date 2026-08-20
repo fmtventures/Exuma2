@@ -777,6 +777,54 @@ table.matrix tbody th .owner { display: block; font-family: var(--mono); font-si
 .tag.warn { border-color: var(--warn); color: var(--ink); }
 
 /* ==========================================================================
+   Ecosystem map
+   ========================================================================== */
+.map-card { overflow: hidden; }
+.map-wrap {
+  position: relative;
+  width: 100%;
+  height: min(72vh, 680px);
+  min-height: 420px;
+  background:
+    radial-gradient(circle at 1px 1px, var(--grid) 1px, transparent 0) 0 0 / 26px 26px,
+    var(--surface);
+  border-top: 1px solid var(--line);
+  touch-action: none;
+}
+#map-canvas { display: block; width: 100%; height: 100%; }
+
+.map-legend {
+  position: absolute; left: 12px; bottom: 12px;
+  display: flex; flex-wrap: wrap; gap: 6px 13px; align-items: center;
+  max-width: calc(100% - 24px);
+  padding: 8px 11px;
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  font-size: 11px; color: var(--ink-2);
+  pointer-events: none;
+}
+.map-legend .legend-key { display: inline-flex; align-items: center; gap: 5px; }
+.legend-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.legend-line { width: 15px; height: 0; flex: none; border-top: 2px solid var(--muted); }
+.legend-line.live { border-color: var(--life-live); }
+.legend-line.planned { border-color: var(--accent); }
+.legend-line.idea { border-top-style: dashed; border-color: var(--muted); }
+
+.map-tip {
+  position: absolute; z-index: 5;
+  padding: 6px 9px;
+  background: var(--ink); color: var(--plane);
+  border-radius: var(--r-sm);
+  font-size: 11.5px; line-height: 1.35;
+  pointer-events: none;
+  max-width: 180px;
+  box-shadow: var(--shadow);
+}
+.map-tip .faint { color: color-mix(in srgb, var(--plane) 70%, transparent); }
+
+/* ==========================================================================
    Responsive
    ========================================================================== */
 @media (max-width: 1080px) {
@@ -927,6 +975,8 @@ table.matrix tbody th .owner { display: block; font-family: var(--mono); font-si
     moon: 'M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z',
     box: 'M12 3 3 7.5v9L12 21l9-4.5v-9L12 3Zm0 0v18M3 7.5 12 12l9-4.5',
     pause: 'M9.5 5v14M14.5 5v14',
+    network: 'M12 12a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Zm6.5 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm-13 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM10.3 11.2l-3 3.4m6.4-3.4 3 3.4',
+    reheat: 'M12 21a9 9 0 1 0-9-9m0 0V6m0 6h6',
   };
 
   function icon(name, cls) {
@@ -2383,8 +2433,325 @@ table.matrix tbody th .owner { display: block; font-family: var(--mono); font-si
   }
 
   /* ================================================================ ROUTER */
+  /* ================================================================== MAP */
+  /* An interactive force-directed map of the whole ecosystem: platforms are
+     hubs, tools orbit their platform, and every module connection is an edge
+     between the tool that owns the module and the tool that consumes it. Drag a
+     node, hover to light up its links, click to open it. Canvas + a small
+     spring simulation, no dependencies. */
+
+  function buildGraph() {
+    const tools = allTools();
+    const nodes = [];
+    const byId = {};
+
+    const zero = { x: null, y: null, vx: 0, vy: 0, fx: 0, fy: 0 };
+    DATA.platforms.forEach((p) => {
+      const n = { id: 'plat:' + p.id, kind: 'platform', label: p.name, r: 11, refId: p.id, ...zero };
+      nodes.push(n); byId[n.id] = n;
+    });
+    tools.forEach((t) => {
+      const impact = t.priority && t.priority.impact != null ? t.priority.impact : 2;
+      const n = { id: 'tool:' + t.id, kind: 'tool', label: t.name, r: 6 + impact * 1.4,
+        status: t.status || 'unknown', refId: t.id, platformId: t.platformId, ...zero };
+      nodes.push(n); byId[n.id] = n;
+    });
+
+    const edges = [];
+    /* membership: tool → platform */
+    tools.forEach((t) => {
+      if (t.platformId && byId['plat:' + t.platformId]) {
+        edges.push({ a: 'tool:' + t.id, b: 'plat:' + t.platformId, kind: 'member' });
+      }
+    });
+    /* module connections: owner tool → consumer tool */
+    DATA.connections.forEach((c) => {
+      const m = moduleById(c.moduleId);
+      if (!m || !m.ownerToolId) return;
+      const a = 'tool:' + m.ownerToolId, b = 'tool:' + c.toToolId;
+      if (!byId[a] || !byId[b] || a === b) return;
+      edges.push({ a, b, kind: 'conn', status: c.status || 'idea', label: m.name });
+    });
+
+    /* adjacency, for hover highlighting */
+    const adj = {};
+    nodes.forEach((n) => { adj[n.id] = new Set(); });
+    edges.forEach((e) => { adj[e.a].add(e.b); adj[e.b].add(e.a); });
+
+    return { nodes, edges, byId, adj, tools };
+  }
+
+  function cssVars(names) {
+    const cs = getComputedStyle(document.documentElement);
+    const out = {};
+    names.forEach((n) => { out[n] = cs.getPropertyValue('--' + n).trim(); });
+    return out;
+  }
+
+  function renderMap() {
+    const g = buildGraph();
+    const conns = DATA.connections.length;
+    return `
+      <div class="section-title">
+        <h2>Ecosystem map</h2>
+        <span class="section-note">Every tool and how the modules wire them together. Platforms are the large hubs;
+          each line is a module flowing from the tool that owns it to the tool that uses it. Drag nodes, hover to
+          trace a tool's links, click to open it.</span>
+      </div>
+
+      <section class="card map-card">
+        <div class="card-head">${icon('network')}<h2>${g.tools.length} tools · ${conns} connections</h2>
+          <div class="spacer"></div>
+          <button class="btn btn-sm btn-ghost" id="map-reheat">${icon('reheat')}Rearrange</button>
+        </div>
+        <div class="map-wrap">
+          <canvas id="map-canvas"></canvas>
+          <div class="map-legend">
+            <span class="legend-key"><span class="legend-dot" style="background:var(--accent)"></span>Platform</span>
+            <span class="legend-key"><span class="legend-dot" style="background:var(--life-live)"></span>Live</span>
+            <span class="legend-key"><span class="legend-dot" style="background:var(--life-building)"></span>Building</span>
+            <span class="legend-key"><span class="legend-dot" style="background:var(--life-unknown)"></span>Other</span>
+            <span class="legend-key"><span class="legend-line live"></span>Live link</span>
+            <span class="legend-key"><span class="legend-line planned"></span>Planned</span>
+            <span class="legend-key"><span class="legend-line idea"></span>Idea</span>
+          </div>
+          <div class="map-tip" id="map-tip" hidden></div>
+        </div>
+      </section>
+    `;
+  }
+
+  function mountMap() {
+    const canvas = $('#map-canvas');
+    const wrap = canvas.parentElement;
+    const tip = $('#map-tip');
+    if (!canvas) return () => {};
+    const ctx = canvas.getContext('2d');
+
+    const { nodes, edges, byId, adj } = buildGraph();
+    let W = 0, H = 0, dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    let palette = readPalette();
+    function readPalette() {
+      return cssVars(['surface', 'ink', 'ink-2', 'muted', 'line', 'accent', 'accent-ink',
+        'life-live', 'life-beta', 'life-building', 'life-idea', 'life-unknown', 'life-paused',
+        'grid', 'good-ink']);
+    }
+    const statusColor = (s) => palette['life-' + s] || palette['life-unknown'];
+    const edgeColor = (st) => st === 'live' ? palette['life-live']
+      : st === 'planned' ? palette.accent : palette.muted;
+
+    function size() {
+      W = wrap.clientWidth; H = wrap.clientHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = W * dpr; canvas.height = H * dpr;
+      canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    /* platform anchors around a ring, tools seeded near their platform */
+    function seed() {
+      const plats = nodes.filter((n) => n.kind === 'platform');
+      const cx = W / 2, cy = H / 2;
+      const R = Math.min(W, H) * 0.30;
+      plats.forEach((p, i) => {
+        const a = (i / plats.length) * Math.PI * 2 - Math.PI / 2;
+        p.ax = cx + Math.cos(a) * R; p.ay = cy + Math.sin(a) * R;
+        if (p.x == null) { p.x = p.ax; p.y = p.ay; }
+        p.vx = 0; p.vy = 0;
+      });
+      nodes.filter((n) => n.kind === 'tool').forEach((t) => {
+        const p = byId['plat:' + t.platformId];
+        const base = p || { ax: cx, ay: cy };
+        if (t.x == null) {
+          t.x = base.ax + (Math.random() - 0.5) * 120;
+          t.y = base.ay + (Math.random() - 0.5) * 120;
+        }
+        t.vx = 0; t.vy = 0;
+      });
+    }
+
+    /* one physics step */
+    function step() {
+      const cx = W / 2, cy = H / 2;
+      for (let i = 0; i < nodes.length; i++) {
+        const a = nodes[i];
+        for (let j = i + 1; j < nodes.length; j++) {
+          const b = nodes[j];
+          let dx = a.x - b.x, dy = a.y - b.y;
+          let d2 = dx * dx + dy * dy || 0.01;
+          const min = (a.r + b.r + 22);
+          const f = 5200 / d2;
+          const d = Math.sqrt(d2);
+          const ux = dx / d, uy = dy / d;
+          a.fx += ux * f; a.fy += uy * f;
+          b.fx -= ux * f; b.fy -= uy * f;
+          if (d < min) { const push = (min - d) * 0.5; a.fx += ux * push; a.fy += uy * push; b.fx -= ux * push; b.fy -= uy * push; }
+        }
+      }
+      edges.forEach((e) => {
+        const a = byId[e.a], b = byId[e.b];
+        const L = e.kind === 'member' ? 78 : 108;
+        const k = e.kind === 'member' ? 0.020 : 0.014;
+        let dx = b.x - a.x, dy = b.y - a.y;
+        const d = Math.sqrt(dx * dx + dy * dy) || 0.01;
+        const f = (d - L) * k;
+        const ux = dx / d, uy = dy / d;
+        a.fx += ux * f; a.fy += uy * f;
+        b.fx -= ux * f; b.fy -= uy * f;
+      });
+      nodes.forEach((n) => {
+        n.fx += (cx - n.x) * 0.0026; n.fy += (cy - n.y) * 0.0026;
+        if (n.kind === 'platform') { n.fx += (n.ax - n.x) * 0.045; n.fy += (n.ay - n.y) * 0.045; }
+      });
+      let energy = 0;
+      nodes.forEach((n) => {
+        if (n === dragging) { n.vx = 0; n.vy = 0; n.fx = 0; n.fy = 0; return; }
+        n.vx = (n.vx + n.fx) * 0.86; n.vy = (n.vy + n.fy) * 0.86;
+        n.x += n.vx; n.y += n.vy;
+        n.x = Math.max(n.r + 4, Math.min(W - n.r - 4, n.x));
+        n.y = Math.max(n.r + 4, Math.min(H - n.r - 4, n.y));
+        energy += n.vx * n.vx + n.vy * n.vy;
+        n.fx = 0; n.fy = 0;
+      });
+      return energy;
+    }
+
+    /* drawing */
+    let hover = null;
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      const hi = hover ? adj[hover.id] : null;
+
+      edges.forEach((e) => {
+        const a = byId[e.a], b = byId[e.b];
+        const active = hover && (e.a === hover.id || e.b === hover.id);
+        const dim = hover && !active;
+        ctx.globalAlpha = dim ? 0.08 : (e.kind === 'member' ? 0.35 : 0.8);
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+        if (e.kind === 'member') { ctx.strokeStyle = palette.line; ctx.lineWidth = 1; ctx.setLineDash([]); }
+        else {
+          ctx.strokeStyle = edgeColor(e.status); ctx.lineWidth = active ? 2.4 : 1.4;
+          ctx.setLineDash(e.status === 'idea' ? [3, 3] : []);
+        }
+        ctx.stroke();
+      });
+      ctx.setLineDash([]); ctx.globalAlpha = 1;
+
+      nodes.forEach((n) => {
+        const dim = hover && n !== hover && !(hi && hi.has(n.id));
+        ctx.globalAlpha = dim ? 0.25 : 1;
+        const fill = n.kind === 'platform' ? palette.accent : statusColor(n.status);
+        ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+        ctx.fillStyle = fill; ctx.fill();
+        ctx.lineWidth = 2; ctx.strokeStyle = palette.surface; ctx.stroke();
+        if (n === hover) { ctx.lineWidth = 2; ctx.strokeStyle = palette.ink; ctx.stroke(); }
+
+        const showLabel = n.kind === 'platform' || n.r > 8 || !hover || n === hover || (hi && hi.has(n.id));
+        if (showLabel) {
+          ctx.font = (n.kind === 'platform' ? '600 12px ' : '500 11px ') +
+            'system-ui, -apple-system, "Segoe UI", sans-serif';
+          const label = n.label.length > 22 ? n.label.slice(0, 21) + '…' : n.label;
+          const tw = ctx.measureText(label).width;
+          ctx.globalAlpha = dim ? 0.25 : 0.92;
+          ctx.fillStyle = palette.surface;
+          ctx.fillRect(n.x - tw / 2 - 3, n.y + n.r + 2, tw + 6, 14);
+          ctx.fillStyle = n.kind === 'platform' ? palette.ink : palette['ink-2'];
+          ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+          ctx.fillText(label, n.x, n.y + n.r + 4);
+        }
+      });
+      ctx.globalAlpha = 1;
+    }
+
+    /* run loop with auto-sleep + kick-on-interaction */
+    let raf = null, running = false, calm = 0;
+    function frame() {
+      const e = step();
+      draw();
+      if (e < 0.05) { calm++; } else { calm = 0; }
+      if (calm > 30 && !dragging) { running = false; raf = null; return; }
+      raf = requestAnimationFrame(frame);
+    }
+    function kick() { calm = 0; if (!running) { running = true; raf = requestAnimationFrame(frame); } }
+
+    /* pointer interaction */
+    let dragging = null, downPt = null, moved = false;
+    const at = (ev) => {
+      const r = canvas.getBoundingClientRect();
+      return { x: ev.clientX - r.left, y: ev.clientY - r.top };
+    };
+    const pick = (p) => {
+      let best = null, bd = Infinity;
+      nodes.forEach((n) => {
+        const d = Math.hypot(n.x - p.x, n.y - p.y);
+        if (d < n.r + 6 && d < bd) { bd = d; best = n; }
+      });
+      return best;
+    };
+    function onDown(ev) {
+      const p = at(ev); const n = pick(p);
+      downPt = p; moved = false;
+      if (n) { dragging = n; canvas.style.cursor = 'grabbing'; kick(); }
+    }
+    function onMove(ev) {
+      const p = at(ev);
+      if (dragging) {
+        dragging.x = p.x; dragging.y = p.y;
+        if (Math.hypot(p.x - downPt.x, p.y - downPt.y) > 3) moved = true;
+        kick(); return;
+      }
+      const n = pick(p);
+      if (n !== hover) {
+        hover = n; canvas.style.cursor = n ? 'pointer' : 'default';
+        if (!running) draw();
+        if (n) {
+          const meta = n.kind === 'platform' ? platformName(n.refId) + ' · platform'
+            : (() => { const t = tool(n.refId); return `${STATUS_LABEL[t.status] || t.status} · ${platformName(t.platformId)}`; })();
+          tip.innerHTML = `<strong>${esc(n.label)}</strong><br><span class="faint">${esc(meta)}</span>`;
+          tip.hidden = false;
+          const r = canvas.getBoundingClientRect();
+          tip.style.left = Math.min(W - 160, n.x + 12) + 'px';
+          tip.style.top = Math.max(6, n.y - 10) + 'px';
+        } else { tip.hidden = true; }
+      }
+    }
+    function onUp() {
+      if (dragging && !moved && dragging.kind === 'tool') { openToolId = dragging.refId; renderPanel(); }
+      dragging = null; canvas.style.cursor = hover ? 'pointer' : 'default';
+    }
+    function onLeave() { hover = null; tip.hidden = true; if (!running) draw(); }
+
+    canvas.addEventListener('pointerdown', onDown);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    canvas.addEventListener('pointerleave', onLeave);
+
+    const reheat = $('#map-reheat');
+    const onReheat = () => { nodes.forEach((n) => { n.x = null; n.vx = 0; n.vy = 0; }); seed(); kick(); };
+    if (reheat) reheat.addEventListener('click', onReheat);
+
+    const ro = new ResizeObserver(() => { const ow = W; size(); if (!ow) seed(); kick(); });
+    ro.observe(wrap);
+
+    /* theme changes recolour the canvas */
+    const mo = new MutationObserver(() => { palette = readPalette(); if (!running) draw(); });
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+    size(); seed(); kick();
+
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      ro.disconnect(); mo.disconnect();
+    };
+  }
+
   const VIEWS = {
     now: { label: 'Now', icon: 'flag', render: renderNow, title: 'Now' },
+    map: { label: 'Map', icon: 'network', render: renderMap, mount: mountMap, title: 'Ecosystem map' },
     overview: { label: 'Overview', icon: 'gauge', render: renderOverview, title: 'Overview' },
     tools: { label: 'Tools', icon: 'grid', render: renderTools, title: 'Tools' },
     modules: { label: 'Connections', icon: 'link', render: renderModules, title: 'Modules and connections' },
@@ -2410,10 +2777,13 @@ table.matrix tbody th .owner { display: block; font-family: var(--mono); font-si
       </button>`).join('');
   }
 
+  let viewCleanup = null;
   function render() {
+    if (viewCleanup) { viewCleanup(); viewCleanup = null; }
     renderRail();
     $('#view-title').textContent = VIEWS[route].title;
     $('#view').innerHTML = VIEWS[route].render();
+    if (VIEWS[route].mount) viewCleanup = VIEWS[route].mount();
     renderEditsBar();
     renderPanel();
   }
