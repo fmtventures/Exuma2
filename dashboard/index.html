@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Build Board</title>
+<meta name="description" content="Every tool FT Ventures is building, what state it is in, how the modules connect, and what to work on next.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="shell">
+
+  <nav class="rail" aria-label="Sections">
+    <div class="brand">
+      <span class="brand-mark"><span class="beacon"></span>Build Board</span>
+      <span class="brand-sub">FT Ventures</span>
+    </div>
+    <div class="nav-group" id="nav"></div>
+    <div class="rail-foot">
+      <button class="btn btn-sm btn-ghost" id="theme-toggle" aria-label="Switch colour theme"></button>
+    </div>
+  </nav>
+
+  <main class="main">
+    <header class="topbar">
+      <h1 id="view-title">Overview</h1>
+      <span class="topbar-meta" id="meta-updated"></span>
+      <span class="conf" id="mode-badge"></span>
+      <div class="search">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+             stroke-linecap="round" aria-hidden="true"><path d="M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13Zm4.6-1.9L20 20"/></svg>
+        <input id="q" type="search" placeholder="Search tools  /" aria-label="Search tools">
+      </div>
+    </header>
+
+    <div style="padding:0 24px">
+      <div class="edits-bar" id="edits-bar" hidden>
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-9.5V16m0-8h.01"/></svg>
+        <span><strong id="edits-count"></strong> <span id="edits-note"></span></span>
+        <span class="spacer"></span>
+        <button class="btn btn-sm btn-primary" id="bar-save" data-act="save" hidden>Save to registry.json</button>
+        <button class="btn btn-sm btn-primary" id="bar-copy-patch" data-act="copy-patch">Copy changes</button>
+        <button class="btn btn-sm btn-ghost" id="discard-edits">Discard</button>
+      </div>
+    </div>
+
+    <div class="view" id="view"></div>
+  </main>
+
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="panel" id="panel" hidden tabindex="-1" aria-label="Tool detail">
+  <div id="panel-content" style="display:flex;flex-direction:column;height:100%;min-height:0"></div>
+</aside>
+
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
