@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Property Valuation &amp; Exit Package | FT Ventures</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<script>
+tailwind.config = {
+  theme: { extend: {
+    colors: { brand: {
+      sand:'#F5F2EA', beige:'#E6E2D6', teal:'#2A9D8F', darkteal:'#20756B',
+      navy:'#264653', gold:'#E9C46A', coral:'#E76F51', ink:'#14252C'
+    }},
+    fontFamily: {
+      ui: ['"Segoe UI"','system-ui','-apple-system','Roboto','Helvetica Neue','sans-serif'],
+      doc: ['Aptos','"Aptos Display"','"Segoe UI"','Calibri','system-ui','sans-serif'],
+      docn: ['"Aptos Narrow"','Aptos','"Segoe UI"','Calibri','system-ui','sans-serif']
+    }
+  }}
+}
+</script>
+
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family:'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', sans-serif;
+         background:#F5F2EA; color:#264653; }
+
+  /* ---------- App chrome ---------- */
+  .tab-btn { padding:.7rem 1rem; font-size:.8125rem; font-weight:600; color:#6B7280;
+             border-bottom:4px solid transparent; white-space:nowrap; transition:all .18s; }
+  .tab-btn:hover { color:#2A9D8F; }
+  .tab-btn.active { color:#264653; border-color:#2A9D8F; background:#fff; }
+
+  .card { background:#fff; border:1px solid #E6E2D6; border-radius:.5rem; }
+  .card-h { border-bottom:1px solid #E6E2D6; padding:.65rem 1rem; font-weight:700; font-size:.8125rem;
+            letter-spacing:.04em; text-transform:uppercase; color:#264653; background:#FBFAF6;
+            border-radius:.5rem .5rem 0 0; }
+
+  label.fld { display:block; font-size:.6875rem; font-weight:600; text-transform:uppercase;
+              letter-spacing:.05em; color:#6B7280; margin-bottom:.2rem; }
+  .inp { width:100%; background:#F9FAFB; border:1px solid #D1D5DB; border-radius:.25rem;
+         padding:.35rem .55rem; font-size:.8125rem; font-weight:600; color:#264653; }
+  .inp:focus { outline:none; border-color:#2A9D8F; background:#fff; box-shadow:0 0 0 2px rgba(42,157,143,.15); }
+  .inp-r { text-align:right; font-variant-numeric:tabular-nums; }
+  .inp-xs { padding:.2rem .35rem; font-size:.75rem; }
+
+  .num { font-variant-numeric:tabular-nums; }
+  .pos { color:#20756B; } .neg { color:#C1442E; }
+
+  table.grid { width:100%; border-collapse:collapse; font-size:.8125rem; }
+  table.grid th { background:#264653; color:#fff; font-weight:600; font-size:.6875rem;
+                  text-transform:uppercase; letter-spacing:.05em; padding:.5rem .5rem; text-align:right; }
+  table.grid th:first-child { text-align:left; }
+  table.grid td { padding:.35rem .5rem; border-bottom:1px solid #EFEDE4; text-align:right;
+                  font-variant-numeric:tabular-nums; }
+  table.grid td:first-child { text-align:left; }
+  table.grid tr:hover td { background:#FBFAF6; }
+  tr.total td { font-weight:800; background:#F3F1E8 !important; border-top:2px solid #264653;
+                border-bottom:2px solid #264653; }
+  tr.sub td { font-weight:700; background:#FAF8F1; }
+
+  .kpi { background:#fff; border:1px solid #E6E2D6; border-radius:.5rem; padding:.75rem .9rem; }
+  .kpi .lbl { font-size:.625rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#8A8F94; }
+  .kpi .val { font-size:1.35rem; font-weight:800; line-height:1.15; margin-top:.15rem; font-variant-numeric:tabular-nums; }
+  .kpi .sub { font-size:.6875rem; color:#6B7280; margin-top:.1rem; }
+
+  .btn { font-size:.75rem; font-weight:700; padding:.4rem .75rem; border-radius:.3rem; transition:all .15s; }
+  .btn-teal { background:#2A9D8F; color:#fff; } .btn-teal:hover { background:#20756B; }
+  .btn-navy { background:#264653; color:#fff; } .btn-navy:hover { background:#14252C; }
+  .btn-out { background:#fff; color:#264653; border:1px solid #D1D5DB; } .btn-out:hover { border-color:#2A9D8F; color:#2A9D8F; }
+  .btn-red { background:#fff; color:#C1442E; border:1px solid #F1C9C0; } .btn-red:hover { background:#FDF3F1; }
+
+  .chart-box { position:relative; width:100%; height:300px; }
+  .hide-scroll::-webkit-scrollbar { display:none; } .hide-scroll { scrollbar-width:none; }
+  .badge { font-size:.625rem; font-weight:700; padding:.1rem .4rem; border-radius:.2rem; text-transform:uppercase; letter-spacing:.04em; }
+
+  /* Heat map cells for the cap-rate sensitivity grid */
+  .heat td.h { color:#14252C; font-weight:700; }
+
+  /* ---------- Document / package styling (Aptos) ---------- */
+  #pkg { font-family:'Aptos','Aptos Display','Segoe UI',Calibri,system-ui,sans-serif; color:#1a1a1a; }
+  #pkg .doc-title { font-family:'Aptos Display','Aptos','Segoe UI',sans-serif; font-size:22pt; font-weight:700; letter-spacing:-.01em; }
+  #pkg h3.sec { font-size:14pt; font-weight:600; color:#264653; border-bottom:2px solid #E9C46A;
+                padding-bottom:.2rem; margin:1.35rem 0 .6rem; page-break-after:avoid; break-after:avoid; }
+  #pkg p, #pkg li { font-size:10.5pt; line-height:1.5; page-break-inside:avoid; break-inside:avoid; }
+  #pkg table { width:100%; border-collapse:collapse; font-size:9.5pt; page-break-inside:avoid; break-inside:avoid; }
+  #pkg table th { background:#264653; color:#fff; font-weight:600; padding:5px 7px; text-align:right; font-size:9pt; }
+  #pkg table th:first-child { text-align:left; }
+  #pkg table td { padding:4px 7px; border-bottom:.5px solid #D9D6CB; text-align:right; font-variant-numeric:tabular-nums; }
+  #pkg table td:first-child { text-align:left; }
+  #pkg .note { font-size:8.75pt; color:#555; line-height:1.45; }
+  #pkg .sig { page-break-inside:avoid; break-inside:avoid; }
+  #pkg .blk { page-break-inside:avoid; break-inside:avoid; }
+  .pagebreak { page-break-before:always; break-before:page; }
+
+  @media print {
+    .no-print { display:none !important; }
+    body { background:#fff; }
+    #pkg { padding:0 !important; box-shadow:none !important; border:0 !important; }
+    @page { size:Letter portrait; margin:0.6in 0.65in; }
+  }
+</style>
+</head>
+<body class="min-h-screen flex flex-col font-ui">
+
+<!-- ================= HEADER ================= -->
+<header class="bg-white border-b border-brand-beige sticky top-0 z-50 no-print">
+  <div class="max-w-[1400px] mx-auto px-4 h-14 flex items-center justify-between gap-3">
+    <div class="flex items-center gap-2 min-w-0">
+      <span class="text-xl">🏢</span>
+      <div class="leading-none min-w-0">
+        <h1 class="text-base font-bold text-brand-navy truncate">Property Valuation &amp; Exit Package</h1>
+        <p class="text-[11px] text-gray-500 mt-.5">Cap-rate valuation · rent roll · exit modelling</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <select id="profileSelect" onchange="switchProfile(this.value)"
+              class="inp inp-xs w-40 hidden sm:block" title="Saved properties"></select>
+      <button onclick="saveProfile()" class="btn btn-out">💾 Save</button>
+      <button onclick="exportJSON()" class="btn btn-out hidden sm:inline">⬇ JSON</button>
+      <button onclick="document.getElementById('importFile').click()" class="btn btn-out hidden sm:inline">⬆ Import</button>
+      <input type="file" id="importFile" accept=".json" class="hidden" onchange="importJSON(event)">
+      <button onclick="switchTab('package')" class="btn btn-navy">📄 Package</button>
+    </div>
+  </div>
+  <div class="border-t border-brand-beige bg-brand-sand/40">
+    <div class="max-w-[1400px] mx-auto px-2 flex overflow-x-auto hide-scroll">
+      <button class="tab-btn active" id="tab-property"  onclick="switchTab('property')">1 · Property</button>
+      <button class="tab-btn"        id="tab-rentroll"  onclick="switchTab('rentroll')">2 · Rent Roll</button>
+      <button class="tab-btn"        id="tab-opex"      onclick="switchTab('opex')">3 · Income &amp; Expenses</button>
+      <button class="tab-btn"        id="tab-valuation" onclick="switchTab('valuation')">4 · Valuation</button>
+      <button class="tab-btn"        id="tab-debt"      onclick="switchTab('debt')">5 · Debt &amp; Returns</button>
+      <button class="tab-btn"        id="tab-exit"      onclick="switchTab('exit')">6 · Exit Strategy</button>
+      <button class="tab-btn"        id="tab-package"   onclick="switchTab('package')">7 · Export Package</button>
+    </div>
+  </div>
+</header>
+
+<!-- ================= LIVE KPI STRIP ================= -->
+<div class="bg-brand-navy text-white no-print sticky top-14 z-40 border-b border-black/20">
+  <div class="max-w-[1400px] mx-auto px-4 py-2 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-center">
+    <div><div class="text-[10px] uppercase tracking-wider text-brand-gold font-bold">In-Place NOI</div><div id="sNoiA" class="text-sm font-bold num">—</div></div>
+    <div><div class="text-[10px] uppercase tracking-wider text-brand-gold font-bold">Stabilized NOI</div><div id="sNoiP" class="text-sm font-bold num">—</div></div>
+    <div><div class="text-[10px] uppercase tracking-wider text-brand-gold font-bold">Value @ Target Cap</div><div id="sVal" class="text-sm font-bold num">—</div></div>
+    <div><div class="text-[10px] uppercase tracking-wider text-brand-gold font-bold">vs. Appraisal</div><div id="sDelta" class="text-sm font-bold num">—</div></div>
+    <div><div class="text-[10px] uppercase tracking-wider text-brand-gold font-bold">DSCR</div><div id="sDscr" class="text-sm font-bold num">—</div></div>
+    <div><div class="text-[10px] uppercase tracking-wider text-brand-gold font-bold">Equity (Net of Sale)</div><div id="sEquity" class="text-sm font-bold num">—</div></div>
+  </div>
+</div>
+
+<main class="flex-1 max-w-[1400px] w-full mx-auto px-4 py-5">
+
+<!-- ============================================================ 1. PROPERTY ============================================================ -->
+<section id="pane-property" class="pane">
+  <div class="grid lg:grid-cols-3 gap-4">
+
+    <div class="card lg:col-span-2">
+      <div class="card-h">Subject Property</div>
+      <div class="p-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div class="sm:col-span-2"><label class="fld">Property Name</label><input class="inp" id="p_name" placeholder="e.g. 41 Hollis Avenue"></div>
+        <div><label class="fld">Asset Type</label>
+          <select class="inp" id="p_type">
+            <option>Multi-Residential</option><option>Mixed-Use</option><option>Commercial / Retail</option>
+            <option>Office</option><option>Industrial</option><option>Short-Term Rental</option><option>Other</option>
+          </select></div>
+        <div class="sm:col-span-2"><label class="fld">Address</label><input class="inp" id="p_addr" placeholder="Street address"></div>
+        <div><label class="fld">City / Province</label><input class="inp" id="p_city" placeholder="Stratford, PEI"></div>
+        <div><label class="fld">Year Built</label><input class="inp inp-r" id="p_year" type="number" placeholder="1998"></div>
+        <div><label class="fld">Rentable Sq Ft</label><input class="inp inp-r" id="p_sqft" type="number" placeholder="12,000"></div>
+        <div><label class="fld">Lot Size (acres)</label><input class="inp inp-r" id="p_lot" type="number" step="0.01" placeholder="0.75"></div>
+        <div><label class="fld">Parcel / PID</label><input class="inp" id="p_pid" placeholder="PID #"></div>
+        <div><label class="fld">Owner / Vendor</label><input class="inp" id="p_owner" placeholder="Francistheriault Ventures Inc."></div>
+        <div><label class="fld">Prepared For</label><input class="inp" id="p_for" placeholder="Broker / investor name"></div>
+        <div class="sm:col-span-2 lg:col-span-3"><label class="fld">Positioning Notes (appears in package)</label>
+          <textarea class="inp" id="p_notes" rows="3" placeholder="Recent capital improvements, below-market rents, redevelopment upside, tenant quality…"></textarea></div>
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <div class="card">
+        <div class="card-h">Prior Appraisal (Benchmark)</div>
+        <div class="p-4 space-y-3">
+          <div><label class="fld">Appraised Value ($)</label><input class="inp inp-r" id="a_value" type="number" placeholder="1,850,000"></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="fld">Effective Date</label><input class="inp" id="a_date" type="date"></div>
+            <div><label class="fld">Cap Rate Used (%)</label><input class="inp inp-r" id="a_cap" type="number" step="0.05" placeholder="6.50"></div>
+          </div>
+          <div><label class="fld">NOI Used in Appraisal ($)</label><input class="inp inp-r" id="a_noi" type="number" placeholder="120,250"></div>
+          <div><label class="fld">Appraiser / Firm</label><input class="inp" id="a_firm" placeholder="AACI firm"></div>
+          <p class="text-[11px] text-gray-500 leading-snug">Used as the benchmark throughout the package — every value is reported against it.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">Valuation Assumptions</div>
+        <div class="p-4 grid grid-cols-2 gap-3">
+          <div><label class="fld">Target Cap Rate (%)</label><input class="inp inp-r" id="v_target" type="number" step="0.05" value="6.50"></div>
+          <div><label class="fld">Cap Step (%)</label><input class="inp inp-r" id="v_step" type="number" step="0.05" value="0.25"></div>
+          <div><label class="fld">Low Cap (%)</label><input class="inp inp-r" id="v_low" type="number" step="0.05" value="5.00"></div>
+          <div><label class="fld">High Cap (%)</label><input class="inp inp-r" id="v_high" type="number" step="0.05" value="8.00"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">Data</div>
+        <div class="p-4 flex flex-wrap gap-2">
+          <button onclick="loadSample()" class="btn btn-out">Load Sample Deal</button>
+          <button onclick="clearAll()" class="btn btn-red">Clear All</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 2. RENT ROLL ============================================================ -->
+<section id="pane-rentroll" class="pane hidden">
+  <div class="card">
+    <div class="card-h flex items-center justify-between flex-wrap gap-2">
+      <span>Rent Roll</span>
+      <span class="flex gap-2 normal-case tracking-normal">
+        <button onclick="addUnit()" class="btn btn-teal">+ Add Unit</button>
+        <button onclick="togglePaste()" class="btn btn-out">Paste Rent Roll</button>
+        <button onclick="marketToActual()" class="btn btn-out" title="Copy in-place rents into the market column">Copy In-Place → Market</button>
+      </span>
+    </div>
+
+    <div id="pasteBox" class="hidden p-4 bg-brand-sand/50 border-b border-brand-beige">
+      <p class="text-xs text-gray-600 mb-2">Paste tab- or comma-separated rows from Excel. Columns:
+        <code class="bg-white px-1 rounded">Unit, Type, SqFt, Tenant, In-Place Rent, Market Rent, Lease End, Status</code>
+        (only Unit and In-Place Rent are required).</p>
+      <textarea id="pasteData" rows="6" class="inp font-mono text-xs" placeholder="101&#9;2 Bed&#9;850&#9;J. Smith&#9;1250&#9;1400&#9;2026-06-30&#9;Occupied"></textarea>
+      <div class="mt-2 flex gap-2">
+        <button onclick="parsePaste(false)" class="btn btn-teal">Append Rows</button>
+        <button onclick="parsePaste(true)" class="btn btn-out">Replace Rent Roll</button>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="grid" id="rrTable">
+        <thead><tr>
+          <th style="min-width:70px">Unit</th><th style="min-width:110px;text-align:left">Type</th>
+          <th style="min-width:70px">Sq Ft</th><th style="min-width:130px;text-align:left">Tenant</th>
+          <th style="min-width:110px">In-Place Rent /mo</th><th style="min-width:110px">Market Rent /mo</th>
+          <th style="min-width:95px">Loss to Lease</th><th style="min-width:120px;text-align:left">Lease End</th>
+          <th style="min-width:105px;text-align:left">Status</th><th style="width:40px"></th>
+        </tr></thead>
+        <tbody id="rrBody"></tbody>
+        <tfoot id="rrFoot" class="text-xs"></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4" id="rrKpis"></div>
+</section>
+
+<!-- ============================================================ 3. INCOME & EXPENSES ============================================================ -->
+<section id="pane-opex" class="pane hidden">
+  <div class="grid lg:grid-cols-5 gap-4">
+
+    <div class="lg:col-span-3 space-y-4">
+      <div class="card">
+        <div class="card-h">Operating Statement — In-Place vs. Stabilized</div>
+        <div class="overflow-x-auto">
+          <table class="grid">
+            <thead><tr><th style="min-width:200px">Line Item</th><th style="min-width:130px">In-Place (T-12)</th><th style="min-width:130px">Stabilized / Pro-Forma</th><th style="min-width:90px">Δ</th></tr></thead>
+            <tbody id="isBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h flex items-center justify-between flex-wrap gap-2">
+          <span>Operating Expenses</span>
+          <button onclick="addExpense()" class="btn btn-teal normal-case tracking-normal">+ Add Line</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="grid">
+            <thead><tr><th style="min-width:190px">Expense</th><th style="min-width:120px">In-Place ($/yr)</th><th style="min-width:120px">Stabilized ($/yr)</th><th style="min-width:80px">$/Unit</th><th style="width:40px"></th></tr></thead>
+            <tbody id="exBody"></tbody>
+            <tfoot id="exFoot"></tfoot>
+          </table>
+        </div>
+        <div class="p-3 bg-brand-sand/40 border-t border-brand-beige grid sm:grid-cols-2 gap-3">
+          <div><label class="fld">Management Fee (% of EGI)</label><input class="inp inp-r" id="e_mgmt" type="number" step="0.5" value="5"></div>
+          <div><label class="fld">Replacement Reserve ($/unit/yr)</label><input class="inp inp-r" id="e_reserve" type="number" step="25" value="300"></div>
+          <p class="sm:col-span-2 text-[11px] text-gray-500 leading-snug">Management and reserves are calculated automatically and added to the expense total. Buyers and lenders will underwrite these whether or not you currently pay them — leaving them at zero overstates value.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="lg:col-span-2 space-y-4">
+      <div class="card">
+        <div class="card-h">Vacancy &amp; Credit Loss</div>
+        <div class="p-4 grid grid-cols-2 gap-3">
+          <div><label class="fld">In-Place (%)</label><input class="inp inp-r" id="i_vacA" type="number" step="0.5" value="3"></div>
+          <div><label class="fld">Stabilized (%)</label><input class="inp inp-r" id="i_vacP" type="number" step="0.5" value="4"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">Other Income ($/yr)</div>
+        <div class="overflow-x-auto">
+          <table class="grid">
+            <thead><tr><th style="min-width:130px">Source</th><th>In-Place</th><th>Stabilized</th></tr></thead>
+            <tbody id="oiBody"></tbody>
+            <tfoot id="oiFoot"></tfoot>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">Expense Benchmarks</div>
+        <div class="p-4 space-y-2" id="benchBox"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 4. VALUATION ============================================================ -->
+<section id="pane-valuation" class="pane hidden">
+  <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4" id="valKpis"></div>
+
+  <div class="grid lg:grid-cols-2 gap-4">
+    <div class="card">
+      <div class="card-h">Direct Capitalization — Value by Cap Rate</div>
+      <div class="overflow-x-auto">
+        <table class="grid">
+          <thead><tr><th>Cap Rate</th><th>Value on In-Place NOI</th><th>Value on Stabilized NOI</th><th>$/Unit (Stab.)</th><th>vs. Appraisal</th></tr></thead>
+          <tbody id="capBody"></tbody>
+        </table>
+      </div>
+      <p class="p-3 text-[11px] text-gray-500 border-t border-brand-beige">Value = NOI ÷ Cap Rate. The row matching your target cap rate is highlighted. Buyers price off in-place NOI; the stabilized column is your negotiating range.</p>
+    </div>
+
+    <div class="space-y-4">
+      <div class="card">
+        <div class="card-h">Value Range</div>
+        <div class="p-4"><div class="chart-box"><canvas id="capChart"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-h">Value Bridge — Appraisal to Today</div>
+        <div class="p-4"><div class="chart-box" style="height:240px"><canvas id="bridgeChart"></canvas></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mt-4">
+    <div class="card-h">Sensitivity — NOI vs. Cap Rate</div>
+    <div class="overflow-x-auto"><table class="grid heat" id="sensTable"></table></div>
+    <p class="p-3 text-[11px] text-gray-500 border-t border-brand-beige">Each column flexes stabilized NOI by the shown percentage; each row applies a cap rate. Use this to defend a value band rather than a single number.</p>
+  </div>
+</section>
+
+<!-- ============================================================ 5. DEBT & RETURNS ============================================================ -->
+<section id="pane-debt" class="pane hidden">
+  <div class="grid lg:grid-cols-3 gap-4">
+
+    <div class="card">
+      <div class="card-h">Existing Financing</div>
+      <div class="p-4 space-y-3">
+        <div><label class="fld">Current Loan Balance ($)</label><input class="inp inp-r" id="d_bal" type="number" placeholder="1,050,000"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="fld">Interest Rate (%)</label><input class="inp inp-r" id="d_rate" type="number" step="0.05" value="5.25"></div>
+          <div><label class="fld">Amortization (yrs)</label><input class="inp inp-r" id="d_amort" type="number" value="25"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="fld">Compounding</label>
+            <select class="inp" id="d_comp"><option value="semi">Semi-annual (CDN)</option><option value="monthly">Monthly (US)</option></select></div>
+          <div><label class="fld">Maturity / Renewal</label><input class="inp" id="d_mat" type="date"></div>
+        </div>
+        <div><label class="fld">Prepayment Penalty ($)</label><input class="inp inp-r" id="d_penalty" type="number" value="0"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">Disposition Costs</div>
+      <div class="p-4 space-y-3">
+        <div><label class="fld">Selling Costs (% of price)</label><input class="inp inp-r" id="d_cos" type="number" step="0.25" value="4"></div>
+        <div><label class="fld">Legal &amp; Closing ($)</label><input class="inp inp-r" id="d_legal" type="number" value="7500"></div>
+        <div><label class="fld">Adjusted Cost Base ($)</label><input class="inp inp-r" id="d_acb" type="number" placeholder="Original cost + capital improvements"></div>
+        <div><label class="fld">Accumulated CCA Recapture ($)</label><input class="inp inp-r" id="d_cca" type="number" value="0"></div>
+        <div><label class="fld">Marginal Tax Rate (%)</label><input class="inp inp-r" id="d_tax" type="number" step="0.5" value="47"></div>
+        <p class="text-[11px] text-gray-500 leading-snug">Tax figures are an estimate only — confirm capital gain, recapture and any corporate structure with your accountant before you commit to a sale price.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">Buyer's Position (at target cap)</div>
+      <div class="p-4 space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="fld">Down Payment (%)</label><input class="inp inp-r" id="b_down" type="number" step="1" value="25"></div>
+          <div><label class="fld">Buyer Rate (%)</label><input class="inp inp-r" id="b_rate" type="number" step="0.05" value="5.75"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="fld">Buyer Amort (yrs)</label><input class="inp inp-r" id="b_amort" type="number" value="25"></div>
+          <div><label class="fld">Closing Costs (%)</label><input class="inp inp-r" id="b_close" type="number" step="0.25" value="2"></div>
+        </div>
+        <div id="buyerBox" class="pt-1 space-y-1 text-xs"></div>
+        <p class="text-[11px] text-gray-500 leading-snug">This is the page a broker turns to first: it shows a buyer what the asset returns on their money at your asking price.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4" id="debtKpis"></div>
+
+  <div class="card mt-4">
+    <div class="card-h">Owner Cash Flow &amp; Equity Position</div>
+    <div class="overflow-x-auto"><table class="grid" id="equityTable"></table></div>
+  </div>
+</section>
+
+<!-- ============================================================ 6. EXIT STRATEGY ============================================================ -->
+<section id="pane-exit" class="pane hidden">
+  <div class="card mb-4">
+    <div class="card-h">Hold &amp; Exit Assumptions</div>
+    <div class="p-4 grid sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div><label class="fld">Hold Period (yrs)</label><input class="inp inp-r" id="x_years" type="number" min="1" max="15" value="5"></div>
+      <div><label class="fld">Rent Growth (%/yr)</label><input class="inp inp-r" id="x_rentg" type="number" step="0.25" value="3"></div>
+      <div><label class="fld">Expense Growth (%/yr)</label><input class="inp inp-r" id="x_expg" type="number" step="0.25" value="2.5"></div>
+      <div><label class="fld">Exit Cap Rate (%)</label><input class="inp inp-r" id="x_cap" type="number" step="0.05" value="6.75"></div>
+      <div><label class="fld">Stabilization (yrs)</label><input class="inp inp-r" id="x_stab" type="number" step="1" min="0" max="5" value="1"
+             title="Years to burn off loss-to-lease and reach stabilized NOI"></div>
+      <div><label class="fld">Capital Plan ($ total)</label><input class="inp inp-r" id="x_capex" type="number" value="0"></div>
+    </div>
+  </div>
+
+  <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4" id="exitKpis"></div>
+
+  <div class="grid lg:grid-cols-2 gap-4">
+    <div class="card">
+      <div class="card-h">Projection</div>
+      <div class="overflow-x-auto"><table class="grid" id="projTable"></table></div>
+    </div>
+    <div class="space-y-4">
+      <div class="card">
+        <div class="card-h">NOI &amp; Value Trajectory</div>
+        <div class="p-4"><div class="chart-box"><canvas id="projChart"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-h">Net Proceeds at Sale</div>
+        <div class="overflow-x-auto"><table class="grid" id="proceedsTable"></table></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mt-4">
+    <div class="card-h">Exit Year vs. Exit Cap — Net Proceeds Before Tax</div>
+    <div class="overflow-x-auto"><table class="grid heat" id="exitGrid"></table></div>
+  </div>
+</section>
+
+<!-- ============================================================ 7. PACKAGE ============================================================ -->
+<section id="pane-package" class="pane hidden">
+  <div class="flex flex-wrap gap-2 mb-4 no-print">
+    <button onclick="window.print()" class="btn btn-navy">🖨 Print / Save as PDF</button>
+    <button onclick="exportPDF()" class="btn btn-teal">📄 Download PDF</button>
+    <button onclick="exportCSV()" class="btn btn-out">📊 Export CSV</button>
+    <button onclick="exportJSON()" class="btn btn-out">💾 Export JSON</button>
+    <button onclick="buildPackage()" class="btn btn-out">↻ Refresh Package</button>
+  </div>
+  <div id="pkg" class="bg-white mx-auto shadow-sm border border-brand-beige"
+       style="max-width:8.5in; padding:0.6in 0.65in;"></div>
+</section>
+
+</main>
+
+<footer class="no-print bg-brand-navy text-white/70 text-[11px] py-3 text-center">
+  Estimates only — not an appraisal. Figures are generated from the inputs entered above and should be verified against
+  audited statements, leases and a current appraisal before any transaction.
+</footer>
+
+<script>
+/* ============================================================================
+   FT VENTURES — PROPERTY VALUATION & EXIT PACKAGE
+   Self-contained module. All identifiers are namespaced or scoped so this file
+   can be pasted into the portal dashboard as an additional tab.
+   ========================================================================== */
+
+const STORE = 'ftv_valuation_v1';
+const NO_BIND = ['profileSelect','pasteData','importFile'];
+
+/* ---------------------------------- state --------------------------------- */
+function blankState() {
+  return {
+    f: {},
+    units: [],
+    expenses: [
+      { id: uid(), name: 'Property Tax',              a: 0, p: 0 },
+      { id: uid(), name: 'Insurance',                 a: 0, p: 0 },
+      { id: uid(), name: 'Heat / Fuel',               a: 0, p: 0 },
+      { id: uid(), name: 'Electricity (Common)',      a: 0, p: 0 },
+      { id: uid(), name: 'Water & Sewer',             a: 0, p: 0 },
+      { id: uid(), name: 'Repairs & Maintenance',     a: 0, p: 0 },
+      { id: uid(), name: 'Snow Removal / Landscaping',a: 0, p: 0 },
+      { id: uid(), name: 'Garbage Removal',           a: 0, p: 0 },
+      { id: uid(), name: 'Admin / Legal / Accounting',a: 0, p: 0 }
+    ],
+    other: [
+      { id: uid(), name: 'Parking',  a: 0, p: 0 },
+      { id: uid(), name: 'Laundry',  a: 0, p: 0 },
+      { id: uid(), name: 'Storage',  a: 0, p: 0 },
+      { id: uid(), name: 'Other',    a: 0, p: 0 }
+    ]
+  };
+}
+let S = blankState();
+let charts = {};
+
+/* --------------------------------- helpers -------------------------------- */
+function uid() { return Math.random().toString(36).slice(2, 9); }
+function n(id) { const v = S.f[id]; const x = parseFloat(v); return isFinite(x) ? x : 0; }
+function t(id) { return (S.f[id] || '').toString(); }
+function num(v) { const x = parseFloat(v); return isFinite(x) ? x : 0; }
+
+const money  = v => (v < 0 ? '-' : '') + '$' + Math.abs(Math.round(v || 0)).toLocaleString('en-CA');
+const money2 = v => (v < 0 ? '-' : '') + '$' + Math.abs(v || 0).toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const pct    = (v, d = 2) => (isFinite(v) ? (v * 100).toFixed(d) : '—') + '%';
+const rate   = (v, d = 2) => (isFinite(v) ? v.toFixed(d) : '—') + '%';
+const x2     = v => isFinite(v) ? v.toFixed(2) + 'x' : '—';
+const esc    = s => (s == null ? '' : String(s)).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const today  = () => new Date().toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' });
+const cls    = v => v < 0 ? 'neg' : (v > 0 ? 'pos' : '');
+
+/* --------------------------- mortgage mathematics -------------------------- */
+function periodicRate(annualPct, compounding) {
+  const r = (annualPct || 0) / 100;
+  if (r === 0) return 0;
+  return compounding === 'monthly' ? r / 12 : Math.pow(1 + r / 2, 1 / 6) - 1;   // CDN semi-annual default
+}
+function payment(principal, i, months) {
+  if (principal <= 0 || months <= 0) return 0;
+  if (i === 0) return principal / months;
+  return principal * i / (1 - Math.pow(1 + i, -months));
+}
+function balanceAfter(principal, i, months, k) {
+  if (principal <= 0) return 0;
+  const p = payment(principal, i, months);
+  if (i === 0) return Math.max(0, principal - p * k);
+  return Math.max(0, principal * Math.pow(1 + i, k) - p * (Math.pow(1 + i, k) - 1) / i);
+}
+function irr(cfs) {
+  const npv = r => cfs.reduce((s, c, k) => s + c / Math.pow(1 + r, k), 0);
+  let lo = -0.9999, hi = 5;
+  if (npv(lo) * npv(hi) > 0) return null;
+  for (let k = 0; k < 250; k++) {
+    const mid = (lo + hi) / 2;
+    if (npv(lo) * npv(mid) <= 0) hi = mid; else lo = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+/* ============================== CALCULATION CORE ============================
+   Two scenarios run in parallel end to end:
+     a = In-Place (T-12, what the asset does today)
+     p = Stabilized / Pro-Forma (what it does at market rents)
+   ========================================================================== */
+function calc() {
+  const U = S.units;
+  const unitCount = U.length || num(S.f.p_units) || 0;
+  const sqft = n('p_sqft');
+
+  // ---- Scheduled rent -----------------------------------------------------
+  let gprA = 0, gprP = 0, ltl = 0, occUnits = 0, inPlaceCollected = 0;
+  U.forEach(u => {
+    const inPlace = num(u.rent), market = num(u.market) || inPlace;
+    const vacant  = (u.status || 'Occupied') === 'Vacant';
+    gprA += (vacant ? market : inPlace) * 12;      // lender convention: vacant carried at market
+    gprP += market * 12;
+    if (!vacant) { occUnits++; inPlaceCollected += inPlace * 12; ltl += Math.max(0, market - inPlace) * 12; }
+  });
+  const physOcc = U.length ? occUnits / U.length : 0;
+
+  // ---- Other income -------------------------------------------------------
+  const oiA = S.other.reduce((s, o) => s + num(o.a), 0);
+  const oiP = S.other.reduce((s, o) => s + num(o.p), 0);
+
+  // ---- Potential gross income & vacancy -----------------------------------
+  // Vacancy is applied to potential gross income including recoveries: a vacant
+  // unit loses its CAM recovery as well as its base rent.
+  const pgiA = gprA + oiA, pgiP = gprP + oiP;
+  const vacRateA = n('i_vacA') / 100, vacRateP = n('i_vacP') / 100;
+  const vacA = pgiA * vacRateA, vacP = pgiP * vacRateP;
+
+  // ---- EGI ----------------------------------------------------------------
+  const egiA = pgiA - vacA, egiP = pgiP - vacP;
+
+  // ---- Operating expenses -------------------------------------------------
+  const fixedA = S.expenses.reduce((s, e) => s + num(e.a), 0);
+  const fixedP = S.expenses.reduce((s, e) => s + num(e.p), 0);
+  const mgmtPct = n('e_mgmt') / 100, resPer = n('e_reserve');
+  const mgmtA = egiA * mgmtPct, mgmtP = egiP * mgmtPct;
+  const resA = resPer * unitCount, resP = resPer * unitCount;
+  const opexA = fixedA + mgmtA + resA, opexP = fixedP + mgmtP + resP;
+
+  // ---- NOI ----------------------------------------------------------------
+  const noiA = egiA - opexA, noiP = egiP - opexP;
+
+  // ---- Valuation ----------------------------------------------------------
+  const targetCap = n('v_target') / 100;
+  const valA = targetCap > 0 ? noiA / targetCap : 0;
+  const valP = targetCap > 0 ? noiP / targetCap : 0;
+  const apprVal = n('a_value'), apprCap = n('a_cap') / 100;
+  const apprNoi = n('a_noi') || (apprCap > 0 ? apprVal * apprCap : 0);
+
+  // ---- Debt ---------------------------------------------------------------
+  const bal = n('d_bal'), i = periodicRate(n('d_rate'), t('d_comp') || 'semi');
+  const months = Math.max(1, n('d_amort') * 12);
+  const pmtM = payment(bal, i, months), ds = pmtM * 12;
+  const dscrA = ds > 0 ? noiA / ds : Infinity;
+  const dscrP = ds > 0 ? noiP / ds : Infinity;
+  const debtYield = bal > 0 ? noiA / bal : 0;
+  const ltv = valA > 0 ? bal / valA : 0;
+  const cfA = noiA - ds, cfP = noiP - ds;
+
+  // ---- Disposition --------------------------------------------------------
+  const cosPct = n('d_cos') / 100, legal = n('d_legal'), penalty = n('d_penalty');
+  const sellCost = valA * cosPct;
+  const netProceeds = valA - sellCost - legal - bal - penalty;
+  const acb = n('d_acb'), cca = n('d_cca'), mtr = n('d_tax') / 100;
+  const gain = Math.max(0, valA - sellCost - legal - acb);
+  const taxOnGain = gain * 0.5 * mtr;
+  const taxOnCCA = cca * mtr;
+  const taxTotal = acb > 0 ? taxOnGain + taxOnCCA : 0;
+  const netAfterTax = netProceeds - taxTotal;
+
+  // ---- Buyer's position ---------------------------------------------------
+  const price = valA;
+  const downPct = n('b_down') / 100, closePct = n('b_close') / 100;
+  const bDown = price * downPct, bClose = price * closePct, bLoan = price - bDown;
+  const bi = periodicRate(n('b_rate'), t('d_comp') || 'semi');
+  const bMonths = Math.max(1, n('b_amort') * 12);
+  const bDS = payment(bLoan, bi, bMonths) * 12;
+  const bCash = bDown + bClose;
+  const bCF = noiA - bDS;
+  const coc = bCash > 0 ? bCF / bCash : 0;
+  const bDscr = bDS > 0 ? noiA / bDS : Infinity;
+
+  return {
+    unitCount, sqft, occUnits, physOcc, ltl, inPlaceCollected,
+    gprA, gprP, oiA, oiP, pgiA, pgiP, vacA, vacP, vacRateA, vacRateP, egiA, egiP,
+    fixedA, fixedP, mgmtA, mgmtP, resA, resP, opexA, opexP, noiA, noiP,
+    targetCap, valA, valP, apprVal, apprCap, apprNoi,
+    bal, ds, pmtM, dscrA, dscrP, debtYield, ltv, cfA, cfP,
+    sellCost, legal, penalty, netProceeds, gain, taxTotal, netAfterTax, acb,
+    price, bDown, bClose, bLoan, bDS, bCash, bCF, coc, bDscr,
+    expRatioA: egiA > 0 ? opexA / egiA : 0,
+    expRatioP: egiP > 0 ? opexP / egiP : 0,
+    grmA: gprA > 0 ? valA / gprA : 0,
+    perUnitA: unitCount ? valA / unitCount : 0,
+    perUnitP: unitCount ? valP / unitCount : 0,
+    perSfA: sqft ? valA / sqft : 0,
+    capOnAppraisal: apprVal > 0 ? noiA / apprVal : 0
+  };
+}
+
+/* ------------------------- multi-year exit projection ---------------------- */
+function project(years, exitCapPct) {
+  const c = calc();
+  const rg = n('x_rentg') / 100, eg = n('x_expg') / 100;
+  const stab = Math.max(0, n('x_stab'));
+  const exitCap = (exitCapPct != null ? exitCapPct : n('x_cap')) / 100;
+  const capexTotal = n('x_capex');
+  const capexYears = Math.max(1, stab);
+  const i = periodicRate(n('d_rate'), t('d_comp') || 'semi');
+  const months = Math.max(1, n('d_amort') * 12);
+  const mgmtPct = n('e_mgmt') / 100;
+
+  const rows = [];
+  for (let y = 1; y <= years; y++) {
+    const b = stab > 0 ? Math.min(y / stab, 1) : 1;                    // stabilization blend
+    const gpr = (c.gprA + (c.gprP - c.gprA) * b) * Math.pow(1 + rg, y);
+    const vr  = c.vacRateA + (c.vacRateP - c.vacRateA) * b;
+    const oi  = (c.oiA + (c.oiP - c.oiA) * b) * Math.pow(1 + rg, y);
+    const egi = (gpr + oi) * (1 - vr);
+    const fixed = (c.fixedA + (c.fixedP - c.fixedA) * b) * Math.pow(1 + eg, y);
+    const res = c.resA * Math.pow(1 + eg, y);
+    const opex = fixed + egi * mgmtPct + res;
+    const noi = egi - opex;
+    const bal = balanceAfter(c.bal, i, months, y * 12);
+    const principal = (y === 1 ? c.bal : rows[y - 2].bal) - bal;
+    const capex = y <= capexYears ? capexTotal / capexYears : 0;
+    const cf = noi - c.ds - capex;
+    rows.push({ y, gpr, vac: gpr * vr, oi, egi, opex, noi, ds: c.ds, principal, capex, cf, bal,
+                value: exitCap > 0 ? noi / exitCap : 0 });
+  }
+
+  const last = rows[rows.length - 1] || { noi: c.noiA, bal: c.bal, value: 0 };
+  const exitValue = exitCap > 0 ? last.noi / exitCap : 0;
+  const sellCost = exitValue * (n('d_cos') / 100);
+  const legal = n('d_legal'), penalty = n('d_penalty');
+  const proceeds = exitValue - sellCost - legal - last.bal - penalty;
+  const acb = n('d_acb'), mtr = n('d_tax') / 100, cca = n('d_cca');
+  const gain = Math.max(0, exitValue - sellCost - legal - acb);
+  const tax = acb > 0 ? gain * 0.5 * mtr + cca * mtr : 0;
+  const proceedsAT = proceeds - tax;
+
+  // Hold-vs-sell IRR: basis is the equity you would free up by selling today.
+  const equityToday = Math.max(0, c.valA - c.valA * (n('d_cos') / 100) - n('d_legal') - c.bal - c.penalty);
+  const cfs = [-equityToday];
+  rows.forEach((r, k) => cfs.push(r.cf + (k === rows.length - 1 ? proceeds : 0)));
+  const holdIrr = equityToday > 0 ? irr(cfs) : null;
+  const totalCF = rows.reduce((s, r) => s + r.cf, 0);
+  const multiple = equityToday > 0 ? (totalCF + proceeds) / equityToday : 0;
+
+  return { rows, exitValue, sellCost, legal, penalty, proceeds, gain, tax, proceedsAT,
+           equityToday, holdIrr, totalCF, multiple, exitCap, lastBal: last.bal, c };
+}
+</script>
+
+<script>
+/* ================================ UI PLUMBING ============================== */
+function switchTab(id) {
+  document.querySelectorAll('.pane').forEach(p => p.classList.add('hidden'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const pane = document.getElementById('pane-' + id), btn = document.getElementById('tab-' + id);
+  if (pane) pane.classList.remove('hidden');
+  if (btn) btn.classList.add('active');
+  if (id === 'package') buildPackage();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function readInputs() {
+  document.querySelectorAll('#pane-property input, #pane-property select, #pane-property textarea, \
+#pane-opex input, #pane-debt input, #pane-debt select, #pane-exit input').forEach(el => {
+    if (!el.id || NO_BIND.includes(el.id)) return;
+    S.f[el.id] = el.value;
+  });
+}
+function writeInputs() {
+  Object.keys(S.f).forEach(k => {
+    const el = document.getElementById(k);
+    if (el && !NO_BIND.includes(k)) el.value = S.f[k];
+  });
+}
+function onChange() { readInputs(); renderAll(); autosave(); }
+
+// Recalculate while typing, but coalesce keystrokes so large grids stay responsive.
+let _liveTimer = null;
+function onLiveInput() {
+  readInputs();
+  clearTimeout(_liveTimer);
+  _liveTimer = setTimeout(() => { renderAll(); autosave(); }, 280);
+}
+
+/* ================================ RENT ROLL =============================== */
+function addUnit(seed) {
+  S.units.push(Object.assign({ id: uid(), unit: '', type: '2 Bed', sqft: '', tenant: '',
+    rent: '', market: '', end: '', status: 'Occupied' }, seed || {}));
+  renderAll(); autosave();
+}
+function delUnit(id) { S.units = S.units.filter(u => u.id !== id); renderAll(); autosave(); }
+function updUnit(id, k, v) { const u = S.units.find(x => x.id === id); if (u) { u[k] = v; renderAll(); autosave(); } }
+function marketToActual() {
+  S.units.forEach(u => { if (!num(u.market)) u.market = u.rent; });
+  renderAll(); autosave();
+}
+function togglePaste() { document.getElementById('pasteBox').classList.toggle('hidden'); }
+function parsePaste(replace) {
+  const raw = document.getElementById('pasteData').value.trim();
+  if (!raw) return;
+  const rows = raw.split(/\r?\n/).filter(r => r.trim());
+  const parsed = [];
+  rows.forEach(r => {
+    const c = r.split(/\t|,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(x => x.replace(/^"|"$/g, '').trim());
+    if (!c[0] || /^unit$/i.test(c[0])) return;
+    const clean = v => (v || '').replace(/[$,\s]/g, '');
+    parsed.push({ id: uid(), unit: c[0] || '', type: c[1] || '', sqft: clean(c[2]), tenant: c[3] || '',
+      rent: clean(c[4]), market: clean(c[5]) || clean(c[4]), end: c[6] || '',
+      status: /vac/i.test(c[7] || '') ? 'Vacant' : (c[7] || 'Occupied') });
+  });
+  if (!parsed.length) { alert('No rows recognised. Check that each line starts with a unit number.'); return; }
+  S.units = replace ? parsed : S.units.concat(parsed);
+  document.getElementById('pasteData').value = '';
+  document.getElementById('pasteBox').classList.add('hidden');
+  renderAll(); autosave();
+}
+
+function renderRentRoll() {
+  const body = document.getElementById('rrBody');
+  if (!S.units.length) {
+    body.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:2rem;color:#9CA3AF">' +
+      'No units yet — click <b>+ Add Unit</b>, or paste your rent roll from Excel.</td></tr>';
+  } else {
+    body.innerHTML = S.units.map(u => {
+      const loss = (num(u.market) - num(u.rent)) * 12;
+      const vac = (u.status || 'Occupied') === 'Vacant';
+      return '<tr>' +
+        td(inp(u.id, 'unit', u.unit, 'text', '60px', 'left')) +
+        td(inp(u.id, 'type', u.type, 'text', '100px', 'left')) +
+        td(inp(u.id, 'sqft', u.sqft, 'number', '62px')) +
+        td(inp(u.id, 'tenant', u.tenant, 'text', '120px', 'left')) +
+        td(inp(u.id, 'rent', u.rent, 'number', '95px')) +
+        td(inp(u.id, 'market', u.market, 'number', '95px')) +
+        '<td class="' + (vac ? '' : cls(-loss)) + '">' + (vac ? '<span class="badge" style="background:#FDECE8;color:#C1442E">Vacant</span>' : (loss ? money(loss) : '—')) + '</td>' +
+        td(inp(u.id, 'end', u.end, 'date', '120px', 'left')) +
+        td('<select class="inp inp-xs" onchange="updUnit(\'' + u.id + '\',\'status\',this.value)">' +
+           ['Occupied', 'Vacant', 'Month-to-Month', 'Owner/Staff'].map(s =>
+             '<option' + (s === (u.status || 'Occupied') ? ' selected' : '') + '>' + s + '</option>').join('') + '</select>') +
+        '<td><button onclick="delUnit(\'' + u.id + '\')" class="text-red-500 hover:text-red-700 font-bold">×</button></td>' +
+        '</tr>';
+    }).join('');
+  }
+  const c = calc();
+  document.getElementById('rrFoot').innerHTML =
+    '<tr class="total"><td>Totals — ' + c.unitCount + ' units</td><td></td>' +
+    '<td>' + (c.sqft ? c.sqft.toLocaleString() : '—') + '</td><td></td>' +
+    '<td>' + money(S.units.reduce((s, u) => s + num(u.rent), 0)) + '/mo</td>' +
+    '<td>' + money(S.units.reduce((s, u) => s + (num(u.market) || num(u.rent)), 0)) + '/mo</td>' +
+    '<td>' + money(c.ltl) + '/yr</td><td colspan="3"></td></tr>';
+
+  document.getElementById('rrKpis').innerHTML =
+    kpi('Gross Scheduled Rent — In-Place', money(c.gprA), 'annual, vacant units at market') +
+    kpi('Gross Scheduled Rent — Market', money(c.gprP), 'all units at market rent') +
+    kpi('Loss to Lease', money(c.ltl), c.gprP > 0 ? pct(c.ltl / c.gprP, 1) + ' of market rent' : '—', c.ltl > 0 ? '#C1442E' : '#20756B') +
+    kpi('Physical Occupancy', pct(c.physOcc, 1), c.occUnits + ' of ' + c.unitCount + ' units occupied');
+}
+function td(inner) { return '<td>' + inner + '</td>'; }
+function inp(id, k, v, type, w, align) {
+  return '<input class="inp inp-xs' + (align === 'left' ? '' : ' inp-r') + '" type="' + type + '" value="' + esc(v) +
+    '" style="width:' + w + '" onchange="updUnit(\'' + id + '\',\'' + k + '\',this.value)">';
+}
+function kpi(label, val, sub, color) {
+  return '<div class="kpi"><div class="lbl">' + label + '</div>' +
+    '<div class="val"' + (color ? ' style="color:' + color + '"' : '') + '>' + val + '</div>' +
+    '<div class="sub">' + (sub || '') + '</div></div>';
+}
+
+/* ============================= INCOME & EXPENSES ========================== */
+function addExpense() { S.expenses.push({ id: uid(), name: 'New Expense', a: 0, p: 0 }); renderAll(); autosave(); }
+function delExpense(id) { S.expenses = S.expenses.filter(e => e.id !== id); renderAll(); autosave(); }
+function updRow(arr, id, k, v) { const r = S[arr].find(x => x.id === id); if (r) { r[k] = v; renderAll(); autosave(); } }
+
+function renderOpex() {
+  const c = calc();
+  const row = (label, a, p, bold, indent) =>
+    '<tr' + (bold ? ' class="sub"' : '') + '><td' + (indent ? ' style="padding-left:1.5rem"' : '') + '>' + label + '</td>' +
+    '<td>' + money(a) + '</td><td>' + money(p) + '</td>' +
+    '<td class="' + cls(p - a) + '">' + (Math.abs(p - a) < 1 ? '—' : money(p - a)) + '</td></tr>';
+
+  document.getElementById('isBody').innerHTML =
+    row('Gross Scheduled Rent', c.gprA, c.gprP) +
+    row('Other Income &amp; Recoveries', c.oiA, c.oiP, false, true) +
+    row('Potential Gross Income', c.pgiA, c.pgiP, true) +
+    row('Less: Vacancy &amp; Credit Loss (' + rate(c.vacRateA * 100, 1) + ' / ' + rate(c.vacRateP * 100, 1) + ')', -c.vacA, -c.vacP, false, true) +
+    row('Effective Gross Income', c.egiA, c.egiP, true) +
+    row('Operating Expenses', -c.opexA, -c.opexP, false, true) +
+    '<tr class="total"><td>NET OPERATING INCOME</td><td>' + money(c.noiA) + '</td><td>' + money(c.noiP) + '</td>' +
+    '<td class="' + cls(c.noiP - c.noiA) + '">' + money(c.noiP - c.noiA) + '</td></tr>';
+
+  document.getElementById('exBody').innerHTML = S.expenses.map(e =>
+    '<tr><td><input class="inp inp-xs" value="' + esc(e.name) + '" onchange="updRow(\'expenses\',\'' + e.id + '\',\'name\',this.value)"></td>' +
+    '<td><input class="inp inp-xs inp-r" type="number" value="' + esc(e.a) + '" onchange="updRow(\'expenses\',\'' + e.id + '\',\'a\',this.value)"></td>' +
+    '<td><input class="inp inp-xs inp-r" type="number" value="' + esc(e.p) + '" onchange="updRow(\'expenses\',\'' + e.id + '\',\'p\',this.value)"></td>' +
+    '<td>' + (c.unitCount ? money(num(e.a) / c.unitCount) : '—') + '</td>' +
+    '<td><button onclick="delExpense(\'' + e.id + '\')" class="text-red-500 hover:text-red-700 font-bold">×</button></td></tr>').join('');
+
+  document.getElementById('exFoot').innerHTML =
+    '<tr class="sub"><td>Management Fee (' + rate(n('e_mgmt'), 1) + ' of EGI)</td><td>' + money(c.mgmtA) + '</td><td>' + money(c.mgmtP) + '</td><td colspan="2"></td></tr>' +
+    '<tr class="sub"><td>Replacement Reserve (' + money(n('e_reserve')) + '/unit)</td><td>' + money(c.resA) + '</td><td>' + money(c.resP) + '</td><td colspan="2"></td></tr>' +
+    '<tr class="total"><td>Total Operating Expenses</td><td>' + money(c.opexA) + '</td><td>' + money(c.opexP) + '</td>' +
+    '<td>' + (c.unitCount ? money(c.opexA / c.unitCount) : '—') + '</td><td></td></tr>';
+
+  document.getElementById('oiBody').innerHTML = S.other.map(o =>
+    '<tr><td><input class="inp inp-xs" value="' + esc(o.name) + '" onchange="updRow(\'other\',\'' + o.id + '\',\'name\',this.value)"></td>' +
+    '<td><input class="inp inp-xs inp-r" type="number" value="' + esc(o.a) + '" onchange="updRow(\'other\',\'' + o.id + '\',\'a\',this.value)"></td>' +
+    '<td><input class="inp inp-xs inp-r" type="number" value="' + esc(o.p) + '" onchange="updRow(\'other\',\'' + o.id + '\',\'p\',this.value)"></td></tr>').join('');
+  document.getElementById('oiFoot').innerHTML =
+    '<tr class="total"><td>Total</td><td>' + money(c.oiA) + '</td><td>' + money(c.oiP) + '</td></tr>';
+
+  const bench = (label, val, good, note) =>
+    '<div class="flex items-baseline justify-between gap-2 border-b border-brand-beige pb-1">' +
+    '<span class="text-xs text-gray-600">' + label + '</span>' +
+    '<span class="text-sm font-bold num" style="color:' + (good ? '#20756B' : '#C1442E') + '">' + val + '</span></div>' +
+    (note ? '<div class="text-[10px] text-gray-400 -mt-1">' + note + '</div>' : '');
+  document.getElementById('benchBox').innerHTML =
+    bench('Expense Ratio — In-Place', pct(c.expRatioA, 1), c.expRatioA > 0 && c.expRatioA < 0.50, 'Typical multi-res: 35–45%') +
+    bench('Expense Ratio — Stabilized', pct(c.expRatioP, 1), c.expRatioP > 0 && c.expRatioP < 0.50, '') +
+    bench('Operating Expense / Unit', c.unitCount ? money(c.opexA / c.unitCount) : '—', true, '') +
+    bench('Revenue / Unit / Month', c.unitCount ? money(c.egiA / c.unitCount / 12) : '—', true, '') +
+    bench('Revenue / Sq Ft / Year', c.sqft ? money2(c.egiA / c.sqft) : '—', true, '');
+}
+</script>
+
+<script>
+/* ================================ VALUATION =============================== */
+function capLadder() {
+  const lo = n('v_low'), hi = n('v_high'), st = Math.max(0.05, n('v_step'));
+  const out = [];
+  for (let r = lo; r <= hi + 1e-9; r += st) out.push(Math.round(r * 100) / 100);
+  return out.length ? out : [n('v_target')];
+}
+function heat(v, min, max) {
+  const k = max > min ? (v - min) / (max - min) : 0.5;
+  const stops = [[247, 217, 209], [250, 243, 224], [206, 232, 227]];
+  const seg = k < 0.5 ? 0 : 1, f = k < 0.5 ? k * 2 : (k - 0.5) * 2;
+  const a = stops[seg], b = stops[seg + 1];
+  return 'rgb(' + a.map((v0, idx) => Math.round(v0 + (b[idx] - v0) * f)).join(',') + ')';
+}
+
+function renderValuation() {
+  const c = calc();
+  const dAbs = c.valA - c.apprVal, dPct = c.apprVal > 0 ? dAbs / c.apprVal : 0;
+
+  document.getElementById('valKpis').innerHTML =
+    kpi('Value on In-Place NOI', money(c.valA), 'at ' + rate(n('v_target')) + ' cap', '#264653') +
+    kpi('Value on Stabilized NOI', money(c.valP), 'at ' + rate(n('v_target')) + ' cap', '#2A9D8F') +
+    kpi('vs. Prior Appraisal', c.apprVal ? money(dAbs) : '—', c.apprVal ? pct(dPct, 1) + ' change · appraised ' + money(c.apprVal) : 'enter an appraised value', dAbs >= 0 ? '#20756B' : '#C1442E') +
+    kpi('Implied Cap on Appraisal', c.apprVal ? pct(c.capOnAppraisal) : '—', 'in-place NOI ÷ appraised value');
+
+  const cap2 = [
+    kpi('Price / Unit', c.unitCount ? money(c.perUnitA) : '—', c.unitCount + ' units'),
+    kpi('Price / Sq Ft', c.sqft ? money2(c.perSfA) : '—', c.sqft ? c.sqft.toLocaleString() + ' sq ft' : 'enter sq ft'),
+    kpi('Gross Rent Multiplier', c.grmA ? x2(c.grmA) : '—', 'value ÷ gross scheduled rent'),
+    kpi('Stabilization Upside', money(c.valP - c.valA), 'value created by reaching market rents', '#2A9D8F')
+  ].join('');
+  document.getElementById('valKpis').insertAdjacentHTML('beforeend', cap2);
+
+  const ladder = capLadder(), tgt = n('v_target');
+  document.getElementById('capBody').innerHTML = ladder.map(r => {
+    const vA = r > 0 ? c.noiA / (r / 100) : 0, vP = r > 0 ? c.noiP / (r / 100) : 0;
+    const d = c.apprVal > 0 ? vA - c.apprVal : null;
+    const isT = Math.abs(r - tgt) < 0.001;
+    return '<tr' + (isT ? ' style="background:#E9F6F4;font-weight:800"' : '') + '>' +
+      '<td>' + rate(r) + (isT ? ' <span class="badge" style="background:#2A9D8F;color:#fff">Target</span>' : '') + '</td>' +
+      '<td>' + money(vA) + '</td><td>' + money(vP) + '</td>' +
+      '<td>' + (c.unitCount ? money(vP / c.unitCount) : '—') + '</td>' +
+      '<td class="' + (d == null ? '' : cls(d)) + '">' + (d == null ? '—' : money(d)) + '</td></tr>';
+  }).join('');
+
+  // --- Sensitivity: stabilized NOI flex × cap rate ---
+  const flex = [-0.10, -0.05, 0, 0.05, 0.10];
+  const cells = [];
+  ladder.forEach(r => flex.forEach(f => { if (r > 0) cells.push(c.noiP * (1 + f) / (r / 100)); }));
+  const mn = Math.min.apply(null, cells), mx = Math.max.apply(null, cells);
+  document.getElementById('sensTable').innerHTML =
+    '<thead><tr><th>Cap Rate \\ NOI</th>' + flex.map(f =>
+      '<th>' + (f === 0 ? 'Base NOI' : (f > 0 ? '+' : '') + (f * 100).toFixed(0) + '%') + '<br><span style="font-weight:400;text-transform:none">' +
+      money(c.noiP * (1 + f)) + '</span></th>').join('') + '</tr></thead><tbody>' +
+    ladder.map(r => '<tr><td style="font-weight:700">' + rate(r) + '</td>' + flex.map(f => {
+      const v = r > 0 ? c.noiP * (1 + f) / (r / 100) : 0;
+      return '<td class="h" style="background:' + heat(v, mn, mx) + '">' + money(v) + '</td>';
+    }).join('') + '</tr>').join('') + '</tbody>';
+
+  drawCapChart(c, ladder);
+  drawBridgeChart(c);
+}
+
+function drawCapChart(c, ladder) {
+  const ctx = document.getElementById('capChart');
+  if (!ctx || typeof Chart === 'undefined') return;   // charts degrade gracefully if the CDN is unreachable
+  if (charts.cap) charts.cap.destroy();
+  charts.cap = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ladder.map(r => rate(r)),
+      datasets: [
+        { label: 'In-Place NOI', data: ladder.map(r => r > 0 ? c.noiA / (r / 100) : 0), backgroundColor: '#264653' },
+        { label: 'Stabilized NOI', data: ladder.map(r => r > 0 ? c.noiP / (r / 100) : 0), backgroundColor: '#2A9D8F' }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 } } },
+        tooltip: { callbacks: { label: x => x.dataset.label + ': ' + money(x.raw) } },
+        annotation: false
+      },
+      scales: {
+        y: { ticks: { callback: v => '$' + (v / 1000).toFixed(0) + 'k', font: { size: 10 } } },
+        x: { ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+function drawBridgeChart(c) {
+  const ctx = document.getElementById('bridgeChart');
+  if (!ctx || typeof Chart === 'undefined') return;   // charts degrade gracefully if the CDN is unreachable
+  if (charts.bridge) charts.bridge.destroy();
+  const cap0 = c.apprCap > 0 ? c.apprCap : c.targetCap;
+  const v0 = c.apprVal || (cap0 > 0 ? c.apprNoi / cap0 : 0);
+  const noiEffect = cap0 > 0 ? (c.noiA - c.apprNoi) / cap0 : 0;
+  const capEffect = c.valA - (v0 + noiEffect);
+  const labels = ['Prior Appraisal', 'NOI Change', 'Cap Rate Shift', 'Value Today'];
+  const base = [0, v0, v0 + Math.min(noiEffect, 0) + Math.max(noiEffect, 0) - Math.max(capEffect, 0) - Math.abs(Math.min(capEffect, 0)) * 0, 0];
+  // simple floating-bar waterfall
+  const b1 = [0, Math.min(v0, v0 + noiEffect), Math.min(v0 + noiEffect, c.valA), 0];
+  const d1 = [v0, Math.abs(noiEffect), Math.abs(capEffect), c.valA];
+  charts.bridge = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'base', data: b1, backgroundColor: 'rgba(0,0,0,0)', stack: 'w' },
+        { label: 'value', data: d1, stack: 'w',
+          backgroundColor: ['#264653', noiEffect >= 0 ? '#2A9D8F' : '#E76F51', capEffect >= 0 ? '#2A9D8F' : '#E76F51', '#E9C46A'] }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: x => x.datasetIndex === 0 ? null :
+          labels[x.dataIndex] + ': ' + money(x.dataIndex === 1 ? noiEffect : x.dataIndex === 2 ? capEffect : x.raw) } }
+      },
+      scales: { y: { ticks: { callback: v => '$' + (v / 1000).toFixed(0) + 'k', font: { size: 10 } } },
+                x: { ticks: { font: { size: 10 } } } }
+    }
+  });
+}
+
+/* ============================== DEBT & RETURNS ============================ */
+function renderDebt() {
+  const c = calc();
+  document.getElementById('debtKpis').innerHTML =
+    kpi('DSCR — In-Place', isFinite(c.dscrA) ? x2(c.dscrA) : 'No debt',
+        'lenders want 1.20x+', c.dscrA >= 1.2 ? '#20756B' : '#C1442E') +
+    kpi('Debt Yield', c.bal ? pct(c.debtYield, 2) : '—', 'NOI ÷ loan balance · 8%+ typical', c.debtYield >= 0.08 ? '#20756B' : '#C1442E') +
+    kpi('Loan-to-Value', c.valA ? pct(c.ltv, 1) + ' ' : '—', 'against value at target cap', c.ltv <= 0.75 ? '#20756B' : '#C1442E') +
+    kpi('Annual Debt Service', money(c.ds), money(c.pmtM) + ' / month');
+
+  document.getElementById('buyerBox').innerHTML = [
+    ['Purchase Price (target cap)', money(c.price)],
+    ['Down Payment', money(c.bDown)],
+    ['Closing Costs', money(c.bClose)],
+    ['Total Cash Required', money(c.bCash)],
+    ['New Mortgage', money(c.bLoan)],
+    ['Annual Debt Service', money(c.bDS)],
+    ['Cash Flow Before Tax', money(c.bCF)],
+    ['Cash-on-Cash Return', pct(c.coc, 2)],
+    ['Buyer DSCR', isFinite(c.bDscr) ? x2(c.bDscr) : '—']
+  ].map((r, i) => '<div class="flex justify-between gap-2 ' + (i >= 6 ? 'font-bold border-t border-brand-beige pt-1' : '') + '">' +
+      '<span class="text-gray-600">' + r[0] + '</span><span class="num">' + r[1] + '</span></div>').join('');
+
+  const R = (l, v, k) => '<tr' + (k ? ' class="' + k + '"' : '') + '><td>' + l + '</td><td>' + v + '</td></tr>';
+  document.getElementById('equityTable').innerHTML =
+    '<thead><tr><th>Owner Position — Sale Today at Target Cap</th><th style="min-width:150px">Amount</th></tr></thead><tbody>' +
+    R('Estimated Market Value', money(c.valA), 'sub') +
+    R('Less: Selling Costs (' + rate(n('d_cos'), 2) + ')', money(-c.sellCost)) +
+    R('Less: Legal &amp; Closing', money(-c.legal)) +
+    R('Less: Mortgage Payout', money(-c.bal)) +
+    R('Less: Prepayment Penalty', money(-c.penalty)) +
+    R('<b>Net Proceeds Before Tax</b>', '<b>' + money(c.netProceeds) + '</b>', 'total') +
+    R('Estimated Capital Gain', c.acb > 0 ? money(c.gain) : 'enter an adjusted cost base') +
+    R('Estimated Tax (gain + recapture)', c.acb > 0 ? money(-c.taxTotal) : '—') +
+    R('<b>Net Proceeds After Estimated Tax</b>', '<b>' + (c.acb > 0 ? money(c.netAfterTax) : '—') + '</b>', 'total') +
+    R('Annual Cash Flow if Held (in-place)', money(c.cfA)) +
+    R('Annual Cash Flow if Held (stabilized)', money(c.cfP)) +
+    '</tbody>';
+}
+
+/* ================================ EXIT ==================================== */
+function renderExit() {
+  const yrs = Math.max(1, Math.min(15, n('x_years') || 5));
+  const P = project(yrs);
+  const c = P.c;
+
+  document.getElementById('exitKpis').innerHTML =
+    kpi('Exit Value — Year ' + yrs, money(P.exitValue), 'at ' + rate(n('x_cap')) + ' exit cap', '#264653') +
+    kpi('Net Proceeds Before Tax', money(P.proceeds), 'after costs and mortgage payout', '#2A9D8F') +
+    kpi('Cumulative Cash Flow', money(P.totalCF), yrs + '-year total after debt service') +
+    kpi('Return on Holding (IRR)', P.holdIrr == null ? '—' : pct(P.holdIrr, 1),
+        'vs. selling today and freeing ' + money(P.equityToday), P.holdIrr != null && P.holdIrr > 0.10 ? '#20756B' : '#C1442E');
+
+  document.getElementById('projTable').innerHTML =
+    '<thead><tr><th>Year</th><th>EGI</th><th>OpEx</th><th>NOI</th><th>Debt Service</th><th>Cash Flow</th><th>Loan Balance</th><th>Value</th></tr></thead><tbody>' +
+    P.rows.map(r => '<tr><td>Year ' + r.y + '</td><td>' + money(r.egi) + '</td><td>' + money(-r.opex) + '</td>' +
+      '<td style="font-weight:700">' + money(r.noi) + '</td><td>' + money(-r.ds) + '</td>' +
+      '<td class="' + cls(r.cf) + '">' + money(r.cf) + '</td><td>' + money(r.bal) + '</td><td>' + money(r.value) + '</td></tr>').join('') +
+    '<tr class="total"><td>Totals</td><td colspan="4"></td><td>' + money(P.totalCF) + '</td><td colspan="2"></td></tr></tbody>';
+
+  const R = (l, v, k) => '<tr' + (k ? ' class="' + k + '"' : '') + '><td>' + l + '</td><td>' + v + '</td></tr>';
+  document.getElementById('proceedsTable').innerHTML =
+    '<thead><tr><th>Disposition — End of Year ' + yrs + '</th><th style="min-width:140px">Amount</th></tr></thead><tbody>' +
+    R('Year ' + yrs + ' NOI', money(P.rows[yrs - 1].noi)) +
+    R('Exit Value @ ' + rate(P.exitCap * 100), money(P.exitValue), 'sub') +
+    R('Less: Selling Costs', money(-P.sellCost)) +
+    R('Less: Legal &amp; Closing', money(-P.legal)) +
+    R('Less: Mortgage Payout', money(-P.lastBal)) +
+    R('Less: Prepayment Penalty', money(-P.penalty)) +
+    R('<b>Net Proceeds Before Tax</b>', '<b>' + money(P.proceeds) + '</b>', 'total') +
+    R('Estimated Tax', c.acb > 0 ? money(-P.tax) : 'enter an ACB') +
+    R('<b>Net Proceeds After Tax</b>', '<b>' + (c.acb > 0 ? money(P.proceedsAT) : '—') + '</b>', 'total') +
+    R('Equity Multiple', x2(P.multiple)) +
+    '</tbody>';
+
+  // Exit year × exit cap grid
+  const caps = capLadder();
+  const yearsList = []; for (let y = 1; y <= Math.min(yrs, 10); y++) yearsList.push(y);
+  const grid = caps.map(r => yearsList.map(y => project(y, r).proceeds));
+  const flatv = grid.flat();
+  const mn = Math.min.apply(null, flatv), mx = Math.max.apply(null, flatv);
+  document.getElementById('exitGrid').innerHTML =
+    '<thead><tr><th>Exit Cap \\ Hold</th>' + yearsList.map(y => '<th>Year ' + y + '</th>').join('') + '</tr></thead><tbody>' +
+    caps.map((r, ri) => '<tr><td style="font-weight:700">' + rate(r) + '</td>' +
+      grid[ri].map(v => '<td class="h" style="background:' + heat(v, mn, mx) + '">' + money(v) + '</td>').join('') + '</tr>').join('') +
+    '</tbody>';
+
+  const ctx = document.getElementById('projChart');
+  if (ctx && typeof Chart !== 'undefined') {
+    if (charts.proj) charts.proj.destroy();
+    charts.proj = new Chart(ctx, {
+      data: {
+        labels: P.rows.map(r => 'Yr ' + r.y),
+        datasets: [
+          { type: 'bar', label: 'Value', data: P.rows.map(r => r.value), backgroundColor: '#E6E2D6', yAxisID: 'y1', order: 3 },
+          { type: 'line', label: 'NOI', data: P.rows.map(r => r.noi), borderColor: '#2A9D8F', backgroundColor: '#2A9D8F', tension: .3, yAxisID: 'y', order: 1 },
+          { type: 'line', label: 'Cash Flow', data: P.rows.map(r => r.cf), borderColor: '#E76F51', backgroundColor: '#E76F51', borderDash: [4, 3], tension: .3, yAxisID: 'y', order: 2 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } },
+                   tooltip: { callbacks: { label: x => x.dataset.label + ': ' + money(x.raw) } } },
+        scales: {
+          y:  { position: 'left',  ticks: { callback: v => '$' + (v / 1000).toFixed(0) + 'k', font: { size: 10 } } },
+          y1: { position: 'right', grid: { drawOnChartArea: false }, ticks: { callback: v => '$' + (v / 1000000).toFixed(2) + 'M', font: { size: 10 } } },
+          x:  { ticks: { font: { size: 10 } } }
+        }
+      }
+    });
+  }
+}
+</script>
+
+<script>
+/* ============================== EXPORT PACKAGE ============================= */
+function buildPackage() {
+  const c = calc();
+  const yrs = Math.max(1, Math.min(15, n('x_years') || 5));
+  const P = project(yrs);
+  const ladder = capLadder(), tgt = n('v_target');
+  const name = t('p_name') || 'Subject Property';
+  const addr = [t('p_addr'), t('p_city')].filter(Boolean).join(', ');
+  const dAbs = c.valA - c.apprVal, dPct = c.apprVal > 0 ? dAbs / c.apprVal : 0;
+  const lowV = c.noiA / (n('v_high') / 100), highV = c.noiP / (n('v_low') / 100);
+
+  const tbl = (head, rows, note) =>
+    '<div class="blk"><table><thead><tr>' + head.map((h, i) => '<th' + (i === 0 ? '' : '') + '>' + h + '</th>').join('') +
+    '</tr></thead><tbody>' + rows.map(r => '<tr' + (r.k ? ' style="' + r.k + '"' : '') + '>' +
+      (r.c || r).map(x => '<td>' + x + '</td>').join('') + '</tr>').join('') + '</tbody></table>' +
+    (note ? '<p class="note" style="margin-top:4px">' + note + '</p>' : '') + '</div>';
+
+  let h = '';
+
+  /* ---- Cover ---- */
+  h += '<div class="blk" style="border-bottom:3px solid #E9C46A;padding-bottom:14px;margin-bottom:18px">' +
+    '<p style="font-size:9pt;letter-spacing:.14em;text-transform:uppercase;color:#2A9D8F;font-weight:700;margin:0">' +
+      'Confidential Investment &amp; Valuation Package</p>' +
+    '<h1 class="doc-title" style="margin:6px 0 2px">' + esc(name) + '</h1>' +
+    (addr ? '<p style="margin:0;font-size:11pt;color:#444">' + esc(addr) + '</p>' : '') +
+    '<p style="margin:10px 0 0;font-size:9.5pt;color:#555">' +
+      'Prepared by ' + esc(t('p_owner') || '—') + (t('p_for') ? ' &nbsp;·&nbsp; Prepared for ' + esc(t('p_for')) : '') +
+      ' &nbsp;·&nbsp; ' + today() + '</p></div>';
+
+  /* ---- Headline value band ---- */
+  h += '<div class="blk" style="display:flex;gap:10px;margin-bottom:16px">' +
+    ['Indicated Value Range|' + money(lowV) + ' – ' + money(highV) + '|' + rate(n('v_high')) + ' to ' + rate(n('v_low')) + ' cap',
+     'Value at ' + rate(tgt) + ' Cap|' + money(c.valA) + '|on in-place NOI of ' + money(c.noiA),
+     'Prior Appraised Value|' + (c.apprVal ? money(c.apprVal) : 'n/a') + '|' + (c.apprVal ? (dAbs >= 0 ? '+' : '') + pct(dPct, 1) + ' since appraisal' : '—')]
+    .map(s => { const p = s.split('|'); return '<div style="flex:1;border:1px solid #D9D6CB;border-top:3px solid #264653;padding:8px 10px">' +
+      '<div style="font-size:7.5pt;text-transform:uppercase;letter-spacing:.07em;color:#666;font-weight:600">' + p[0] + '</div>' +
+      '<div style="font-size:13pt;font-weight:700;color:#264653;margin-top:2px">' + p[1] + '</div>' +
+      '<div style="font-size:8pt;color:#777">' + p[2] + '</div></div>'; }).join('') + '</div>';
+
+  /* ---- Executive summary ---- */
+  h += '<h3 class="sec">1. Executive Summary</h3>';
+  h += '<p class="blk">' + esc(name) + ' is a ' + esc(t('p_type') || 'commercial').toLowerCase() + ' asset comprising ' +
+    c.unitCount + ' units' + (c.sqft ? ' across ' + c.sqft.toLocaleString() + ' square feet' : '') +
+    (addr ? ' at ' + esc(addr) : '') + '. On in-place income the property generates effective gross income of ' +
+    money(c.egiA) + ' and net operating income of ' + money(c.noiA) + ', an operating expense ratio of ' +
+    pct(c.expRatioA, 1) + '. Capitalized at ' + rate(tgt) + ', this indicates a value of <b>' + money(c.valA) + '</b>' +
+    (c.unitCount ? ' — ' + money(c.perUnitA) + ' per unit' : '') + (c.sqft ? ' and ' + money2(c.perSfA) + ' per square foot' : '') + '.</p>';
+  if (c.ltl > 0)
+    h += '<p class="blk">The rent roll carries ' + money(c.ltl) + ' of annual loss to lease. Marking every unit to market lifts ' +
+      'net operating income to ' + money(c.noiP) + ' and value at the same cap rate to <b>' + money(c.valP) + '</b> — ' +
+      money(c.valP - c.valA) + ' of embedded upside available to an incoming owner without a change in cap rate.</p>';
+  if (c.apprVal)
+    h += '<p class="blk">The property was appraised at ' + money(c.apprVal) + (t('a_date') ? ' with an effective date of ' + esc(t('a_date')) : '') +
+      (t('a_firm') ? ' by ' + esc(t('a_firm')) : '') + '. The indicated value today is ' + money(Math.abs(dAbs)) + ' ' +
+      (dAbs >= 0 ? 'above' : 'below') + ' that benchmark, a change of ' + pct(Math.abs(dPct), 1) + '.</p>';
+  if (t('p_notes')) h += '<p class="blk">' + esc(t('p_notes')).replace(/\n/g, '<br>') + '</p>';
+
+  /* ---- Property summary ---- */
+  h += '<h3 class="sec">2. Property Summary</h3>';
+  h += tbl(['Attribute', 'Detail'], [
+    ['Property', esc(name)], ['Address', esc(addr) || '—'], ['Asset Type', esc(t('p_type'))],
+    ['Year Built', t('p_year') || '—'], ['Units / Tenancies', String(c.unitCount)],
+    ['Rentable Area', c.sqft ? c.sqft.toLocaleString() + ' sq ft' : '—'],
+    ['Site Area', t('p_lot') ? t('p_lot') + ' acres' : '—'], ['Parcel / PID', esc(t('p_pid')) || '—'],
+    ['Registered Owner', esc(t('p_owner')) || '—'],
+    ['Physical Occupancy', pct(c.physOcc, 1) + ' (' + c.occUnits + ' of ' + c.unitCount + ')']
+  ]);
+
+  /* ---- Rent roll ---- */
+  h += '<div class="pagebreak"></div><h3 class="sec">3. Rent Roll</h3>';
+  h += tbl(['Unit', 'Type / Use', 'Sq Ft', 'Tenant', 'In-Place /mo', 'Market /mo', 'Lease End', 'Status'],
+    S.units.map(u => [esc(u.unit), esc(u.type), num(u.sqft) ? num(u.sqft).toLocaleString() : '—', esc(u.tenant),
+      money(num(u.rent)), money(num(u.market) || num(u.rent)), esc(u.end) || '—', esc(u.status || 'Occupied')])
+      .concat([{ k: 'font-weight:700;background:#F3F1E8', c: ['Total', c.unitCount + ' units',
+        c.sqft ? c.sqft.toLocaleString() : '—', '',
+        money(S.units.reduce((s, u) => s + num(u.rent), 0)),
+        money(S.units.reduce((s, u) => s + (num(u.market) || num(u.rent)), 0)), '', ''] }]),
+    'In-place rents are contract rents at the date of this package. Market rents reflect the owner’s estimate of achievable rent on turnover.');
+
+  /* ---- Operating statement ---- */
+  h += '<h3 class="sec">4. Operating Statement</h3>';
+  const opRows = [
+    ['Gross Scheduled Rent', money(c.gprA), money(c.gprP)],
+    ['Other Income &amp; Recoveries', money(c.oiA), money(c.oiP)],
+    { k: 'font-weight:700;background:#FAF8F1', c: ['Potential Gross Income', money(c.pgiA), money(c.pgiP)] },
+    ['Less: Vacancy &amp; Credit Loss (' + rate(n('i_vacA'), 1) + ' / ' + rate(n('i_vacP'), 1) + ')', money(-c.vacA), money(-c.vacP)],
+    { k: 'font-weight:700;background:#FAF8F1', c: ['Effective Gross Income', money(c.egiA), money(c.egiP)] }
+  ].concat(S.expenses.filter(e => num(e.a) || num(e.p)).map(e => ['  ' + esc(e.name), money(-num(e.a)), money(-num(e.p))]))
+   .concat([
+    ['  Management Fee (' + rate(n('e_mgmt'), 1) + ')', money(-c.mgmtA), money(-c.mgmtP)],
+    ['  Structural Reserve', money(-c.resA), money(-c.resP)],
+    { k: 'font-weight:700;background:#FAF8F1', c: ['Total Operating Expenses', money(-c.opexA), money(-c.opexP)] },
+    { k: 'font-weight:800;background:#F3F1E8;border-top:1.5px solid #264653', c: ['NET OPERATING INCOME', money(c.noiA), money(c.noiP)] },
+    ['Operating Expense Ratio', pct(c.expRatioA, 1), pct(c.expRatioP, 1)]
+  ]);
+  h += tbl(['Line Item', 'In-Place (T-12)', 'Stabilized'], opRows,
+    'Stabilized column assumes all units at market rent with a ' + rate(n('i_vacP'), 1) + ' vacancy and credit loss allowance. ' +
+    'Management and structural reserves are included whether or not currently paid, consistent with lender and buyer underwriting.');
+
+  /* ---- Valuation ---- */
+  h += '<div class="pagebreak"></div><h3 class="sec">5. Valuation — Direct Capitalization</h3>';
+  h += '<p class="blk">Value is derived by capitalizing net operating income. The table below shows the indicated value ' +
+    'across a range of capitalization rates on both in-place and stabilized income.</p>';
+  h += tbl(['Cap Rate', 'Value — In-Place NOI', 'Value — Stabilized NOI', '$ / Unit', '$ / Sq Ft'],
+    ladder.map(r => {
+      const vA = c.noiA / (r / 100), vP = c.noiP / (r / 100);
+      const row = [rate(r), money(vA), money(vP), c.unitCount ? money(vA / c.unitCount) : '—', c.sqft ? money2(vA / c.sqft) : '—'];
+      return Math.abs(r - tgt) < 0.001 ? { k: 'font-weight:800;background:#E9F6F4', c: row } : row;
+    }),
+    'Highlighted row is the concluded capitalization rate of ' + rate(tgt) + '.');
+
+  h += tbl(['Valuation Metric', 'In-Place', 'Stabilized'], [
+    ['Net Operating Income', money(c.noiA), money(c.noiP)],
+    ['Capitalization Rate', rate(tgt), rate(tgt)],
+    { k: 'font-weight:700;background:#F3F1E8', c: ['Indicated Value', money(c.valA), money(c.valP)] },
+    ['Value per Unit', c.unitCount ? money(c.perUnitA) : '—', c.unitCount ? money(c.perUnitP) : '—'],
+    ['Value per Sq Ft', c.sqft ? money2(c.perSfA) : '—', c.sqft ? money2(c.valP / c.sqft) : '—'],
+    ['Gross Rent Multiplier', c.grmA ? x2(c.grmA) : '—', c.gprP ? x2(c.valP / c.gprP) : '—'],
+    ['Prior Appraised Value', c.apprVal ? money(c.apprVal) : '—', ''],
+    ['Variance to Appraisal', c.apprVal ? money(dAbs) + ' (' + pct(dPct, 1) + ')' : '—', '']
+  ]);
+
+  /* ---- Financing & proceeds ---- */
+  h += '<h3 class="sec">6. Financing &amp; Net Proceeds on a Sale Today</h3>';
+  h += tbl(['Item', 'Amount'], [
+    ['Indicated Market Value', money(c.valA)],
+    ['Less: Selling Costs (' + rate(n('d_cos'), 2) + ')', money(-c.sellCost)],
+    ['Less: Legal &amp; Closing', money(-c.legal)],
+    ['Less: Mortgage Payout', money(-c.bal)],
+    ['Less: Prepayment Penalty', money(-c.penalty)],
+    { k: 'font-weight:800;background:#F3F1E8', c: ['Net Proceeds Before Tax', money(c.netProceeds)] },
+    ['Annual Debt Service', money(c.ds)],
+    ['Debt Service Coverage Ratio', isFinite(c.dscrA) ? x2(c.dscrA) : 'n/a — unencumbered'],
+    ['Debt Yield', c.bal ? pct(c.debtYield, 2) : 'n/a'],
+    ['Loan to Value', c.bal ? pct(c.ltv, 1) : 'n/a']
+  ], 'Tax consequences are not included above and will depend on adjusted cost base, capital cost allowance recapture and ownership structure.');
+
+  /* ---- Buyer's return ---- */
+  h += '<h3 class="sec">7. Indicative Buyer Return</h3>';
+  h += tbl(['Assumption / Result', 'Amount'], [
+    ['Purchase Price', money(c.price)],
+    ['Down Payment (' + rate(n('b_down'), 0) + ')', money(c.bDown)],
+    ['Closing Costs (' + rate(n('b_close'), 2) + ')', money(c.bClose)],
+    { k: 'font-weight:700', c: ['Total Cash Required', money(c.bCash)] },
+    ['New Financing @ ' + rate(n('b_rate')) + ' / ' + n('b_amort') + '-yr amortization', money(c.bLoan)],
+    ['Annual Debt Service', money(-c.bDS)],
+    ['Net Operating Income', money(c.noiA)],
+    { k: 'font-weight:700;background:#F3F1E8', c: ['Cash Flow Before Tax', money(c.bCF)] },
+    ['Cash-on-Cash Return', pct(c.coc, 2)],
+    ['Going-In Capitalization Rate', pct(c.targetCap, 2)],
+    ['Debt Service Coverage', isFinite(c.bDscr) ? x2(c.bDscr) : '—']
+  ], 'Illustrative only. Actual financing terms are subject to lender underwriting and the purchaser’s covenant.');
+
+  /* ---- Exit ---- */
+  h += '<div class="pagebreak"></div><h3 class="sec">8. ' + yrs + '-Year Hold and Exit Analysis</h3>';
+  h += '<p class="blk">The projection below grows rental income at ' + rate(n('x_rentg'), 2) + ' and operating expenses at ' +
+    rate(n('x_expg'), 2) + ' per annum, with the rent roll reaching market over ' + n('x_stab') + ' year(s). ' +
+    'The asset is assumed to be sold at the end of year ' + yrs + ' at a ' + rate(n('x_cap')) + ' capitalization rate.</p>';
+  h += tbl(['Year', 'EGI', 'Operating Expenses', 'NOI', 'Debt Service', 'Cash Flow', 'Loan Balance', 'Indicated Value'],
+    P.rows.map(r => ['Year ' + r.y, money(r.egi), money(-r.opex), money(r.noi), money(-r.ds), money(r.cf), money(r.bal), money(r.value)])
+      .concat([{ k: 'font-weight:700;background:#F3F1E8', c: ['Cumulative', '', '', '', '', money(P.totalCF), '', ''] }]));
+
+  h += tbl(['Disposition — End of Year ' + yrs, 'Amount'], [
+    ['Year ' + yrs + ' Net Operating Income', money(P.rows[yrs - 1].noi)],
+    ['Exit Capitalization Rate', rate(P.exitCap * 100)],
+    { k: 'font-weight:700', c: ['Gross Sale Price', money(P.exitValue)] },
+    ['Less: Selling Costs', money(-P.sellCost)],
+    ['Less: Legal &amp; Closing', money(-P.legal)],
+    ['Less: Mortgage Payout', money(-P.lastBal)],
+    ['Less: Prepayment Penalty', money(-P.penalty)],
+    { k: 'font-weight:800;background:#F3F1E8', c: ['Net Proceeds Before Tax', money(P.proceeds)] },
+    ['Cumulative Cash Flow over Hold', money(P.totalCF)],
+    ['Equity Released if Sold Today', money(P.equityToday)],
+    ['Return on Continued Ownership (IRR)', P.holdIrr == null ? '—' : pct(P.holdIrr, 1)],
+    ['Equity Multiple', x2(P.multiple)]
+  ], 'Return on continued ownership measures the internal rate of return on the equity that would be released by selling today, ' +
+     'held through to the year ' + yrs + ' disposition. It is the hold-versus-sell hurdle rate.');
+
+  /* ---- Sensitivity ---- */
+  h += '<h3 class="sec">9. Sensitivity Analysis</h3>';
+  const flex = [-0.10, -0.05, 0, 0.05, 0.10];
+  h += tbl(['Cap Rate'].concat(flex.map(f => (f === 0 ? 'Base' : (f > 0 ? '+' : '') + (f * 100).toFixed(0) + '% NOI'))),
+    ladder.map(r => [rate(r)].concat(flex.map(f => money(c.noiP * (1 + f) / (r / 100))))),
+    'Indicated value at varying capitalization rates and net operating income outcomes, based on stabilized income of ' + money(c.noiP) + '.');
+
+  /* ---- Assumptions ---- */
+  h += '<div class="pagebreak"></div><h3 class="sec">10. Assumptions and Limiting Conditions</h3>';
+  h += '<ul style="margin:0;padding-left:18px">' + [
+    'This package is an estimate of value prepared by the owner for discussion purposes. It is not an appraisal and was not prepared by a designated appraiser.',
+    'Figures are derived from the rent roll, operating statements and assumptions entered by the owner and have not been independently audited.',
+    'Net operating income excludes financing costs, income taxes, depreciation and capital expenditure other than the stated structural reserve.',
+    'Capitalization rates are selections by the owner and should be tested against current market transactions at the time of any offering.',
+    'Stabilized figures assume all units achieve the stated market rents; no allowance is made for downtime, leasing commissions or tenant inducements unless entered above.',
+    'Mortgage payout assumes the stated balance and any prepayment penalty; the actual payout is determined by the lender at the time of discharge.',
+    'Tax estimates, where shown, are indicative only. Capital gain, capital cost allowance recapture and the effect of the ownership structure must be confirmed with a professional accountant.',
+    'A prospective purchaser should complete its own due diligence, including review of leases, financial statements, environmental condition and building systems.'
+  ].map(s => '<li style="margin-bottom:5px">' + s + '</li>').join('') + '</ul>';
+
+  /* ---- Signature block: kept together with the text above it ---- */
+  h += '<div class="sig" style="margin-top:26px;border-top:1px solid #D9D6CB;padding-top:14px">' +
+    '<p style="margin:0 0 18px;font-size:10pt">Prepared and submitted,</p>' +
+    '<table style="width:100%;border:0"><tr>' +
+    '<td style="border:0;text-align:left;width:48%">' +
+      '<div style="border-bottom:1px solid #333;height:34px"></div>' +
+      '<div style="font-size:10pt;font-weight:600;margin-top:4px">' + esc(t('p_owner') || 'Owner') + '</div>' +
+      '<div style="font-size:8.75pt;color:#555">Owner / Vendor</div>' +
+      '<div style="font-size:8.75pt;color:#555">Date: ' + today() + '</div></td>' +
+    '<td style="border:0;width:4%"></td>' +
+    '<td style="border:0;text-align:left;width:48%">' +
+      '<div style="border-bottom:1px solid #333;height:34px"></div>' +
+      '<div style="font-size:10pt;font-weight:600;margin-top:4px">' + esc(t('p_for') || 'Recipient') + '</div>' +
+      '<div style="font-size:8.75pt;color:#555">Received / Acknowledged</div>' +
+      '<div style="font-size:8.75pt;color:#555">Date: _______________</div></td>' +
+    '</tr></table></div>';
+
+  h += '<p class="note" style="margin-top:16px;border-top:1px solid #E5E2D8;padding-top:8px">' +
+    esc(name) + ' · Confidential · Generated ' + today() + ' · Page content derived from owner-supplied data.</p>';
+
+  document.getElementById('pkg').innerHTML = h;
+}
+
+/* ================================ EXPORTS ================================= */
+function download(filename, content, mime) {
+  const blob = new Blob([content], { type: mime || 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+function csvEsc(v) { const s = (v == null ? '' : String(v)); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+function slug() { return (t('p_name') || 'property').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase(); }
+
+function exportCSV() {
+  const c = calc(), yrs = Math.max(1, n('x_years') || 5), P = project(yrs);
+  const L = [];
+  const push = (...cols) => L.push(cols.map(csvEsc).join(','));
+  push('VALUATION & EXIT PACKAGE'); push('Property', t('p_name')); push('Address', t('p_addr') + ' ' + t('p_city'));
+  push('Generated', today()); push('');
+  push('RENT ROLL'); push('Unit', 'Type', 'SqFt', 'Tenant', 'In-Place Rent/mo', 'Market Rent/mo', 'Lease End', 'Status');
+  S.units.forEach(u => push(u.unit, u.type, u.sqft, u.tenant, num(u.rent), num(u.market) || num(u.rent), u.end, u.status));
+  push('');
+  push('OPERATING STATEMENT', 'In-Place', 'Stabilized');
+  push('Gross Scheduled Rent', c.gprA, c.gprP);
+  push('Other Income & Recoveries', c.oiA, c.oiP);
+  push('Potential Gross Income', c.pgiA, c.pgiP);
+  push('Vacancy & Credit Loss', -c.vacA, -c.vacP);
+  push('Effective Gross Income', c.egiA, c.egiP);
+  S.expenses.forEach(e => push(e.name, -num(e.a), -num(e.p)));
+  push('Management Fee', -c.mgmtA, -c.mgmtP);
+  push('Structural Reserve', -c.resA, -c.resP);
+  push('Total Operating Expenses', -c.opexA, -c.opexP);
+  push('NET OPERATING INCOME', c.noiA, c.noiP);
+  push('');
+  push('VALUE BY CAP RATE', 'In-Place', 'Stabilized');
+  capLadder().forEach(r => push(rate(r), c.noiA / (r / 100), c.noiP / (r / 100)));
+  push('');
+  push('KEY METRICS');
+  push('Target Cap Rate', rate(n('v_target'))); push('Value (In-Place)', c.valA); push('Value (Stabilized)', c.valP);
+  push('Prior Appraised Value', c.apprVal); push('Variance', c.valA - c.apprVal);
+  push('Price per Unit', c.perUnitA); push('Price per Sq Ft', c.perSfA);
+  push('Expense Ratio', c.expRatioA); push('DSCR', isFinite(c.dscrA) ? c.dscrA : '');
+  push('Debt Yield', c.debtYield); push('LTV', c.ltv); push('Net Proceeds Today', c.netProceeds);
+  push('');
+  push(yrs + '-YEAR PROJECTION');
+  push('Year', 'EGI', 'OpEx', 'NOI', 'Debt Service', 'Cash Flow', 'Loan Balance', 'Value');
+  P.rows.forEach(r => push(r.y, r.egi, -r.opex, r.noi, -r.ds, r.cf, r.bal, r.value));
+  push('');
+  push('EXIT'); push('Exit Value', P.exitValue); push('Net Proceeds Before Tax', P.proceeds);
+  push('Cumulative Cash Flow', P.totalCF); push('Hold IRR', P.holdIrr == null ? '' : P.holdIrr);
+  download(slug() + '-valuation.csv', '﻿' + L.join('\n'), 'text/csv;charset=utf-8');
+}
+
+function exportJSON() {
+  readInputs();
+  download(slug() + '-valuation.json', JSON.stringify({ version: 1, saved: new Date().toISOString(), state: S }, null, 2), 'application/json');
+}
+function importJSON(ev) {
+  const f = ev.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = e => {
+    try {
+      const d = JSON.parse(e.target.result);
+      S = d.state || d;
+      ['f', 'units', 'expenses', 'other'].forEach(k => { if (!S[k]) S[k] = blankState()[k]; });
+      writeInputs(); renderAll(); autosave();
+      alert('Imported successfully.');
+    } catch (err) { alert('Could not read that file: ' + err.message); }
+  };
+  r.readAsText(f); ev.target.value = '';
+}
+
+async function exportPDF() {
+  if (typeof html2canvas === 'undefined' || !window.jspdf) {
+    alert('The PDF library could not be loaded (no internet connection?).\n\nUse “Print / Save as PDF” instead — it produces a cleaner document and respects page breaks.');
+    return;
+  }
+  buildPackage();
+  const src = document.getElementById('pkg');
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ unit: 'pt', format: 'letter' });
+  const pageW = pdf.internal.pageSize.getWidth(), pageH = pdf.internal.pageSize.getHeight();
+  const margin = 40, usableW = pageW - margin * 2, usableH = pageH - margin * 2;
+  let y = margin, first = true;
+
+  // Render block by block so a table or signature is never split across pages.
+  const blocks = Array.from(src.children);
+  const rendered = [];
+  for (const el of blocks) {
+    if (el.classList.contains('pagebreak')) { rendered.push({ br: true }); continue; }
+    const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff', logging: false });
+    rendered.push({ img: canvas.toDataURL('image/jpeg', 0.92), h: (canvas.height / canvas.width) * usableW,
+                    heading: el.tagName === 'H3' });
+  }
+  for (let k = 0; k < rendered.length; k++) {
+    const b = rendered[k];
+    if (b.br) { if (!first) { pdf.addPage(); y = margin; } continue; }
+    // A section heading travels with the block that follows it.
+    let need = b.h;
+    if (b.heading && rendered[k + 1] && !rendered[k + 1].br) need += rendered[k + 1].h + 8;
+    if (!first && y + need > margin + usableH) { pdf.addPage(); y = margin; }
+    pdf.addImage(b.img, 'JPEG', margin, y, usableW, b.h);
+    y += b.h + 8; first = false;
+  }
+  pdf.save(slug() + '-valuation-package.pdf');
+}
+</script>
+
+<script>
+/* ========================= PROFILES / PERSISTENCE ========================== */
+function store() { try { return JSON.parse(localStorage.getItem(STORE) || '{}'); } catch (e) { return {}; } }
+function writeStore(o) { try { localStorage.setItem(STORE, JSON.stringify(o)); } catch (e) {} }
+function autosave() {
+  const db = store();
+  db.draft = S;
+  writeStore(db);
+}
+function saveProfile() {
+  readInputs();
+  const suggested = t('p_name') || 'Untitled Property';
+  const key = prompt('Save this property as:', suggested);
+  if (!key) return;
+  const db = store();
+  db.profiles = db.profiles || {};
+  db.profiles[key] = JSON.parse(JSON.stringify(S));
+  db.last = key; db.draft = S;
+  writeStore(db);
+  refreshProfiles(key);
+  alert('Saved “' + key + '”. It will be here next time you open this page on this device.');
+}
+function refreshProfiles(sel) {
+  const db = store(), names = Object.keys(db.profiles || {});
+  const el = document.getElementById('profileSelect');
+  el.innerHTML = '<option value="">— saved properties —</option>' +
+    names.map(k => '<option' + (k === sel ? ' selected' : '') + '>' + esc(k) + '</option>').join('');
+}
+function switchProfile(k) {
+  if (!k) return;
+  const db = store();
+  if (!db.profiles || !db.profiles[k]) return;
+  S = JSON.parse(JSON.stringify(db.profiles[k]));
+  writeInputs(); renderAll(); autosave();
+}
+function clearAll() {
+  if (!confirm('Clear every field on this page? Saved properties in the dropdown are not affected.')) return;
+  S = blankState();
+  document.querySelectorAll('input, textarea').forEach(el => { if (!NO_BIND.includes(el.id)) el.value = ''; });
+  S.f = {};
+  ['v_target:6.50', 'v_step:0.25', 'v_low:5.00', 'v_high:8.00', 'i_vacA:3', 'i_vacP:4', 'e_mgmt:5',
+   'e_reserve:300', 'd_rate:5.25', 'd_amort:25', 'd_cos:4', 'd_legal:7500', 'd_tax:47', 'd_penalty:0', 'd_cca:0',
+   'b_down:25', 'b_rate:5.75', 'b_amort:25', 'b_close:2', 'x_years:5', 'x_rentg:3', 'x_expg:2.5',
+   'x_cap:6.75', 'x_stab:1', 'x_capex:0'].forEach(p => { const [k, v] = p.split(':'); S.f[k] = v; });
+  writeInputs(); renderAll(); autosave();
+}
+
+/* =============================== SEED DATA ================================
+   Hollis Avenue Portfolio — sourced from the McQuaid & Associates - ARA
+   appraisal, file #2026027, effective 9 February 2026.
+   ======================================================================== */
+const MARKET_PSF = 20.27;   // appraisal micro-market average net rent, $/ft²/yr
+
+function hollisSeed() {
+  const raw = [
+    // [building, unit, tenant, sqft, annual base rent]
+    ['26 Hollis', 'Unit 1',            'Integrity HVAC',                  1200,  21600],
+    ['26 Hollis', 'Unit 2',            'Spring Child Psychology',         1200,  26400],
+    ['26 Hollis', 'Unit 3',            'Little Ducklings Early Learning', 2290,  52899],
+    ['26 Hollis', 'Unit 4',            'Little Ducklings Early Learning',  600,  13872],
+    ['26 Hollis', 'Unit 5',            'PPR Property Group Inc.',          600,  13200],
+    ['26 Hollis', 'Garage Bays (3)',   'Storage bays',                       0,   7200],
+    ['30 Hollis', 'Unit 1',            'Little Ducklings Early Learning', 5928, 136937],
+    ['41 Hollis', 'Unit 1A',           'Geo Terra Survey',                 600,  13892],
+    ['41 Hollis', 'Unit 2A',           'Confound',                         600,  13892],
+    ['41 Hollis', 'Units 3A,1B,2B,3B', 'Pro Tech',                        3497,  57814],
+    ['41 Hollis', 'Unit 4A',           'Ted Bicycle Shop',                1200,  26460],
+    ['41 Hollis', 'Unit 4B',           'PEI Martial Arts Academy',        1200,  16380],
+    ['41 Hollis', 'Units 5A, 5B',      'Sematic / Innovation Interior',   2400,  42840],
+    ['41 Hollis', 'Units 6A, 6B',      'PEI Agents Realty',               2400,  42840],
+    ['45 Hollis', 'Unit 1A',           'Volume 18',                        600,  13860],
+    ['45 Hollis', 'Unit 2A',           'Risk Management Group',            600,  12600],
+    ['45 Hollis', 'Unit 2B',           'Wise Skateboarding',              1200,  17940],
+    ['45 Hollis', 'Units 3A,3B,4A,4B', 'Alignment Dance Studio',          3600,  55200],
+    ['45 Hollis', 'Unit 5A',           'Happy Nostalgia Party Supplies',  1200,  26400],
+    ['45 Hollis', 'Unit 6A',           'Lupin Nails and Spa',             1200,  27600],
+    ['45 Hollis', 'Unit 1B',           'Cultural Circle',                 1097,  20700],
+    ['45 Hollis', 'Units 5B, 6B',      'Oakside Custom',                  2400,  34800]
+  ];
+  const st = blankState();
+  st.units = raw.map(r => {
+    const monthly = Math.round(r[4] / 12 * 100) / 100;
+    const mkt = r[3] ? Math.max(monthly, Math.round(MARKET_PSF * r[3] / 12 * 100) / 100) : monthly;
+    return { id: uid(), unit: r[0] + ' · ' + r[1], type: 'Commercial', sqft: r[3] || '',
+             tenant: r[2], rent: monthly, market: mkt, end: '', status: 'Occupied' };
+  });
+
+  st.expenses = [
+    { id: uid(), name: 'Property Tax & Annual Charges',          a: 50858,  p: 50858 },
+    { id: uid(), name: 'Recoverable Operating Costs (CAM pool)', a: 149413, p: 149413 }
+  ];
+  st.other = [
+    { id: uid(), name: 'CAM / Recoverable Income',       a: 144373, p: 144373 },
+    { id: uid(), name: 'Lease Escalation PV (appraisal)', a: 35232,  p: 0 }
+  ];
+
+  st.f = {
+    p_name: 'Hollis Avenue Portfolio', p_type: 'Commercial / Retail',
+    p_addr: '26, 30, 41 & 45 Hollis Avenue', p_city: 'Stratford, PEI',
+    p_year: '', p_sqft: 35612, p_lot: 2.76,
+    p_pid: '1093814 · 1112366 · 1110147 · 1142413',
+    p_owner: 'Francistheriault Ventures Inc.', p_for: '',
+    p_notes: 'Four freestanding commercial office-retail buildings on 2.76 acres in the M-2 Business Park Zone, ' +
+      'Stratford. 35,612 ft² leasable across 22 tenancies, fully leased at the appraisal date. ' +
+      'Tenant base is diversified across professional services, childcare, fitness and retail, with ' +
+      'staggered lease expiries and contractual escalations. Several tenancies sit materially below the ' +
+      'surveyed market rent of $20.27/ft², representing recoverable upside on renewal.',
+
+    a_value: 9225000, a_date: '2026-02-09', a_cap: 6.50, a_noi: 622863,
+    a_firm: 'McQuaid & Associates – ARA (H. McQuaid, AACI · R. McQuaid, AACI) · File #2026027',
+
+    v_target: 6.50, v_step: 0.25, v_low: 5.50, v_high: 8.00,
+    i_vacA: 2, i_vacP: 3, e_mgmt: 3, e_reserve: 390,
+
+    d_bal: '', d_rate: 5.25, d_amort: 25, d_comp: 'semi', d_mat: '', d_penalty: 0,
+    d_cos: 3, d_legal: 15000, d_acb: '', d_cca: 0, d_tax: 47,
+    b_down: 30, b_rate: 5.75, b_amort: 25, b_close: 2,
+    x_years: 5, x_rentg: 3, x_expg: 2.5, x_cap: 6.75, x_stab: 3, x_capex: 0
+  };
+  return st;
+}
+function loadSample() {
+  if (S.units.length && !confirm('Replace the current inputs with the Hollis Avenue portfolio data?')) return;
+  S = hollisSeed(); writeInputs(); renderAll(); autosave();
+}
+
+/* ================================== INIT ================================== */
+function renderAll() {
+  const c = calc();
+  document.getElementById('sNoiA').textContent = money(c.noiA);
+  document.getElementById('sNoiP').textContent = money(c.noiP);
+  document.getElementById('sVal').textContent = money(c.valA);
+  const d = c.valA - c.apprVal;
+  const sd = document.getElementById('sDelta');
+  sd.textContent = c.apprVal ? (d >= 0 ? '+' : '') + money(d) : '—';
+  sd.style.color = c.apprVal ? (d >= 0 ? '#7BE3D3' : '#F3A392') : '';
+  document.getElementById('sDscr').textContent = c.bal ? (isFinite(c.dscrA) ? x2(c.dscrA) : '—') : 'no debt';
+  document.getElementById('sEquity').textContent = money(c.netProceeds);
+
+  renderRentRoll(); renderOpex(); renderValuation(); renderDebt(); renderExit();
+  if (!document.getElementById('pane-package').classList.contains('hidden')) buildPackage();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const db = store();
+  if (db.draft && db.draft.f) S = db.draft; else S = hollisSeed();
+  ['f', 'units', 'expenses', 'other'].forEach(k => { if (!S[k]) S[k] = blankState()[k]; });
+  writeInputs();
+  refreshProfiles(db.last);
+  document.querySelectorAll('input, select, textarea').forEach(el => {
+    if (NO_BIND.includes(el.id)) return;
+    el.addEventListener('change', onChange);
+    if (el.tagName === 'INPUT' && el.type !== 'date') el.addEventListener('input', onLiveInput);
+  });
+  renderAll();
+});
+</script>
+</body>
+</html>
