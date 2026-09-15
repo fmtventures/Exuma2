@@ -2144,7 +2144,10 @@ function taxReadiness() {
       missingUcc ? missingUcc + ' of ' + rows.length + ' missing — the closing UCC on your last T2 schedule 8. This drives recapture, which is the largest single line'
                  : 'Supplied for every parcel');
   add(t('tx_vendor').trim() ? 'have' : 'soft', 'Vendor entity confirmed',
-      t('tx_vendor').trim() || 'Which company holds title, and is it a CCPC? Are any parcels held personally or in another company?');
+      t('tx_vendor').trim()
+        ? t('tx_vendor').trim() + ' holds title to all four parcels — confirmed 15 September 2026. '
+          + 'Nothing is held personally or in a second company, so one asset sale or one share sale covers the whole portfolio and there is no split return to model.'
+        : 'Which company holds title, and is it a CCPC? Are any parcels held personally or in another company?');
   const TT = taxTiming();
   add(t('tx_yearend') ? 'have' : 'soft', 'Fiscal year end',
       TT ? fmtDate(t('tx_yearend')).replace(/, \d{4}$/, '') + ' — a sale closing ' + fmtDate(TT.saleISO)
@@ -2310,7 +2313,7 @@ function renderTax() {
     'Recapture is fully taxable. Only half of the capital gain is, and the other half credits the capital dividend account, which can be paid to shareholders free of tax. Recapture is therefore the more expensive dollar.',
     'A sale of commercial real property in PEI is a taxable supply for HST. Where the purchaser is registered, the purchaser self-assesses and no HST moves through the closing — confirm the purchaser’s registration before relying on that.',
     'Selling the four parcels separately or in stages changes the timing and may keep income out of a single fiscal year. Selling shares rather than assets avoids recapture entirely but transfers the low cost base to the buyer, who will price that in.',
-    'If you are reinvesting in replacement property, the replacement property rules may defer part of the gain and recapture. Raise it with your accountant before closing, not after.',
+    'The replacement property rules are very unlikely to be available here. On a voluntary sale they apply only to a former business property, and that definition excludes real property used principally to earn rent — which is what all four parcels are. The rollover remains available on an involuntary disposition such as expropriation or a fire settlement. Confirm with your accountant, but do not plan around a deferral on a negotiated sale.',
     'A vendor take-back may allow a capital gains reserve over as much as five years, spreading the taxable portion. It does not defer recapture.',
     'The rates on this page are estimates for a PEI Canadian-controlled private corporation in 2026 and have not been verified against current legislation.'
   ].map(x => '<li style="margin-bottom:6px">' + x + '</li>').join('');

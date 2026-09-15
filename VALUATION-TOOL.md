@@ -118,6 +118,13 @@ until they are:
 
 The Tax tab's readiness panel lists what is missing and what each gap blocks.
 
+Two questions are now closed. **Title** — Francistheriault Ventures Inc. holds all four
+parcels; nothing is personal or in a second company, so one asset sale or one share sale
+covers the portfolio. **Replacement property** — the s.44 rollover is very unlikely to be
+available, because on a voluntary sale it applies only to a former business property and
+that definition excludes real property used principally to earn rent. It survives only for
+an involuntary disposition. Neither is modelled as an option any more.
+
 ## Exports
 
 - **Print / Save as PDF** — preferred. Honours CSS page breaks, keeps paragraphs and the
