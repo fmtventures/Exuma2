@@ -107,13 +107,18 @@ it is used instead, and the record itself is filed in `docs/` and linked from th
 |---|---|---|
 | PEI Property Assessment Information Listings, 2026, four parcels | Title, parcel numbers, site area, classification, and the property tax line — **$51,740.67**, replacing the appraiser's normalized $50,858 | Overview tab · `docs/assessments/` |
 | Equitable Bank welcome letter, loan 598842 | Loan amount, rate, term, amortization and maturity | Debt & Exit tab · `docs/` |
+| Equitable Bank information statement, 15 Sep 2026 | Principal balance of **$4,993,475.04** at 5 September 2026, and the $17,315.82 tax account credit | Debt & Exit tab · `docs/` |
+| Equitable Bank amortization schedule | The lender's own balance at every payment through maturity | Debt & Exit tab · `docs/` |
+| Equitable Bank payment history | The funding breakdown and the first payment's principal and interest split | Debt & Exit tab · `docs/` |
 
 The assessment records confirm Francistheriault Ventures Inc. on title to all four parcels,
 2.76 acres in total, and a 2026 mortgage registered against each. The loan is **$5,000,000
 advanced 22 July 2026 at 6.74% fixed**, 24-month term, 300-month amortization, maturing
 **5 August 2028**. The engine's Canadian semi-annual compounding reproduces the letter's
-principal-and-interest payment of **$34,221.89** to the cent, which is an independent check
-on the debt module. The letter's $38,662.96 regular payment includes a $4,441.07 monthly
+principal-and-interest payment of **$34,221.89** to the cent, and run forward against
+Equitable's own amortization schedule it tracks the lender to **one cent** across all 23
+payments to maturity — $4,833,007.82 against their $4,833,007.81. The balance used at any
+sale date is therefore the lender's, not an approximation. The letter's $38,662.96 regular payment includes a $4,441.07 monthly
 property tax escrow; that is excluded from debt service, because property tax is already an
 operating expense.
 
@@ -130,8 +135,9 @@ until they are:
 
 - **T2 Schedule 8, per parcel** — adjusted cost base of the land, capital cost of the
   building, and closing UCC (Class 1). Blocks the recapture and capital-gain split.
-- **Prepayment penalty** — the welcome letter defers to the commitment. Until it is known,
-  the cost of closing before the 5 August 2028 maturity cannot be priced.
+- **Prepayment penalty** — the welcome letter defers to the commitment and the information
+  statement returns null. Until it is known, the cost of closing before the 5 August 2028
+  maturity cannot be priced, and the 2027 exit dates carry an unquantified charge.
 - **Tax rates** — the four rates on the Tax tab are PEI CCPC estimates and are not
   verified against current legislation.
 - **CAM pool** — the $149,413 recoverable operating cost line is still the appraiser's

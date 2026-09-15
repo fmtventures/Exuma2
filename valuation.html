@@ -659,11 +659,28 @@ table.heat td.h{font-weight:600; color:#1B2432}
         </div>
         <div class="f r"><label for="d_penalty">Prepayment Penalty ($)</label><input id="d_penalty" type="number" placeholder="Refer to commitment — not yet supplied"></div>
         <p class="hint" style="margin:2px 0 0">Equitable Bank loan <strong>598842</strong>, advanced 22 July 2026 —
-          $5,000,000 at 6.74% fixed, 24-month term, 300-month amortization, maturing 5 August 2028.
-          The regular payment of $38,662.96 includes a $4,441.07 monthly property tax component; debt service here is
-          principal and interest only, $34,221.89 a month, because property tax is already an operating expense above.
-          Balance shown is the advance. Take the exact current balance off myEquitable before a closing statement is drawn.
-          <a href="docs/eq-bank-loan-598842-welcome-letter.pdf" target="_blank" rel="noopener">Welcome letter · PDF</a></p>
+          $5,000,000 at <strong>6.74% fixed</strong>, 24-month term, 300-month amortization, maturing
+          <strong>5 August 2028</strong>. The balance above is the lender's own figure at 5 September 2026, after the
+          first payment.</p>
+        <p class="hint" style="margin:8px 0 0">The $38,662.96 regular payment includes a $4,441.07 property tax escrow.
+          Debt service here is principal and interest only, <strong>$34,221.89</strong> a month, because property tax is
+          already an operating expense above. Run against Equitable's own amortization schedule, this model tracks the
+          lender to <strong>one cent</strong> over all 23 payments to maturity, ending at $4,833,007.82 against their
+          $4,833,007.81 — so the balance used at any sale date is the lender's, not an approximation.</p>
+        <p class="hint" style="margin:8px 0 0"><strong>Two closing items not in the figures above.</strong>
+          The tax account holds <strong>$17,315.82</strong> for you — the $13,323.22 holdback taken at funding, less
+          $448.47 remitted, plus one $4,441.07 escrow instalment. It reconciles exactly and is returned on payout, so it
+          adds to net proceeds. Against that, the <strong>prepayment penalty is still unknown</strong> — the welcome
+          letter defers to the commitment. Closing on 5 August 2028 at maturity avoids it entirely, which is worth
+          weighing against the 2027 exit dates on the Sale Price tab.</p>
+        <p class="hint" style="margin:8px 0 0">Funding: $5,000,000 gross, less a $13,250.00 commitment fee, a
+          $13,323.22 tax holdback and a $12,508.29 interest adjustment — <strong>$4,960,918.49</strong> net cash.
+          Those are sunk costs of the 2026 refinance and are not charged against a future disposition.</p>
+        <p class="hint" style="margin:8px 0 0">
+          <a href="docs/eq-bank-loan-598842-welcome-letter.pdf" target="_blank" rel="noopener">Welcome letter</a> ·
+          <a href="docs/eq-bank-598842-information-statement-2026-09-15.pdf" target="_blank" rel="noopener">Information statement</a> ·
+          <a href="docs/eq-bank-598842-amortization-schedule.pdf" target="_blank" rel="noopener">Amortization schedule</a> ·
+          <a href="docs/eq-bank-598842-payment-history.pdf" target="_blank" rel="noopener">Payment history</a></p>
       </div></div>
     <div class="card"><h3>Disposition &amp; Tax</h3>
       <div class="body fields">
@@ -1449,7 +1466,7 @@ function hollisSeed() {
     a_firm: 'McQuaid & Associates – ARA · reliance letter 8 Jun 2026 (report #2026027, $9,225,000 eff. 9 Feb 2026)',
     v_target: 6.5, v_step: 0.25, v_low: 5.5, v_high: 8,
     i_vacA: 2, i_vacP: 3, e_mgmt: 3, e_reserve: 390, m_psf: 20.27,
-    d_bal: 5000000, d_rate: 6.74, d_amort: 25, d_comp: 'semi', d_mat: '2028-08-05',
+    d_bal: 4993475.04, d_rate: 6.74, d_amort: 25, d_comp: 'semi', d_mat: '2028-08-05',
     d_cos: 3, d_legal: 15000, d_tax: 47,
     x_start: '2026-10-01', x_years: 5, x_renew: 'market', x_down: 4,
     x_defesc: 3, x_expg: 2.5, x_lease: 8, x_capex: 0,
