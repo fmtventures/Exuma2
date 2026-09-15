@@ -128,6 +128,26 @@ $8,191.75 a year where 45 Hollis pays $15,461.25. A reassessment to commercial o
 add roughly $10,991 a year — about $169,000 of value at a 6.50% cap. It is a disclosure item,
 and a purchaser's due diligence will find it.
 
+### Investor capital
+
+Net proceeds are stated after the capital that ranks ahead of the vendor. Seeded from the
+MMH investor buyout workbook: **thirteen Maison Maritime House preferred shareholders,
+$1,000,000 of principal at 5%**, interest paid to 31 August 2025 and accruing from
+1 September 2025 on a monthly-prorated basis — whole months from the start month plus the
+day fraction of the closing month. At 15 August 2026 that is **$1,047,849.46**, which
+reproduces the workbook to the cent, investor by investor.
+
+**These sit at MMH, not at Francistheriault Ventures Inc.** The 2026 Equitable refinance was
+raised in part to retire them: Francistheriault Ventures lends MMH the money, MMH redeems the
+preferred shares, and MNP has it structured as a redemption at principal with a non-eligible
+dividend for the accrued difference. Bernard Mallet was still circulating the redemption and
+transfer documents as at 14 September 2026, so the obligation is live today.
+
+If the redemption completes before Hollis closes, it has been paid out of the refinance and
+must not be deducted from the sale as well. Switching every row to *Rides through* corrects
+the waterfall. They stay marked *Repaid* only while genuinely outstanding at the closing date
+being tested.
+
 ## Still outstanding
 
 These are entered by hand and the figures that depend on them stay blank or indicative

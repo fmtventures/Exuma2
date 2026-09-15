@@ -687,7 +687,19 @@ table.heat td.h{font-weight:600; color:#1B2432}
       <div class="body">
         <p class="hint" style="margin:0 0 10px">Capital that must be repaid out of the sale, ranking behind the
           mortgage and ahead of you. Enter each obligation once; the return accrues to whatever closing date is being
-          tested, so the Sale Price tab and the exit below both deduct the right amount for their own date.</p>
+          tested, so the Sale Price tab and the exit below both deduct the right amount for their own date. Accrual is
+          monthly prorated — whole months from the start month plus the day fraction of the closing month — which is the
+          basis the buyout workbook uses, so these figures tie to the redemption schedule rather than approximating it.</p>
+        <p class="hint" style="margin:0 0 10px"><strong style="color:var(--crit)">FRANCIS — read this before relying on
+          the net-proceeds figures.</strong> Seeded here are the thirteen Maison Maritime House preferred
+          shareholders: $1,000,000 of principal at 5%, interest paid to 31 August 2025 and running from 1 September 2025.
+          At 15 August 2026 that is $1,047,849.46, which ties to your buyout workbook to the cent, investor by investor.
+          <em>But these sit at MMH, not at Francistheriault Ventures Inc.</em> The 2026 Equitable refinance was raised in
+          part to retire them — Francistheriault Ventures lends MMH the money, MMH redeems the preferred shares, and MNP
+          has it structured as a redemption at principal with a non-eligible dividend for the accrued difference.
+          <strong>If that redemption completes before Hollis closes, this is already paid and must not be deducted
+          twice</strong> — switch every row to “Rides through” and the waterfall corrects itself. Leave them as
+          “Repaid” only while they are genuinely still outstanding at the closing date being tested.</p>
         <div style="overflow-x:auto">
         <table class="t"><thead><tr>
           <th class="l">Investor</th><th class="l">Type</th><th>Principal</th><th>Return %</th>
@@ -1304,13 +1316,23 @@ function valuationAt(iso, capPct) {
     when the row says so. Rows marked not payable on sale are carried for the
     record but excluded from the waterfall, because some capital rides through a
     disposition and some does not — and which is which changes what reaches you. */
+function accrualYears(startISO, endISO) {
+  const a = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(startISO || ''));
+  const b = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(endISO || ''));
+  if (!a || !b) return 0;
+  const sy = +a[1], sm = +a[2] - 1;
+  const ey = +b[1], em = +b[2] - 1, ed = +b[3];
+  const whole = (ey * 12 + em) - (sy * 12 + sm);
+  const dim = new Date(Date.UTC(ey, em + 1, 0)).getUTCDate();
+  const months = whole + ed / dim;
+  return months > 0 ? months / 12 : 0;
+}
+
 function investorPayout(saleISO) {
   const rows = (S.investors || []).map(r => {
     const principal = num(r.amt);
     const ratePct = num(r.rate);
-    const startMI = mi(r.start), endMI = mi(saleISO);
-    let years = 0;
-    if (startMI != null && endMI != null && endMI > startMI) years = (endMI - startMI) / 12;
+    const years = accrualYears(r.start, saleISO);
     let accrued = 0;
     if (principal > 0 && ratePct > 0 && years > 0) {
       accrued = r.compound === 'yes'
@@ -1502,6 +1524,38 @@ function hollisSeed() {
   const st = blankState();
   st.units = R.map(r => ({ id: uid(), bldg: r[0], unit: r[1], tenant: r[2], sqft: r[3],
     status: r[4], start: r[5], end: r[6], base: r[7], cam: r[8], esc: r[9], note: r[10] }));
+
+  /* Maison Maritime House preferred shareholders. Principal $1,000,000 across thirteen
+     holders at 5% annual, interest paid to 31 August 2025 and accruing from 1 September
+     2025 on the monthly-prorated basis used in the buyout workbook. */
+  st.investors = [
+    { id: uid(), name: 'Alexandre Boukhlif', type: 'Preferred equity', amt: 50000, rate: 5,
+      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'yes' },
+    { id: uid(), name: 'Corina Boukhlif', type: 'Preferred equity', amt: 50000, rate: 5,
+      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'yes' },
+    { id: uid(), name: 'Charles Michaud', type: 'Preferred equity', amt: 100000, rate: 5,
+      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'yes' },
+    { id: uid(), name: 'Daniel Allain', type: 'Preferred equity', amt: 50000, rate: 5,
+      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'yes' },
+    { id: uid(), name: 'France Allain', type: 'Preferred equity', amt: 25000, rate: 5,
+      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'yes' },
+    { id: uid(), name: 'Diane Cormier', type: 'Preferred equity', amt: 50000, rate: 5,
+      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'yes' },
+    { id: uid(), name: 'Joel LeBlanc', type: 'Preferred equity', amt: 50000, rate: 5,
+      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'yes' },
+    { id: uid(), name: 'Louis Melanson', type: 'Preferred equity', amt: 62500, rate: 5,
+      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'yes' },
+    { id: uid(), name: 'Martin Robichaud', type: 'Preferred equity', amt: 100000, rate: 5,
+      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'yes' },
+    { id: uid(), name: 'Stephane Babineau', type: 'Preferred equity', amt: 50000, rate: 5,
+      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'yes' },
+    { id: uid(), name: 'Martine Gallant', type: 'Preferred equity', amt: 62500, rate: 5,
+      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'yes' },
+    { id: uid(), name: 'Jean Arsenault', type: 'Preferred equity', amt: 100000, rate: 5,
+      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'yes' },
+    { id: uid(), name: 'Bernard Lord', type: 'Preferred equity', amt: 250000, rate: 5,
+      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'yes' }
+  ];
 
   st.expenses = [
     { id: uid(), name: 'Property tax & annual charges (2026 provincial assessment record)', a: 51740.67 },
