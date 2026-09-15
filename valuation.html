@@ -694,16 +694,15 @@ table.heat td.h{font-weight:600; color:#1B2432}
           tested, so the Sale Price tab and the exit below both deduct the right amount for their own date. Accrual is
           monthly prorated — whole months from the start month plus the day fraction of the closing month — which is the
           basis the buyout workbook uses, so these figures tie to the redemption schedule rather than approximating it.</p>
-        <p class="hint" style="margin:0 0 10px"><strong style="color:var(--crit)">FRANCIS — read this before relying on
-          the net-proceeds figures.</strong> Seeded here are the thirteen Maison Maritime House preferred
-          shareholders: $1,000,000 of principal at 5%, interest paid to 31 August 2025 and running from 1 September 2025.
-          At 15 August 2026 that is $1,047,849.46, which ties to your buyout workbook to the cent, investor by investor.
-          <em>But these sit at MMH, not at Francistheriault Ventures Inc.</em> The 2026 Equitable refinance was raised in
-          part to retire them — Francistheriault Ventures lends MMH the money, MMH redeems the preferred shares, and MNP
-          has it structured as a redemption at principal with a non-eligible dividend for the accrued difference.
-          <strong>If that redemption completes before Hollis closes, this is already paid and must not be deducted
-          twice</strong> — switch every row to “Rides through” and the waterfall corrects itself. Leave them as
-          “Repaid” only while they are genuinely still outstanding at the closing date being tested.</p>
+        <p class="hint" style="margin:0 0 10px"><strong>Retired from the refinance, not from the sale.</strong>
+          The thirteen Maison Maritime House preferred shareholders — $1,000,000 of principal at 5%, interest paid to
+          31 August 2025 and running from 1 September 2025 — are being paid in full out of the $5,000,000 Equitable
+          facility advanced 22 July 2026. Francistheriault Ventures lends MMH the money, MMH redeems the preferred
+          shares, and MNP has it structured as a redemption at principal with a non-eligible dividend for the accrued
+          difference. They are therefore set to <em>rides through</em> and are carried here for the record only:
+          deducting them from a Hollis sale as well would double-count the whole $1,000,000. The accrued figures still
+          compute to any date, so the redemption amount can be read off for whatever day it settles — at
+          15 August 2026 it is $1,047,849.46, which ties to the buyout workbook to the cent.</p>
         <div style="overflow-x:auto">
         <table class="t"><thead><tr>
           <th class="l">Investor</th><th class="l">Type</th><th>Principal</th><th>Return %</th>
@@ -1630,34 +1629,37 @@ function hollisSeed() {
 
   /* Maison Maritime House preferred shareholders. Principal $1,000,000 across thirteen
      holders at 5% annual, interest paid to 31 August 2025 and accruing from 1 September
-     2025 on the monthly-prorated basis used in the buyout workbook. */
+     2025 on the monthly-prorated basis used in the buyout workbook.
+     They are retired in full out of the July 2026 Equitable refinance, not out of a Hollis
+     sale, so they ride through a disposition and are carried here for the record only.
+     Deducting them from sale proceeds as well would double-count $1,000,000 of principal. */
   st.investors = [
     { id: uid(), name: 'Alexandre Boukhlif', type: 'Preferred equity', amt: 50000, rate: 5,
-      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'yes' },
+      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'no' },
     { id: uid(), name: 'Corina Boukhlif', type: 'Preferred equity', amt: 50000, rate: 5,
-      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'yes' },
+      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'no' },
     { id: uid(), name: 'Charles Michaud', type: 'Preferred equity', amt: 100000, rate: 5,
-      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'yes' },
+      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'no' },
     { id: uid(), name: 'Daniel Allain', type: 'Preferred equity', amt: 50000, rate: 5,
-      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'yes' },
+      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'no' },
     { id: uid(), name: 'France Allain', type: 'Preferred equity', amt: 25000, rate: 5,
-      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'yes' },
+      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'no' },
     { id: uid(), name: 'Diane Cormier', type: 'Preferred equity', amt: 50000, rate: 5,
-      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'yes' },
+      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'no' },
     { id: uid(), name: 'Joel LeBlanc', type: 'Preferred equity', amt: 50000, rate: 5,
-      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'yes' },
+      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'no' },
     { id: uid(), name: 'Louis Melanson', type: 'Preferred equity', amt: 62500, rate: 5,
-      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'yes' },
+      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'no' },
     { id: uid(), name: 'Martin Robichaud', type: 'Preferred equity', amt: 100000, rate: 5,
-      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'yes' },
+      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'no' },
     { id: uid(), name: 'Stephane Babineau', type: 'Preferred equity', amt: 50000, rate: 5,
-      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'yes' },
+      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'no' },
     { id: uid(), name: 'Martine Gallant', type: 'Preferred equity', amt: 62500, rate: 5,
-      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'yes' },
+      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'no' },
     { id: uid(), name: 'Jean Arsenault', type: 'Preferred equity', amt: 100000, rate: 5,
-      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'yes' },
+      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'no' },
     { id: uid(), name: 'Bernard Lord', type: 'Preferred equity', amt: 250000, rate: 5,
-      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'yes' }
+      start: '2025-09-01', compound: 'no', paid: 0, onsale: 'no' }
   ];
 
   /* Ownership. Title to all four parcels is in Francistheriault Ventures Inc.; these are the
