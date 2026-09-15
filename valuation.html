@@ -682,6 +682,21 @@ table.heat td.h{font-weight:600; color:#1B2432}
           <a href="docs/eq-bank-598842-amortization-schedule.pdf" target="_blank" rel="noopener">Amortization schedule</a> ·
           <a href="docs/eq-bank-598842-payment-history.pdf" target="_blank" rel="noopener">Payment history</a></p>
       </div></div>
+    <div class="card span2"><h3>Investor Capital to Repay
+      <button class="btn sm" id="btnAddInv">Add obligation</button></h3>
+      <div class="body">
+        <p class="hint" style="margin:0 0 10px">Capital that must be repaid out of the sale, ranking behind the
+          mortgage and ahead of you. Enter each obligation once; the return accrues to whatever closing date is being
+          tested, so the Sale Price tab and the exit below both deduct the right amount for their own date.</p>
+        <div style="overflow-x:auto">
+        <table class="t"><thead><tr>
+          <th class="l">Investor</th><th class="l">Type</th><th>Principal</th><th>Return %</th>
+          <th class="l">Accrues From</th><th class="l">Compound</th><th>Already Paid</th>
+          <th class="l">On Sale</th><th>Due at Exit</th><th></th>
+        </tr></thead><tbody id="invBody"></tbody><tfoot id="invFoot"></tfoot></table>
+        </div>
+        <p class="hint" style="margin:10px 0 0" id="invNote"></p>
+      </div></div>
     <div class="card"><h3>Disposition &amp; Tax</h3>
       <div class="body fields">
         <div class="grid c2" style="gap:12px">
@@ -916,6 +931,7 @@ function irr(cfs) {
 /* ------------------------------ blank state ------------------------------ */
 function blankState() {
   return {
+    investors: [],
     f: {
       p_type: 'Commercial / Retail', v_target: 6.5, v_step: 0.25, v_low: 5, v_high: 8,
       i_vacA: 2, i_vacP: 3, e_mgmt: 3, e_reserve: 390, m_psf: 20.27,
@@ -1273,9 +1289,44 @@ function valuationAt(iso, capPct) {
   const bal = k <= 0 ? M.c.bal : (M.months[Math.min(M.months.length - 1, k - 1)] || {}).bal;
   const sellCost = value * (n('d_cos') / 100);
   const legal = n('d_legal'), penalty = n('d_penalty');
-  const proceeds = value - sellCost - legal - (bal || 0) - penalty;
-  return { k, iso, noi, cap, value, bal: bal || 0, sellCost, legal, penalty, proceeds,
+  const beforeInv = value - sellCost - legal - (bal || 0) - penalty;
+  const inv = investorPayout(iso);
+  const proceeds = beforeInv - inv.total;
+  return { k, iso, noi, cap, value, bal: bal || 0, sellCost, legal, penalty,
+           beforeInv, investors: inv.total, proceeds,
            psf: M.c.sqftTotal ? value / M.c.sqftTotal : 0 };
+}
+
+/** Capital owed to investors at a closing date.
+
+    Each obligation carries a principal and, optionally, a return that accrues
+    from a start date to closing. Simple accrual by default; compounded annually
+    when the row says so. Rows marked not payable on sale are carried for the
+    record but excluded from the waterfall, because some capital rides through a
+    disposition and some does not — and which is which changes what reaches you. */
+function investorPayout(saleISO) {
+  const rows = (S.investors || []).map(r => {
+    const principal = num(r.amt);
+    const ratePct = num(r.rate);
+    const startMI = mi(r.start), endMI = mi(saleISO);
+    let years = 0;
+    if (startMI != null && endMI != null && endMI > startMI) years = (endMI - startMI) / 12;
+    let accrued = 0;
+    if (principal > 0 && ratePct > 0 && years > 0) {
+      accrued = r.compound === 'yes'
+        ? principal * (Math.pow(1 + ratePct / 100, years) - 1)
+        : principal * (ratePct / 100) * years;
+    }
+    accrued = Math.max(0, accrued - num(r.paid));
+    const due = r.onsale === 'no' ? 0 : principal + accrued;
+    return { id: r.id, name: r.name || '—', type: r.type || 'Loan', principal, ratePct,
+             years, accrued, paid: num(r.paid), due, onsale: r.onsale !== 'no' };
+  });
+  const total = rows.reduce((a, b) => a + b.due, 0);
+  const principal = rows.reduce((a, b) => a + (b.onsale ? b.principal : 0), 0);
+  const accrued = rows.reduce((a, b) => a + (b.onsale ? b.accrued : 0), 0);
+  const deferred = rows.filter(r => !r.onsale).reduce((a, b) => a + b.principal, 0);
+  return { rows, total, principal, accrued, deferred, any: rows.length > 0 };
 }
 
 /** Rolling twelve-month periods from the model start. */
@@ -1356,7 +1407,10 @@ function exitAnalysis(exitYear, exitCapPct) {
   const sellCost = exitValue * (n('d_cos') / 100);
   const legal = n('d_legal'), penalty = n('d_penalty');
   const bal = row.bal || 0;
-  const proceeds = exitValue - sellCost - legal - bal - penalty;
+  const exitISO = addMonthsISO(t('asOf') || new Date().toISOString().slice(0, 10), years * 12);
+  const inv = investorPayout(exitISO);
+  const beforeInv = exitValue - sellCost - legal - bal - penalty;
+  const proceeds = beforeInv - inv.total;
   const acb = n('d_acb'), mtr = n('d_tax') / 100, cca = n('d_cca');
   const gain = Math.max(0, exitValue - sellCost - legal - acb);
   const tax = acb > 0 ? gain * 0.5 * mtr + cca * mtr : 0;
@@ -1367,7 +1421,8 @@ function exitAnalysis(exitYear, exitCapPct) {
   const holdIrr = (equityToday > 0 && c.bal > 0) ? irr(cfs) : null;
   const totalCF = P.rows.reduce((s, r) => s + r.cf, 0);
 
-  return { P, row, exitYear: years, exitValue, noiForValue, sellCost, legal, penalty, proceeds, tax,
+  return { P, row, exitYear: years, exitValue, noiForValue, sellCost, legal, penalty,
+           investors: inv.total, investorRows: inv.rows, beforeInv, exitISO, proceeds, tax,
            proceedsAT: proceeds - tax, equityToday, holdIrr, totalCF,
            multiple: equityToday > 0 ? (totalCF + proceeds) / equityToday : 0, exitCap, lastBal: bal };
 }
@@ -1385,6 +1440,11 @@ function readiness() {
       c.bal > 0 ? money(c.bal) + ' outstanding' : 'Blank — DSCR, LTV, net proceeds and the hold IRR are all unavailable');
   add(c.acb > 0 ? 'have' : 'need', 'Adjusted cost base',
       c.acb > 0 ? money(c.acb) : 'Blank — after-tax proceeds cannot be estimated');
+  const INV = investorPayout(t('asOf') || new Date().toISOString().slice(0, 10));
+  add(INV.any ? 'have' : 'need', 'Investor capital',
+      INV.any ? INV.rows.length + ' obligation' + (INV.rows.length === 1 ? '' : 's') + ', ' + money(INV.total)
+                + ' due on a sale today — deducted from every net-proceeds figure'
+              : 'Nothing entered. If investors are repaid out of the sale, every net-proceeds figure here overstates what reaches you');
   add(t('d_mat') ? 'have' : 'soft', 'Mortgage maturity',
       t('d_mat') ? 'Renews ' + fmtDate(t('d_mat')) : 'Not set — a buyer will ask when the debt renews and whether it is assumable');
   add(c.fixed > 0 ? 'soft' : 'need', 'Operating expenses',
@@ -1870,9 +1930,52 @@ function renderProjection() {
   }
 }
 
+function renderInvestors(saleISO) {
+  const iso = saleISO || t('asOf') || new Date().toISOString().slice(0, 10);
+  const I = investorPayout(iso);
+  const inp = (r, k, type, cls) => '<input' + (type ? ' type="' + type + '"' : '') +
+    (cls ? ' class="' + cls + '"' : '') + ' value="' + esc(r[k] == null ? '' : r[k]) +
+    '" data-row="investors" data-id="' + r.id + '" data-k="' + k + '">';
+  const sel = (r, k, opts) => '<select data-row="investors" data-id="' + r.id + '" data-k="' + k + '">' +
+    opts.map(o => '<option value="' + o[0] + '"' + ((r[k] || opts[0][0]) === o[0] ? ' selected' : '') +
+      '>' + o[1] + '</option>').join('') + '</select>';
+
+  document.getElementById('invBody').innerHTML = (S.investors || []).map(r => {
+    const calc = I.rows.find(x => x.id === r.id) || {};
+    return '<tr>' +
+      '<td class="l">' + inp(r, 'name', '', 'l') + '</td>' +
+      '<td class="l">' + sel(r, 'type', [['Loan','Loan'],['Preferred equity','Preferred equity'],
+                                          ['Shareholder loan','Shareholder loan'],['Profit share','Profit share']]) + '</td>' +
+      '<td>' + inp(r, 'amt', 'number') + '</td>' +
+      '<td>' + inp(r, 'rate', 'number') + '</td>' +
+      '<td class="l">' + inp(r, 'start', 'date') + '</td>' +
+      '<td class="l">' + sel(r, 'compound', [['no','Simple'],['yes','Annual']]) + '</td>' +
+      '<td>' + inp(r, 'paid', 'number') + '</td>' +
+      '<td class="l">' + sel(r, 'onsale', [['yes','Repaid'],['no','Rides through']]) + '</td>' +
+      '<td>' + (calc.onsale ? money(calc.due) : '—') + '</td>' +
+      '<td><button class="icon-btn" data-delrow="investors" data-id="' + r.id + '" aria-label="Remove">×</button></td></tr>';
+  }).join('') || '<tr><td class="l" colspan="10" style="color:var(--muted)">No investor capital recorded. ' +
+      'Add each obligation so net proceeds show what actually reaches you.</td></tr>';
+
+  document.getElementById('invFoot').innerHTML = I.any
+    ? '<tr class="tot"><td class="l">Due at a ' + fmtDate(iso) + ' closing</td><td class="l"></td>' +
+      '<td>' + money(I.principal) + '</td><td></td><td class="l"></td><td class="l"></td><td></td>' +
+      '<td class="l">principal + ' + money(I.accrued) + ' accrued</td><td>' + money(I.total) + '</td><td></td></tr>'
+    : '';
+
+  document.getElementById('invNote').innerHTML = I.any
+    ? 'Ranked behind the mortgage and ahead of you. At a ' + fmtDate(iso) + ' closing, ' + money(I.total) +
+      ' comes off the proceeds — ' + money(I.principal) + ' of principal and ' + money(I.accrued) + ' of accrued return' +
+      (I.deferred > 0 ? ', with a further ' + money(I.deferred) + ' of principal marked as riding through the sale' : '') +
+      '. Every net-proceeds figure in this tool is stated after this deduction.'
+    : 'Nothing entered, so every net-proceeds figure in this tool is currently stated <strong>before</strong> any ' +
+      'investor repayment. If capital has to come out of the sale, enter it here or those numbers overstate what reaches you.';
+}
+
 function renderExit() {
   const ey = Math.max(1, Math.min(10, n('x_exityear') || 5));
   const X = exitAnalysis(ey), c = X.P.c;
+  renderInvestors(X.exitISO);
 
   document.getElementById('exitTiles').innerHTML =
     tile('Exit Value · Year ' + X.exitYear, money(X.exitValue),
@@ -1893,7 +1996,12 @@ function renderExit() {
     R('Legal &amp; closing', money(-X.legal)) +
     R('Mortgage payout', c.bal ? money(-X.lastBal) : 'balance not supplied') +
     R('Prepayment penalty', money(-X.penalty)) +
-    R('<b>Net proceeds before tax</b>', '<b>' + (c.bal ? money(X.proceeds) : '—') + '</b>', 'tot') +
+    (X.investors > 0
+      ? R('<b>Proceeds before investor capital</b>', '<b>' + (c.bal ? money(X.beforeInv) : '—') + '</b>', 'sub') +
+        R('Investor capital repaid', money(-X.investors))
+      : '') +
+    R('<b>Net proceeds before tax' + (X.investors > 0 ? ', after investors' : '') + '</b>',
+      '<b>' + (c.bal ? money(X.proceeds) : '—') + '</b>', 'tot') +
     R('Estimated tax', c.acb > 0 ? money(-X.tax) : 'ACB not supplied') +
     R('<b>Net proceeds after tax</b>', '<b>' + (c.acb > 0 && c.bal ? money(X.proceedsAT) : '—') + '</b>', 'tot') +
     R('Cumulative cash flow', money(X.totalCF)) +
@@ -2794,7 +2902,7 @@ function showPane(id) {
   const db = readStore();
   S = (db.draft && db.draft.f && Array.isArray(db.draft.units) && db.draft.units.length
        && db.draft.units[0].base !== undefined) ? db.draft : hollisSeed();
-  ['f', 'units', 'expenses', 'other', 'tax'].forEach(k => { if (!S[k]) S[k] = blankState()[k]; });
+  ['f', 'units', 'expenses', 'other', 'tax', 'investors'].forEach(k => { if (!S[k]) S[k] = blankState()[k]; });
   writeInputs(); refreshProfiles(db.last); renderAll();
 
   document.getElementById('tablist').addEventListener('click', e => {
@@ -2843,6 +2951,9 @@ function showPane(id) {
   on('btnAddUnit', () => { S.units.push({ id: uid(), bldg: '', unit: '', tenant: '', sqft: '', status: 'Active',
     start: '', end: '', base: '', cam: '', esc: '', note: '' }); renderAll(); autosave(); });
   on('btnAddExp', () => { S.expenses.push({ id: uid(), name: 'New expense', a: 0 }); renderAll(); autosave(); });
+  on('btnAddInv', () => { (S.investors = S.investors || []).push({ id: uid(), name: '', type: 'Loan',
+    amt: 0, rate: 0, start: t('asOf') || '', compound: 'no', paid: 0, onsale: 'yes' });
+    renderAll(); autosave(); });
   on('btnAddOi', () => { S.other.push({ id: uid(), name: 'New income line', a: 0, p: 0 }); renderAll(); autosave(); });
   on('btnPaste', () => { const b = document.getElementById('pasteBox'); b.hidden = !b.hidden; });
   on('btnSyncTax', () => { syncTaxRows(); renderAll(); autosave(); });
@@ -2878,7 +2989,7 @@ function showPane(id) {
       try {
         const d2 = JSON.parse(x.target.result);
         S = d2.state || d2;
-        ['f', 'units', 'expenses', 'other', 'tax'].forEach(k => { if (!S[k]) S[k] = blankState()[k]; });
+        ['f', 'units', 'expenses', 'other', 'tax', 'investors'].forEach(k => { if (!S[k]) S[k] = blankState()[k]; });
         writeInputs(); renderAll(); autosave();
       } catch (err) { alert('That file could not be read: ' + err.message); }
     };
