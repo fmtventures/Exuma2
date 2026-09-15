@@ -159,7 +159,7 @@ input[type="number"]{font-variant-numeric:tabular-nums}
 .hint{font-size:11.5px; color:var(--muted); line-height:1.5}
 
 /* -------------------------------- buttons -------------------------------- */
-.btn{appearance:none; border:1px solid var(--rule-strong); background:var(--surface); color:var(--ink);
+.btn{appearance:none; text-decoration:none; border:1px solid var(--rule-strong); background:var(--surface); color:var(--ink);
   font-size:12px; font-weight:600; padding:6px 11px; border-radius:4px; cursor:pointer;
   display:inline-flex; align-items:center; gap:6px; transition:all .14s; white-space:nowrap}
 .btn:hover{border-color:var(--brass); color:var(--brass)}
@@ -402,6 +402,51 @@ table.heat td.h{font-weight:600; color:#1B2432}
         <input type="file" id="fileImport" accept=".json" hidden></div></div>
     </div>
   </div>
+
+  <div class="card" style="margin-top:16px">
+    <h3>Assessment Record &amp; Source Documents</h3>
+    <div class="body">
+      <p class="hint" style="margin:0 0 12px">Province of Prince Edward Island, Department of Finance, Taxation and Property Records Division —
+        Property Assessment Information Listing, assessment year 2026, drawn 15 September 2026. This is the record of title,
+        site area, classification and annual charges. It is a primary source, not an opinion of value, and the property tax
+        line in the operating statement is taken from it.</p>
+      <div style="overflow-x:auto">
+      <table class="t">
+        <thead><tr>
+          <th class="l">Parcel</th><th class="l">Location</th><th>Acres</th>
+          <th>Commercial</th><th>Non-Commercial</th><th>Assessed</th><th>2026 Charges</th>
+        </tr></thead>
+        <tbody>
+          <tr><td class="l">1093814</td><td class="l">26 Hollis Avenue</td><td>0.62</td>
+              <td>$345,500</td><td>$277,700</td><td>$623,200</td><td>$14,040.02</td></tr>
+          <tr><td class="l">1112366</td><td class="l">30 Hollis Avenue</td><td>0.64</td>
+              <td>—</td><td>$542,500</td><td>$542,500</td><td>$8,191.75</td></tr>
+          <tr><td class="l">1110147</td><td class="l">41 Hollis Avenue</td><td>0.77</td>
+              <td>$492,900</td><td>—</td><td>$492,900</td><td>$14,047.65</td></tr>
+          <tr><td class="l">1142413</td><td class="l">45 Hollis Avenue</td><td>0.73</td>
+              <td>$542,500</td><td>—</td><td>$542,500</td><td>$15,461.25</td></tr>
+          <tr class="tot"><td class="l">Four parcels</td><td class="l">Francistheriault Ventures Inc.</td><td>2.76</td>
+              <td>$1,380,900</td><td>$820,200</td><td>$2,201,100</td><td>$51,740.67</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p class="hint" style="margin:12px 0 0"><strong>Classification is worth watching.</strong>
+        30 Hollis is assessed wholly non-commercial and 26 Hollis is 44.6% non-commercial. Non-commercial property
+        carries a provincial rate of $1.70 less a $0.70 credit and a municipal rate of $0.51, against $1.50 and $1.35
+        for commercial — so 30 Hollis pays $8,191.75 where 45 Hollis, on an identical $542,500 assessment, pays
+        $15,461.25. If a reassessment on sale moved both to commercial, annual charges would rise about $10,991,
+        which at a 6.50% capitalization rate is roughly $169,000 of value. A purchaser's due diligence will find this.
+        It is a disclosure item, not a defect.</p>
+      <p class="hint" style="margin:10px 0 0">Registry shows a 2026 mortgage and assignment filed against each parcel,
+        consistent with the Equitable Bank facility. Site area totals 2.76 acres, agreeing with the leasing records.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px">
+        <a class="btn sm" href="docs/assessments/26-hollis-parcel-1093814-assessment-2026.pdf" target="_blank" rel="noopener">26 Hollis · PDF</a>
+        <a class="btn sm" href="docs/assessments/30-hollis-parcel-1112366-assessment-2026.pdf" target="_blank" rel="noopener">30 Hollis · PDF</a>
+        <a class="btn sm" href="docs/assessments/41-hollis-parcel-1110147-assessment-2026.pdf" target="_blank" rel="noopener">41 Hollis · PDF</a>
+        <a class="btn sm" href="docs/assessments/45-hollis-parcel-1142413-assessment-2026.pdf" target="_blank" rel="noopener">45 Hollis · PDF</a>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- ============================ 02 RENT ROLL ============================ -->
@@ -612,7 +657,13 @@ table.heat td.h{font-weight:600; color:#1B2432}
             <select id="d_comp"><option value="semi">Semi-annual (Canada)</option><option value="monthly">Monthly (US)</option></select></div>
           <div class="f"><label for="d_mat">Maturity</label><input id="d_mat" type="date"></div>
         </div>
-        <div class="f r"><label for="d_penalty">Prepayment Penalty ($)</label><input id="d_penalty" type="number"></div>
+        <div class="f r"><label for="d_penalty">Prepayment Penalty ($)</label><input id="d_penalty" type="number" placeholder="Refer to commitment — not yet supplied"></div>
+        <p class="hint" style="margin:2px 0 0">Equitable Bank loan <strong>598842</strong>, advanced 22 July 2026 —
+          $5,000,000 at 6.74% fixed, 24-month term, 300-month amortization, maturing 5 August 2028.
+          The regular payment of $38,662.96 includes a $4,441.07 monthly property tax component; debt service here is
+          principal and interest only, $34,221.89 a month, because property tax is already an operating expense above.
+          Balance shown is the advance. Take the exact current balance off myEquitable before a closing statement is drawn.
+          <a href="docs/eq-bank-loan-598842-welcome-letter.pdf" target="_blank" rel="noopener">Welcome letter · PDF</a></p>
       </div></div>
     <div class="card"><h3>Disposition &amp; Tax</h3>
       <div class="body fields">
@@ -1376,7 +1427,7 @@ function hollisSeed() {
     status: r[4], start: r[5], end: r[6], base: r[7], cam: r[8], esc: r[9], note: r[10] }));
 
   st.expenses = [
-    { id: uid(), name: 'Property tax & annual charges', a: 50858 },
+    { id: uid(), name: 'Property tax & annual charges (2026 provincial assessment record)', a: 51740.67 },
     { id: uid(), name: 'Recoverable operating costs (CAM pool)', a: 149413 }
   ];
   st.other = [];
@@ -1398,7 +1449,8 @@ function hollisSeed() {
     a_firm: 'McQuaid & Associates – ARA · reliance letter 8 Jun 2026 (report #2026027, $9,225,000 eff. 9 Feb 2026)',
     v_target: 6.5, v_step: 0.25, v_low: 5.5, v_high: 8,
     i_vacA: 2, i_vacP: 3, e_mgmt: 3, e_reserve: 390, m_psf: 20.27,
-    d_rate: 5.25, d_amort: 25, d_comp: 'semi', d_cos: 3, d_legal: 15000, d_tax: 47,
+    d_bal: 5000000, d_rate: 6.74, d_amort: 25, d_comp: 'semi', d_mat: '2028-08-05',
+    d_cos: 3, d_legal: 15000, d_tax: 47,
     x_start: '2026-10-01', x_years: 5, x_renew: 'market', x_down: 4,
     x_defesc: 3, x_expg: 2.5, x_lease: 8, x_capex: 0,
     x_exityear: 5, x_cap: 6.75,

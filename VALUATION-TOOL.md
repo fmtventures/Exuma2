@@ -98,20 +98,47 @@ expiry, base rent, CAM, area and status entered as stated. On that roll the in-p
 is materially below the appraisal's stabilized benchmark, which is the point of the exercise,
 not a defect in it.
 
+### Primary-source documents
+
+The appraisal is a benchmark to measure against, not an input. Where a primary record exists
+it is used instead, and the record itself is filed in `docs/` and linked from the tool:
+
+| Source | What it fixes | Where |
+|---|---|---|
+| PEI Property Assessment Information Listings, 2026, four parcels | Title, parcel numbers, site area, classification, and the property tax line — **$51,740.67**, replacing the appraiser's normalized $50,858 | Overview tab · `docs/assessments/` |
+| Equitable Bank welcome letter, loan 598842 | Loan amount, rate, term, amortization and maturity | Debt & Exit tab · `docs/` |
+
+The assessment records confirm Francistheriault Ventures Inc. on title to all four parcels,
+2.76 acres in total, and a 2026 mortgage registered against each. The loan is **$5,000,000
+advanced 22 July 2026 at 6.74% fixed**, 24-month term, 300-month amortization, maturing
+**5 August 2028**. The engine's Canadian semi-annual compounding reproduces the letter's
+principal-and-interest payment of **$34,221.89** to the cent, which is an independent check
+on the debt module. The letter's $38,662.96 regular payment includes a $4,441.07 monthly
+property tax escrow; that is excluded from debt service, because property tax is already an
+operating expense.
+
+One finding worth carrying into any listing: **30 Hollis is assessed wholly non-commercial
+and 26 Hollis is 44.6% non-commercial**. On identical $542,500 assessments, 30 Hollis pays
+$8,191.75 a year where 45 Hollis pays $15,461.25. A reassessment to commercial on sale would
+add roughly $10,991 a year — about $169,000 of value at a 6.50% cap. It is a disclosure item,
+and a purchaser's due diligence will find it.
+
 ## Still outstanding
 
 These are entered by hand and the figures that depend on them stay blank or indicative
 until they are:
 
-- **Mortgage** — EQ Bank loan #598842: amount, rate and maturity. Blocks DSCR, LTV, net
-  proceeds, IRR and the net-proceeds column on the sale-price table.
 - **T2 Schedule 8, per parcel** — adjusted cost base of the land, capital cost of the
   building, and closing UCC (Class 1). Blocks the recapture and capital-gain split.
+- **Prepayment penalty** — the welcome letter defers to the commitment. Until it is known,
+  the cost of closing before the 5 August 2028 maturity cannot be priced.
 - **Tax rates** — the four rates on the Tax tab are PEI CCPC estimates and are not
   verified against current legislation.
-- **Operating statement** — the expense lines are the appraiser's normalized figures, not
-  an actual T-12. Property tax in particular is unreconciled: the appraisal carries $50,858
-  against 2026 statements totalling $38,836.59.
+- **CAM pool** — the $149,413 recoverable operating cost line is still the appraiser's
+  normalized figure, not an actual twelve months. It is now the single largest
+  appraiser-derived number left in the model, and it flows straight into NOI.
+- **Market rent** — the $20.27/ft² stabilized benchmark is also the appraiser's, and it
+  drives the stabilized scenario and every re-letting assumption.
 - **Escalations** — three leases carry an annual adjustment with no percentage stated on
   the roll (Refined Auto Detailing, Confound, ProTech), and Alignment Dance Studio has a
   renewal review at 1 June 2027 with no rate set.
