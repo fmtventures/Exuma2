@@ -18,7 +18,8 @@ it also runs straight off disk.
 | 07 · Sale Price | Value at any date or quarter out to the horizon, at any cap rate |
 | 08 · Debt & Exit | DSCR, debt yield, LTV, net proceeds, hold-versus-sell IRR |
 | 09 · Tax on Sale | Recapture, capital gain, corporate tax, CDA, fiscal timing |
-| 10 · Investor Package | A formatted broker/investor document, ready to print or send |
+| 10 · What's Left to Me | Ownership by parcel, the JV waterfall, and the full stack down to cash in hand |
+| 11 · Investor Package | A formatted broker/investor document, ready to print or send |
 
 ## Method
 
@@ -127,6 +128,30 @@ and 26 Hollis is 44.6% non-commercial**. On identical $542,500 assessments, 30 H
 $8,191.75 a year where 45 Hollis pays $15,461.25. A reassessment to commercial on sale would
 add roughly $10,991 a year — about $169,000 of value at a 6.50% cap. It is a disclosure item,
 and a purchaser's due diligence will find it.
+
+### Ownership and the personal waterfall
+
+Title to all four parcels is in Francistheriault Ventures Inc., but the economic ownership is
+not uniform. The **What's Left to Me** tab carries a percentage and a joint-venture capital
+figure per parcel and runs the money in the order it actually moves:
+
+1. **Corporate** — gross price less selling costs, legal, mortgage payout and corporate tax.
+2. **Parcel** — that cash allocated across the four parcels by their share of value.
+3. **Joint venture** — at each parcel, the partners' original capital returned *in full* before
+   any profit is divided, then the remainder split on the ownership percentages. This ordering
+   comes from clause 8 of the Hollis agreements and is not cosmetic: a parcel that clears less
+   than the capital committed to it returns nothing to the sponsor whatever the percentage says.
+4. **Shareholder** — the MMH preferred redemption, then optional extraction through the capital
+   dividend account and a taxable dividend.
+
+Seeded: **30 Hollis at 50%** with **$300,000** of partner capital — the Phase 3 joint venture, in
+which three partners each contributed $100,000 for a third of the investors' half (Bernard Lord
+through 678108NB inc., Allain, Darryl Boyce). **41 and 45 Hollis at 100%.** **26 Hollis at 75%**,
+which is a placeholder for "seventy-something" and must be read off the executed agreement.
+
+Because capital comes out ahead of profit, the effective share of proceeds is not the headline
+percentage: on the seeded figures it is about 85% weighted by parcel value, while 30 Hollis
+returns far less than half of its own proceeds until its $300,000 is repaid.
 
 ### Investor capital
 

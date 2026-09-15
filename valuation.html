@@ -112,11 +112,14 @@ button{font-family:inherit}
 }
 
 /* --------------------------------- tabs ---------------------------------- */
-.tabs{background:var(--surface); border-bottom:1px solid var(--rule); position:sticky; top:58px; z-index:55}
+.tabs{background:var(--surface); border-bottom:1px solid var(--rule); position:sticky; top:58px; z-index:55;
+  position:sticky; --fade:linear-gradient(to left, var(--surface), transparent)}
+.tabs::after{content:''; position:absolute; right:0; top:0; bottom:1px; width:34px;
+  background:var(--fade); pointer-events:none}
 .tabs-in{display:flex; overflow-x:auto; scrollbar-width:none}
 .tabs-in::-webkit-scrollbar{display:none}
 .tab{appearance:none; background:none; border:0; border-bottom:2px solid transparent;
-  padding:12px 15px; font-size:13px; font-weight:600; color:var(--muted); cursor:pointer;
+  padding:12px 11px; font-size:12.5px; font-weight:600; color:var(--muted); cursor:pointer;
   white-space:nowrap; display:flex; align-items:center; gap:7px; transition:color .15s,border-color .15s}
 .tab:hover{color:var(--ink)}
 .tab[aria-selected="true"]{color:var(--ink); border-bottom-color:var(--brass)}
@@ -333,7 +336,8 @@ table.heat td.h{font-weight:600; color:#1B2432}
   <button class="tab" role="tab" data-pane="price"     aria-selected="false"><span class="idx">07</span>Sale Price</button>
   <button class="tab" role="tab" data-pane="exit"      aria-selected="false"><span class="idx">08</span>Debt &amp; Exit</button>
   <button class="tab" role="tab" data-pane="tax"       aria-selected="false"><span class="idx">09</span>Tax on Sale<span class="pip" id="pipTax" hidden></span></button>
-  <button class="tab" role="tab" data-pane="package"   aria-selected="false"><span class="idx">10</span>Investor Package</button>
+  <button class="tab" role="tab" data-pane="mine"      aria-selected="false"><span class="idx">10</span>What's Left to Me<span class="pip" id="pipMine" hidden></span></button>
+  <button class="tab" role="tab" data-pane="package"   aria-selected="false"><span class="idx">11</span>Package</button>
 </div></nav>
 
 <main class="wrap">
@@ -853,7 +857,41 @@ table.heat td.h{font-weight:600; color:#1B2432}
   </div>
 </section>
 
-<!-- ============================ 08 PACKAGE ============================ -->
+<!-- ========================= 10 WHAT'S LEFT TO ME ========================= -->
+<section class="pane" id="pane-mine" hidden>
+  <div class="grid c3 astart">
+    <div class="card span2"><h3>Ownership by Parcel
+      <button class="btn sm" id="btnSyncOwn">Sync parcels</button></h3>
+      <div class="body">
+        <p class="hint" style="margin:0 0 10px">Your percentage of each building, and the joint-venture capital that
+          must be returned to the partners at that building before any profit is divided. Clause 8 of the Hollis
+          agreements is explicit about the order: expenses, then original capital in full, then additional capital,
+          then profit on the ownership percentages. A parcel that clears less than the capital sitting in it returns
+          nothing to you whatever the percentage says.</p>
+        <div style="overflow-x:auto">
+        <table class="t"><thead><tr>
+          <th class="l" style="min-width:92px">Parcel</th><th class="l" style="min-width:230px">Partners</th>
+          <th style="min-width:72px">Your %</th><th style="min-width:110px">JV Capital</th>
+          <th>Share of Proceeds</th><th>To Partners</th><th>To You</th>
+        </tr></thead><tbody id="ownBody"></tbody><tfoot id="ownFoot"></tfoot></table>
+        </div>
+        <p class="hint" style="margin:10px 0 0" id="ownNote"></p>
+      </div></div>
+    <div class="grid" style="gap:16px;align-content:start">
+      <div class="card"><h3>Bottom Line</h3>
+        <div class="body"><div class="grid" id="mineTiles" style="gap:12px"></div></div></div>
+    </div>
+  </div>
+
+  <div class="grid c2 astart" style="margin-top:16px">
+    <div class="card"><h3>The Full Waterfall</h3>
+      <div class="body"><div style="overflow-x:auto"><table class="t" id="mineTable"></table></div></div></div>
+    <div class="card"><h3>What This Depends On</h3>
+      <div class="body tight"><div id="mineCaveats"></div></div></div>
+  </div>
+</section>
+
+<!-- ============================ 11 PACKAGE ============================ -->
 <section class="pane" id="pane-package" hidden>
   <div class="noprint" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
     <button class="btn primary" id="btnPdf">Download PDF</button>
@@ -1449,6 +1487,71 @@ function exitAnalysis(exitYear, exitCapPct) {
            multiple: equityToday > 0 ? (totalCF + proceeds) / equityToday : 0, exitCap, lastBal: bal };
 }
 
+/** What actually reaches Francis.
+
+    Four stages, in the order the money really moves:
+      corporate   — gross price less costs, mortgage and corporate tax, inside the company
+      parcel      — that cash allocated across parcels by value share
+      joint venture — at each parcel, JV capital repaid in full before any profit is split,
+                      then the remainder divided on the ownership percentages
+      shareholder — the MMH preferred redemption, then optional extraction to him personally
+
+    The JV order is not cosmetic. Clause 8 of the Hollis agreements repays original capital
+    ahead of profit, so a parcel that clears less than the capital in it returns nothing to
+    the sponsor even though the percentage says otherwise. */
+function waterfall() {
+  const T = taxOnSale();
+  const rows = taxRows();
+  const inv = investorPayout(t('tx_date') || t('x_start') || t('asOf'));
+
+  const corpCash = T.cashAfterTax;
+  const shares = T.parcels.map(p => p.share);
+  const shareSum = shares.reduce((a, b) => a + b, 0) || 1;
+
+  const parcels = T.parcels.map((p, i) => {
+    const r = p.r;
+    const fshare = Math.max(0, Math.min(100, num(r.fshare === '' || r.fshare == null ? 100 : r.fshare))) / 100;
+    const jvcap = Math.max(0, num(r.jvcap));
+    const cash = corpCash * (p.share / shareSum);
+    const capitalPaid = Math.min(Math.max(0, cash), jvcap);
+    const surplus = Math.max(0, cash - jvcap);
+    const shortfall = Math.max(0, jvcap - Math.max(0, cash));
+    const toFrancis = surplus * fshare;
+    const toPartners = capitalPaid + surplus * (1 - fshare);
+    return { bldg: r.bldg || '—', share: p.share / shareSum, cash, jvcap, capitalPaid,
+             shortfall, surplus, fshare, toFrancis, toPartners, jvwho: r.jvwho || '' };
+  });
+
+  const francisParcels = parcels.reduce((a, b) => a + b.toFrancis, 0);
+  const partners = parcels.reduce((a, b) => a + b.toPartners, 0);
+  const jvCapitalTotal = parcels.reduce((a, b) => a + b.jvcap, 0);
+  const anyShortfall = parcels.some(p => p.shortfall > 0);
+
+  // The MMH preferred redemption sits below the JV split: those shareholders rank ahead of
+  // the common, which is his.
+  const mmh = inv.total;
+  const afterMmh = francisParcels - mmh;
+
+  // Extraction. Capital dividend account first, then a taxable dividend.
+  const cdaAvailable = Math.max(0, T.cdaAvailable);
+  const cdaOut = Math.min(Math.max(0, afterMmh), cdaAvailable);
+  const taxableBase = Math.max(0, afterMmh - cdaOut);
+  const rdtohRefund = Math.min(Math.max(0, T.rdtohPool), taxableBase * 0.3833);
+  const grossDiv = taxableBase + rdtohRefund;
+  const personalTax = grossDiv * (n('tx_personal') / 100);
+  const inPocket = cdaOut + grossDiv - personalTax;
+
+  const weighted = (() => {
+    const tot = parcels.reduce((a, b) => a + b.cash, 0);
+    return tot > 0 ? parcels.reduce((a, b) => a + b.fshare * b.cash, 0) / tot : 0;
+  })();
+
+  return { T, inv, parcels, corpCash, francisParcels, partners, jvCapitalTotal, anyShortfall,
+           mmh, afterMmh, cdaOut, taxableBase, rdtohRefund, grossDiv, personalTax, inPocket,
+           weighted, gross: T.gross, mortgage: T.mortgage, corpTax: T.corpTax,
+           sellCost: T.sellCost, legal: T.legal, penalty: T.penalty };
+}
+
 /* ============================ PACKAGE READINESS ========================== */
 function readiness() {
   const c = calc(), w = walt(), x = expiryWatch(), items = [];
@@ -1556,6 +1659,16 @@ function hollisSeed() {
     { id: uid(), name: 'Bernard Lord', type: 'Preferred equity', amt: 250000, rate: 5,
       start: '2025-09-01', compound: 'no', paid: 0, onsale: 'yes' }
   ];
+
+  /* Ownership. Title to all four parcels is in Francistheriault Ventures Inc.; these are the
+     economic shares under the Hollis joint-venture agreements. Phase 3 is a 50/50 venture in
+     which three partners each put in $100,000 for a third of the investors' half. */
+  st.tax = { rows: [
+    { id: uid(), bldg: '26 Hollis', acbLand: '', capCost: '', ucc: '', fshare: 75,  jvcap: 0,      jvwho: 'JV partners — share to confirm' },
+    { id: uid(), bldg: '30 Hollis', acbLand: '', capCost: '', ucc: '', fshare: 50,  jvcap: 300000, jvwho: 'Bernard Lord (678108NB), Allain, Darryl Boyce' },
+    { id: uid(), bldg: '41 Hollis', acbLand: '', capCost: '', ucc: '', fshare: 100, jvcap: 0,      jvwho: '' },
+    { id: uid(), bldg: '45 Hollis', acbLand: '', capCost: '', ucc: '', fshare: 100, jvcap: 0,      jvwho: '' }
+  ] };
 
   st.expenses = [
     { id: uid(), name: 'Property tax & annual charges (2026 provincial assessment record)', a: 51740.67 },
@@ -2256,7 +2369,7 @@ function syncTaxRows() {
   const names = [...new Set(S.units.map(u => (u.bldg || '').trim()).filter(Boolean))];
   names.forEach(nm => {
     if (!rows.some(r => r.bldg === nm))
-      rows.push({ id: uid(), bldg: nm, acbLand: '', capCost: '', ucc: '' });
+      rows.push({ id: uid(), bldg: nm, acbLand: '', capCost: '', ucc: '', fshare: 100, jvcap: 0, jvwho: '' });
   });
   S.tax.rows = rows.filter(r => !r.bldg || names.length === 0 || names.includes(r.bldg));
 }
@@ -2349,7 +2462,7 @@ function taxOnSale() {
            parcels, anyData, costBase, capGain, capLoss, netCapGain, taxableCapGain, cdaAddition,
            recapture, terminalLoss, nonCapLoss, income, rateInv, corpTax, rdtohAddition,
            cashBeforeTax, cashAfterTax, effRate: cashBeforeTax > 0 ? corpTax / cashBeforeTax : 0,
-           cdaAvailable, cdaOut, taxableDivBase, rdtohRefund, grossDividend, personalTax, toPocket,
+           cdaAvailable, cdaOut, taxableDivBase, rdtohPool, rdtohRefund, grossDividend, personalTax, toPocket,
            shareGain, shareTaxable, sharePersonalTax,
            structure: t('tx_structure') || 'asset', extract: t('tx_extract') || 'corp',
            date: t('tx_date') || t('x_start'), capPct, override };
@@ -2552,6 +2665,100 @@ function renderTax() {
 </script>
 
 <script>
+function renderMine() {
+  const W = waterfall(), T = W.T;
+  const inp = (r, k, type) => '<input' + (type ? ' type="' + type + '"' : '') +
+    ' value="' + esc(r[k] == null ? '' : r[k]) + '" data-taxrow="' + r.id + '" data-k="' + k + '">';
+
+  document.getElementById('ownBody').innerHTML = taxRows().map((r, i) => {
+    const w = W.parcels[i] || {};
+    return '<tr><td class="l">' + esc(r.bldg || '—') + '</td>' +
+      '<td class="l"><input class="l" value="' + esc(r.jvwho || '') + '" data-taxrow="' + r.id + '" data-k="jvwho" placeholder="—"></td>' +
+      '<td>' + inp(r, 'fshare', 'number') + '</td>' +
+      '<td>' + inp(r, 'jvcap', 'number') + '</td>' +
+      '<td>' + money(w.cash || 0) + '</td>' +
+      '<td>' + money(w.toPartners || 0) + '</td>' +
+      '<td style="font-weight:700">' + money(w.toFrancis || 0) + '</td></tr>';
+  }).join('') || '<tr><td class="l" colspan="7" style="color:var(--muted)">No parcels — press Sync parcels.</td></tr>';
+
+  document.getElementById('ownFoot').innerHTML = W.parcels.length
+    ? '<tr class="tot"><td class="l">Portfolio</td><td class="l">weighted ' + pct(W.weighted, 1) + '</td>' +
+      '<td>' + pct(W.weighted, 1) + '</td><td>' + money(W.jvCapitalTotal) + '</td>' +
+      '<td>' + money(W.corpCash) + '</td><td>' + money(W.partners) + '</td>' +
+      '<td style="font-weight:700">' + money(W.francisParcels) + '</td></tr>' : '';
+
+  document.getElementById('ownNote').innerHTML = W.anyShortfall
+    ? '<strong style="color:var(--crit)">At least one parcel clears less than the capital committed to it.</strong> ' +
+      'The partners are repaid to the extent there is cash and you take nothing from that parcel.'
+    : 'Percentages apply only to what is left after partner capital is returned in full, so your effective share of the ' +
+      'proceeds — ' + pct(W.weighted, 1) + ' weighted by parcel value — is not the same as your share of the profit.';
+
+  const ok = T.anyData && T.mortgage > 0;
+  document.getElementById('mineTiles').innerHTML =
+    tile('In the Company, After Tax', ok ? money(W.corpCash) : '—',
+         ok ? 'Francistheriault Ventures Inc.' : 'needs schedule 8 figures') +
+    tile('Your Share After Partners', ok ? money(W.francisParcels) : '—',
+         'after ' + money(W.jvCapitalTotal) + ' of JV capital') +
+    tile('After the MMH Redemption', ok ? money(W.afterMmh) : '—',
+         'less ' + money(W.mmh) + ' to the preferred holders',
+         ok && W.afterMmh <= 0 ? 'crit' : '') +
+    tile('In Your Own Hands', ok ? money(W.inPocket) : '—',
+         'if fully extracted, after ' + money(W.personalTax) + ' personal tax', 'accent');
+
+  const R = (l, v, k) => '<tr' + (k ? ' class="' + k + '"' : '') + '><td class="l">' + l +
+    '</td><td style="min-width:150px">' + v + '</td></tr>';
+  document.getElementById('mineTable').innerHTML =
+    '<thead><tr><th class="l">Sale on ' + fmtDate(T.date) + '</th><th>Amount</th></tr></thead><tbody>' +
+    R('<b>Gross sale price</b>', '<b>' + money(T.gross) + '</b>', 'sub') +
+    R('Selling costs (' + rate(n('d_cos'), 2) + ')', money(-T.sellCost)) +
+    R('Legal &amp; closing', money(-T.legal)) +
+    R('Mortgage payout', money(-T.mortgage)) +
+    R('Prepayment penalty', T.penalty > 0 ? money(-T.penalty) : 'not yet known') +
+    R('<b>Cash before tax</b>', '<b>' + money(T.cashBeforeTax) + '</b>', 'sub') +
+    R('Recapture of capital cost allowance', T.anyData ? money(T.recapture) : 'schedule 8 not supplied') +
+    R('Taxable capital gain', T.anyData ? money(T.taxableCapGain) : 'schedule 8 not supplied') +
+    R('Corporate tax at ' + rate(n('tx_rateinv'), 2), T.anyData ? money(-T.corpTax) : '—') +
+    R('<b>Cash in Francistheriault Ventures Inc.</b>', '<b>' + (ok ? money(W.corpCash) : '—') + '</b>', 'tot') +
+    (ok
+      ? R('Joint-venture capital returned to partners', money(-W.parcels.reduce((a, b) => a + b.capitalPaid, 0))) +
+        R('Partners’ share of the remaining profit',
+          money(-(W.partners - W.parcels.reduce((a, b) => a + b.capitalPaid, 0)))) +
+        R('<b>Your share across the four parcels</b>', '<b>' + money(W.francisParcels) + '</b>', 'tot') +
+        R('MMH preferred redemption (' + W.inv.rows.length + ' holders)', money(-W.mmh)) +
+        R('<b>Yours, held in the group</b>', '<b>' + money(W.afterMmh) + '</b>', 'tot') +
+        R('Paid as a capital dividend, tax free', money(W.cdaOut)) +
+        R('Paid as a taxable dividend', money(W.grossDiv)) +
+        R('Personal tax at ' + rate(n('tx_personal'), 2), money(-W.personalTax)) +
+        R('<b>In your own hands</b>', '<b>' + money(W.inPocket) + '</b>', 'tot')
+      : R('Everything below this line', 'waits on the schedule 8 figures', 'sub')) +
+    '</tbody>';
+
+  const C = [];
+  if (!T.anyData) C.push(['need', 'Schedule 8 figures are missing',
+    'Without the adjusted cost base of the land, the capital cost of each building and the closing UCC, the recapture ' +
+    'and capital gain cannot be computed, so every figure below the corporate tax line is unavailable rather than wrong.']);
+  if (T.penalty <= 0) C.push(['need', 'Prepayment penalty not known',
+    'The commitment letter governs it. Closing at the 5 August 2028 maturity avoids it; any earlier date understates ' +
+    'the cost by whatever it is.']);
+  const est = taxRows().filter(r => num(r.fshare) > 0 && num(r.fshare) < 100);
+  if (est.length) C.push(['soft', 'Ownership percentages are yours to confirm',
+    est.map(r => esc(r.bldg) + ' at ' + rate(num(r.fshare), 1)).join(', ') +
+    '. Title is in Francistheriault Ventures Inc. for all four parcels, so these are economic shares under the joint ' +
+    'venture agreements rather than registered interests. They should be read off the executed agreements.']);
+  C.push(['soft', 'The MMH redemption may already be paid',
+    'It is funded by the 2026 refinance. If it completes before closing, the ' + money(W.mmh) + ' line above is a ' +
+    'double count — switch the rows on the Debt & Exit tab to “Rides through”.']);
+  C.push(['soft', 'Rates are estimates',
+    'The corporate investment rate, the refundable portion and the personal dividend rate are PEI figures I have not ' +
+    'verified against current legislation. MNP should confirm them before you rely on the last three lines.']);
+  C.push(['soft', 'Operating expenses are still the appraiser’s',
+    'The CAM pool is a normalized figure, not your actual twelve months. It moves net operating income, and through ' +
+    'it the price, and through that everything here.']);
+  document.getElementById('mineCaveats').innerHTML = C.map(c =>
+    '<div class="check"><span class="dot ' + c[0] + '"></span><div><div class="t">' + c[1] + '</div>' +
+    '<div class="d">' + c[2] + '</div></div></div>').join('');
+}
+
 /* ============================ INVESTOR PACKAGE =========================== */
 function tbl(head, rows, note) {
   return '<div class="blk"><table><thead><tr>' + head.map(h => '<th>' + h + '</th>').join('') +
@@ -2936,7 +3143,7 @@ function refreshProfiles(sel) {
 function renderAll() {
   invalidateModel();                       // income changed: rebuild the monthly series once
   renderHeader(); renderOverview(); renderRentRoll(); renderOpex();
-  renderValuation(); renderRisk(); renderProjection(); renderPrice(); renderExit(); renderTax();
+  renderValuation(); renderRisk(); renderProjection(); renderPrice(); renderExit(); renderTax(); renderMine();
   if (!document.getElementById('pane-package').hidden) buildPackage();
 }
 let liveTimer = null;
@@ -3011,6 +3218,7 @@ function showPane(id) {
   on('btnAddOi', () => { S.other.push({ id: uid(), name: 'New income line', a: 0, p: 0 }); renderAll(); autosave(); });
   on('btnPaste', () => { const b = document.getElementById('pasteBox'); b.hidden = !b.hidden; });
   on('btnSyncTax', () => { syncTaxRows(); renderAll(); autosave(); });
+  on('btnSyncOwn', () => { syncTaxRows(); renderAll(); autosave(); });
   on('btnSeed', () => {
     if (S.units.length && !confirm('Replace everything with the Hollis Avenue portfolio as at 20 July 2026?')) return;
     S = hollisSeed(); writeInputs(); renderAll(); autosave();
